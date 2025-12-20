@@ -2,6 +2,7 @@
 
 //Setting for quizes - MODRA
 // tento subor uz sa nepouzva a moze sa vymazat.
+// ale chcem si ho nechat, lebo Samorin so Seeds este mozem potrebovat
 
 
 class Eventkviz_Akcia_Class {
