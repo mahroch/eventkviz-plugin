@@ -1,0 +1,52 @@
+  body {
+   text-align: center;
+  }
+  .seed_block {
+     
+  }
+
+ .seed_for_place{
+    font-weight: 900;
+    text-transform: uppercase;
+    color: red;
+ }
+
+ .eventkviz_warning_correct_answers{
+   color: red;
+   
+ }
+
+ .eventkviz_standard_answer {
+  font-weight: 900;
+ }
+
+ .eventkviz_gained_points{
+   font-weight: 900;
+   text-transform: uppercase;
+   color: green;
+ }
+
+ .eventkviz_correct_answer {
+  font-weight: 900;
+   color: green;
+ }
+
+  .eventkviz_incorrect_answer {
+    font-weight: 900;
+    color: red;
+  }
+
+ .explanation-of-correct-answer {
+  color: green;
+ }
+
+ .seed_correct{
+  color: green;
+  text-transform: uppercase;
+  font-weight: 900;
+ }
+
+ .seed_incorrect {
+   color: red;
+  text-transform: uppercase;
+ }

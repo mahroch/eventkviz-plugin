@@ -1,0 +1,57 @@
+/* Elementor-like layout pre event metabox */
+.eventkviz-metabox-tabs {
+    background: #f0f0f1;
+    padding: 0;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+    margin-top: 20px;
+}
+
+.eventkviz-metabox-tabs .nav-tab-wrapper {
+    background: #fff;
+    padding: 0 20px;
+    border-bottom: 1px solid #c3c4c7;
+    margin: 0;
+}
+
+.eventkviz-metabox-tabs .nav-tab {
+    margin: 0;
+    padding: 12px 20px;
+    font-size: 14px;
+    border: none;
+}
+
+.eventkviz-metabox-tabs .nav-tab-active {
+    border-bottom: 3px solid #2271b1;
+    color: #2271b1;
+    font-weight: 600;
+}
+
+.eventkviz-tab-content {
+    background: #fff;
+    padding: 30px;
+}
+
+/* Clean form-table ako v Elementor */
+.eventkviz-tab-content .form-table th {
+    width: 250px;
+    padding: 20px 10px 20px 0;
+    font-weight: 600;
+    vertical-align: top;
+}
+
+.eventkviz-tab-content .form-table td {
+    padding: 20px 10px;
+}
+
+.eventkviz-tab-content .description {
+    margin-top: 8px;
+    color: #646970;
+    font-size: 13px;
+}
+
+/* Široké tabuľky v bodovaní */
+.eventkviz-tab-content .widefat {
+    border: none;
+    box-shadow: none;
+}
