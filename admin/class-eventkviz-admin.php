@@ -64,6 +64,7 @@ add_action( 'trashed_post', array( $this, 'delete_event_pages' ) );
 
 // Pre permanent delete (vyprázdnenie koša alebo force delete)
 add_action( 'deleted_post', array( $this, 'delete_event_pages' ), 10, 2 ); // 2 parametre pre deleted_post
+wp_enqueue_style( 'eventkviz-admin-tabs', plugin_dir_url( __FILE__ ) . 'css/eventkviz-admin-tabs.css', array(), '1.1.0' );
 	}
 
 	/**
@@ -216,8 +217,8 @@ public function render_settings_tabs( $post ) {
     $meta = get_post_meta( $post->ID );
 
     ?>
-    <div class="eventkviz-tabs">
-        <ul class="tabs-nav">
+    <div class="eventkviz-metabox-tabs">
+        <ul class="eventkviz-tabs-nav">
             <li class="active"><a href="#tab-general">General</a></li>
             <li><a href="#tab-music">Music</a></li>
             <li><a href="#tab-movies">Movies</a></li>
@@ -225,58 +226,136 @@ public function render_settings_tabs( $post ) {
             <li><a href="#tab-sudoku">Sudoku</a></li>
         </ul>
 
-        <?php
-        // Volanie samostatných metód pre každý tab
-        $this->render_general_tab( $post, $meta );
-        $this->render_music_tab( $post, $meta );
-        $this->render_movies_tab( $post, $meta );
-        $this->render_knowledge_tab( $post, $meta );
-        $this->render_sudoku_tab( $post, $meta );
-        ?>
+        <div class="eventkviz-tab-content">
+            <?php
+            $this->render_general_tab( $post, $meta );
+            $this->render_music_tab( $post, $meta );
+            $this->render_movies_tab( $post, $meta );
+            $this->render_knowledge_tab( $post, $meta );
+            $this->render_sudoku_tab( $post, $meta );
+            ?>
+        </div>
     </div>
 
     <script>
     jQuery(function($) {
-        // Tabs switching
-        $('.tabs-nav a').on('click', function(e) {
+        // Prepínanie tabov
+        $('.eventkviz-tabs-nav a').on('click', function(e) {
             e.preventDefault();
             var target = $(this).attr('href');
-            $('.tab-content').hide();
-            $(target).show();
-            $('.tabs-nav li').removeClass('active');
+
+            $('.eventkviz-tab-content .tab-panel').removeClass('active').hide();
+            $(target).addClass('active').show();
+
+            $('.eventkviz-tabs-nav li').removeClass('active');
             $(this).parent().addClass('active');
         });
-        $('.tabs-nav li:first a').trigger('click');
 
-        // Conditional show/hide (pre General tab – presunuté do sub-metódy, ale JS ostáva tu)
-        function toggleTeams() {
-            if ($('#select_from_teams_array_cb').is(':checked')) {
-                $('#select_teams_container').show();
-            } else {
-                $('#select_teams_container').hide();
+        // Initial
+        $('.eventkviz-tabs-nav li.active a').trigger('click');
+
+        // General
+        $('#select_from_teams_array_cb_general').on('change', function() {
+            $('#select_teams_container_general').toggle($(this).is(':checked'));
+        });
+        $('#use_seed_cb_general').on('change', function() {
+            $('#places_container_general').toggle($(this).is(':checked'));
+        });
+
+        // Music
+        $('#music_quiz_active_cb').on('change', function() {
+            $('#music_fields_container').toggle($(this).is(':checked'));
+        });
+        $('#poslat_vysledok_mailom_cb_music').on('change', function() {
+            $('#admin_mail_container_music').toggle($(this).is(':checked'));
+        });
+        $('#format_pri_splneni_select_music').on('change', function() {
+            var value = $(this).val();
+            $('#obrazok_container_music').toggle(value === 'obrazok');
+            $('#text_container_music').toggle(value === 'text');
+        });
+
+        // Movies
+        $('#movies_quiz_active_cb').on('change', function() {
+            $('#movies_fields_container').toggle($(this).is(':checked'));
+        });
+        $('#poslat_vysledok_mailom_cb_movies').on('change', function() {
+            $('#admin_mail_container_movies').toggle($(this).is(':checked'));
+        });
+        $('#format_pri_splneni_select_movies').on('change', function() {
+            var value = $(this).val();
+            $('#obrazok_container_movies').toggle(value === 'obrazok');
+            $('#text_container_movies').toggle(value === 'text');
+        });
+
+        // Knowledge
+        $('#knowledge_quiz_active_cb').on('change', function() {
+            $('#knowledge_fields_container').toggle($(this).is(':checked'));
+        });
+        $('#poslat_vysledok_mailom_cb_knowledge').on('change', function() {
+            $('#admin_mail_container_knowledge').toggle($(this).is(':checked'));
+        });
+        $('#format_pri_splneni_select_knowledge').on('change', function() {
+            var value = $(this).val();
+            $('#obrazok_container_knowledge').toggle(value === 'obrazok');
+            $('#text_container_knowledge').toggle(value === 'text');
+        });
+
+        // Sudoku
+        $('#sudoku_quiz_active_cb').on('change', function() {
+            $('#sudoku_fields_container').toggle($(this).is(':checked'));
+        });
+        $('#poslat_vysledok_mailom_cb_sudoku').on('change', function() {
+            $('#admin_mail_container_sudoku').toggle($(this).is(':checked'));
+        });
+        $('#format_pri_splneni_select_sudoku').on('change', function() {
+            var value = $(this).val();
+            $('#obrazok_container_sudoku').toggle(value === 'obrazok');
+            $('#text_container_sudoku').toggle(value === 'text');
+        });
+
+        // Initial toggle pre všetky
+        $('.eventkviz-tabs-nav a').each(function() {
+            if ($(this).parent().hasClass('active')) {
+                var target = $(this).attr('href');
+                $(target + ' input[type="checkbox"], select[id^="format_pri_splneni_select"], input[id^="select_from_teams_array_cb"], input[id^="use_seed_cb"]').trigger('change');
             }
-        }
-        function togglePlaces() {
-            if ($('#use_seed_cb').is(':checked')) {
-                $('#places_container').show();
-            } else {
-                $('#places_container').hide();
-            }
-        }
-        $('#select_from_teams_array_cb').on('change', toggleTeams);
-        $('#use_seed_cb').on('change', togglePlaces);
-        toggleTeams();
-        togglePlaces();
+        });
+
+        // Uploader (globálny)
+        $('.upload_obrazok_button').on('click', function(e) {
+            e.preventDefault();
+            var button = $(this);
+            var target = $(button.data('target'));
+            var preview = $(button.data('preview'));
+
+            var frame = wp.media({
+                title: 'Vybrať obrázok',
+                button: { text: 'Použiť tento obrázok' },
+                multiple: false
+            });
+
+            frame.on('select', function() {
+                var attachment = frame.state().get('selection').first().toJSON();
+                target.val(attachment.id);
+                preview.html('<img src="' + attachment.url + '" style="max-width: 300px; height: auto;" />');
+                button.siblings('.remove_obrazok_button').show();
+            });
+
+            frame.open();
+        });
+
+        $('.remove_obrazok_button').on('click', function(e) {
+            e.preventDefault();
+            var button = $(this);
+            var target = $(button.data('target'));
+            var preview = $(button.data('preview'));
+            target.val('');
+            preview.html('');
+            button.hide();
+        });
     });
     </script>
-
-    <style>
-    .eventkviz-tabs .tabs-nav { list-style: none; display: flex; margin: 0; padding: 0; border-bottom: 2px solid #ccc; background: #f1f1f1; }
-    .eventkviz-tabs .tabs-nav li { margin: 0; }
-    .eventkviz-tabs .tabs-nav li a { padding: 10px 20px; display: block; text-decoration: none; color: #333; }
-    .eventkviz-tabs .tabs-nav li.active a { background: #fff; border-bottom: 2px solid #0073aa; font-weight: bold; }
-    .tab-content { display: none; padding: 20px; background: #fff; border: 1px solid #ccc; border-top: none; }
-    </style>
     <?php
 }
 
@@ -389,26 +468,9 @@ public function save_event_meta( $post_id ) {
  */
 private function render_general_tab( $post, $meta ) {
     ?>
-    <div id="tab-general" class="tab-content" style="display: block;">
+    <div id="tab-general" class="tab-panel">
         <h3>Všeobecné nastavenia eventu</h3>
         <table class="form-table" role="presentation">
-
-			<!-- Zobrazenie slugu eventu (read-only) -->
-			<tr>
-				<th><label>Slug eventu</label></th>
-				<td>
-					<?php if ( $post->post_name ) : ?>
-						<input type="text" value="<?php echo esc_attr( $post->post_name ); ?>" disabled class="regular-text" />
-						<p class="description">
-							Slug eventu (automaticky vygenerovaný z názvu). Používa sa napr. v shortcodoch alebo URL (napr. ?eventkviz_event=<?php echo esc_attr( $post->post_name ); ?>).<br>
-							Ak chceš zmeniť slug, uprav názov eventu a ulož (WP ho pregeneruje, ak nie je duplicitný).
-						</p>
-					<?php else : ?>
-						<p><em>Bude automaticky vygenerovaný z názvu eventu po prvom uložení.</em></p>
-						<p class="description">Slug sa vytvorí z názvu (title) – malé písmená, pomlčky namiesto medzier.</p>
-					<?php endif; ?>
-				</td>
-			</tr>
 
             <!-- startup_form -->
             <tr>
@@ -457,10 +519,10 @@ private function render_general_tab( $post, $meta ) {
             <tr>
                 <th><label>Výber tímu zo zoznamu</label></th>
                 <td>
-                    <input type="checkbox" id="select_from_teams_array_cb" name="event_general[select_from_teams_array]" value="1" <?php checked( $meta['event_general_select_from_teams_array'][0] ?? '1', '1' ); ?> />
+                    <input type="checkbox" id="select_from_teams_array_cb_general" name="event_general[select_from_teams_array]" value="1" <?php checked( $meta['event_general_select_from_teams_array'][0] ?? '1', '1' ); ?> />
                     <p class="description">true/false - má sa tím vybrať z vopred zadaného zoznamu, zoznam nižšie.</p>
 
-                    <div id="select_teams_container" style="margin-top: 10px; <?php echo ( $meta['event_general_select_from_teams_array'][0] ?? '1' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
+                    <div id="select_teams_container_general" style="margin-top: 10px; <?php echo ( $meta['event_general_select_from_teams_array'][0] ?? '1' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
                         <label><strong>Zoznam tímov (JSON formát objektu):</strong></label><br>
                         <textarea name="event_general[select_teams_json]" rows="10" class="large-text" placeholder='{"": "Select ...", "team1": "Team 1", "team2": "Team 2"}'><?php 
                             $teams = get_post_meta( $post->ID, 'event_general_select_teams', true );
@@ -475,10 +537,10 @@ private function render_general_tab( $post, $meta ) {
             <tr>
                 <th><label>Použiť seed (kódy pre stanovištia)</label></th>
                 <td>
-                    <input type="checkbox" id="use_seed_cb" name="event_general[use_seed]" value="1" <?php checked( $meta['event_general_use_seed'][0] ?? '0', '1' ); ?> />
+                    <input type="checkbox" id="use_seed_cb_general" name="event_general[use_seed]" value="1" <?php checked( $meta['event_general_use_seed'][0] ?? '0', '1' ); ?> />
                     <p class="description">true/false - pri získaní stanovišťa sa používateľovi ukáže kód za dané stanovište</p>
 
-                    <div id="places_container" style="margin-top: 10px; <?php echo ( $meta['event_general_use_seed'][0] ?? '0' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
+                    <div id="places_container_general" style="margin-top: 10px; <?php echo ( $meta['event_general_use_seed'][0] ?? '0' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
                         <label><strong>Poradie stanovísk (places – JSON indexed array):</strong></label><br>
                         <textarea name="event_general[places_json]" rows="8" class="large-text" placeholder='[[ "sudoku", "Sudoku quiz" ], [ "movies", "Movies quiz" ]]'><?php 
                             $places = get_post_meta( $post->ID, 'event_general_places', true );
@@ -523,28 +585,25 @@ private function render_general_tab( $post, $meta ) {
  * Render Music tabu
  */
 private function render_music_tab( $post, $meta ) {
-    // Načítaj aktuálne hodnoty
     $image_id = isset( $meta['event_music_obrazok_pri_splneni_kvizu'][0] ) ? (int) $meta['event_music_obrazok_pri_splneni_kvizu'][0] : 0;
     $image_src = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
 
-    $format_pri_splneni = isset( $meta['event_music_format_pri_splneni'][0] ) ? $meta['event_music_format_pri_splneni'][0] : 'obrazok'; // default obrazok
+    $format_pri_splneni = isset( $meta['event_music_format_pri_splneni'][0] ) ? $meta['event_music_format_pri_splneni'][0] : 'obrazok';
     $text_pri_splneni = isset( $meta['event_music_text_pri_splneni_kvizu'][0] ) ? $meta['event_music_text_pri_splneni_kvizu'][0] : '';
 
-    // Načítaj credits hodnoty
     $credits = array(
         'corr_art_corr_pos_corr_song_corr_pos' => isset( $meta['event_music_credits_corr_art_corr_pos_corr_song_corr_pos'][0] ) ? (int) $meta['event_music_credits_corr_art_corr_pos_corr_song_corr_pos'][0] : 100,
         'corr_art_corr_pos_incorr_song'       => isset( $meta['event_music_credits_corr_art_corr_pos_incorr_song'][0] ) ? (int) $meta['event_music_credits_corr_art_corr_pos_incorr_song'][0] : 50,
         'incorr_art_corr_song_corr_pos'       => isset( $meta['event_music_credits_incorr_art_corr_song_corr_pos'][0] ) ? (int) $meta['event_music_credits_incorr_art_corr_song_corr_pos'][0] : 50,
     );
 
-    // Aktívny kvíz – pre conditional
     $music_active = isset( $meta['event_music_music_quiz_active'][0] ) ? $meta['event_music_music_quiz_active'][0] : '1';
     ?>
-    <div id="tab-music" class="tab-content">
+    <div id="tab-music" class="tab-panel">
         <h3>Music kvíz nastavenia</h3>
         <table class="form-table" role="presentation">
 
-            <!-- Aktívny Music kvíz (vždy viditeľný) -->
+            <!-- Aktívny Music kvíz -->
             <tr>
                 <th><label>Aktívny Music kvíz</label></th>
                 <td>
@@ -553,7 +612,6 @@ private function render_music_tab( $post, $meta ) {
                 </td>
             </tr>
 
-            <!-- VŠETKY OSTATNÉ POLIA (conditional podľa aktívneho kvízu) -->
             <tbody id="music_fields_container" style="<?php echo $music_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
                 <!-- show_entry_form -->
                 <tr>
@@ -567,7 +625,7 @@ private function render_music_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Bodovanie / kredity -->
+                <!-- Bodovanie -->
                 <tr>
                     <th><label>Bodovanie</label></th>
                     <td>
@@ -583,21 +641,21 @@ private function render_music_tab( $post, $meta ) {
                                     <td>Správny umelec, správna pieseň</td>
                                     <td>
                                         <input type="number" name="event_music[credits_corr_art_corr_pos_corr_song_corr_pos]" value="<?php echo esc_attr( $credits['corr_art_corr_pos_corr_song_corr_pos'] ); ?>" min="0" class="small-text" />
-                                        
+                                        <p class="description">správny umelec, správna pieseň</p>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Správny umelec, nesprávna pieseň</td>
                                     <td>
                                         <input type="number" name="event_music[credits_corr_art_corr_pos_incorr_song]" value="<?php echo esc_attr( $credits['corr_art_corr_pos_incorr_song'] ); ?>" min="0" class="small-text" />
-                                        
+                                        <p class="description">správny umelec, nesprávna pieseň</p>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Nesprávny umelec, správna pieseň</td>
                                     <td>
                                         <input type="number" name="event_music[credits_incorr_art_corr_song_corr_pos]" value="<?php echo esc_attr( $credits['incorr_art_corr_song_corr_pos'] ); ?>" min="0" class="small-text" />
-                                        
+                                        <p class="description">nesprávny umelec, správna pieseň</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -612,8 +670,8 @@ private function render_music_tab( $post, $meta ) {
                     <td>
                         <input type="number" name="event_music[pocet_otazok_v_sete]" value="<?php echo esc_attr( $meta['event_music_pocet_otazok_v_sete'][0] ?? '10' ); ?>" min="0" class="small-text" />
                         <p class="description">
-                            Číslo - možnosť zvoliť si koľko otázok v sete dostane používateľ.<br>
-                   
+                            0/číslo - možnosť zvoliť si koľko otázok v sete dostane používateľ.<br>
+                            0 znamená, že sa vyberá podľa žiadneho množstva v production settingu.
                         </p>
                     </td>
                 </tr>
@@ -635,10 +693,10 @@ private function render_music_tab( $post, $meta ) {
                 <tr>
                     <th><label>Poslať výsledok mailom</label></th>
                     <td>
-                        <input type="checkbox" id="poslat_vysledok_mailom_cb" name="event_music[poslat_vysledok_usera_mailom]" value="1" <?php checked( $meta['event_music_poslat_vysledok_usera_mailom'][0] ?? '0', '1' ); ?> />
+                        <input type="checkbox" id="poslat_vysledok_mailom_cb_music" name="event_music[poslat_vysledok_usera_mailom]" value="1" <?php checked( $meta['event_music_poslat_vysledok_usera_mailom'][0] ?? '0', '1' ); ?> />
                         <p class="description">true/false - možnosť poslať aktuálny výsledok používateľa po odoslaní na zadaný email</p>
 
-                        <div id="admin_mail_container" style="margin-top: 10px; <?php echo ( $meta['event_music_poslat_vysledok_usera_mailom'][0] ?? '0' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
+                        <div id="admin_mail_container_music" style="margin-top: 10px; <?php echo ( $meta['event_music_poslat_vysledok_usera_mailom'][0] ?? '0' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
                             <label><strong>Admin email pre výsledky:</strong></label><br>
                             <input type="email" name="event_music[admin_mail]" value="<?php echo esc_attr( $meta['event_music_admin_mail'][0] ?? 'mahroch@gmail.com' ); ?>" class="regular-text" />
                             <p class="description">možnosť poslať aktuálny výsledok používateľa po odoslaní na zadaný email</p>
@@ -689,31 +747,29 @@ private function render_music_tab( $post, $meta ) {
                 <tr>
                     <th><label>Formát pri splnení kvízu</label></th>
                     <td>
-                        <select id="format_pri_splneni_select" name="event_music[format_pri_splneni]">
+                        <select id="format_pri_splneni_select_music" name="event_music[format_pri_splneni]">
                             <option value="obrazok" <?php selected( $format_pri_splneni, 'obrazok' ); ?>>Obrázok</option>
                             <option value="text" <?php selected( $format_pri_splneni, 'text' ); ?>>Text</option>
                         </select>
                         <p class="description">Vyberte, čo sa zobrazí používateľovi po splnení kvízu (po dosiahnutí minimálnych bodov).</p>
 
-                        <!-- Conditional: Obrázok -->
-                        <div id="obrazok_container" style="margin-top: 15px; <?php echo $format_pri_splneni === 'obrazok' ? 'display: block;' : 'display: none;'; ?>">
-                            <input type="hidden" name="event_music[obrazok_pri_splneni_kvizu]" id="obrazok_pri_splneni_kvizu_id" value="<?php echo esc_attr( $image_id ); ?>" />
-                            <div id="obrazok_preview" style="margin-bottom: 10px;">
+                        <div id="obrazok_container_music" style="margin-top: 15px; <?php echo $format_pri_splneni === 'obrazok' ? 'display: block;' : 'display: none;'; ?>">
+                            <input type="hidden" name="event_music[obrazok_pri_splneni_kvizu]" id="obrazok_pri_splneni_kvizu_id_music" value="<?php echo esc_attr( $image_id ); ?>" />
+                            <div id="obrazok_preview_music" style="margin-bottom: 10px;">
                                 <?php if ( $image_src ) : ?>
                                     <img src="<?php echo esc_url( $image_src ); ?>" style="max-width: 300px; height: auto;" />
                                 <?php endif; ?>
                             </div>
-                            <button type="button" class="button upload_obrazok_button" data-target="#obrazok_pri_splneni_kvizu_id" data-preview="#obrazok_preview">
-                                <?php _e( 'Vybrať obrázok', 'eventkviz' ); ?>
+                            <button type="button" class="button upload_obrazok_button" data-target="#obrazok_pri_splneni_kvizu_id_music" data-preview="#obrazok_preview_music">
+                                Vybrať obrázok
                             </button>
-                            <button type="button" class="button remove_obrazok_button" data-target="#obrazok_pri_splneni_kvizu_id" data-preview="#obrazok_preview" <?php echo $image_id ? '' : 'style="display:none;"'; ?>>
-                                <?php _e( 'Odstrániť obrázok', 'eventkviz' ); ?>
+                            <button type="button" class="button remove_obrazok_button" data-target="#obrazok_pri_splneni_kvizu_id_music" data-preview="#obrazok_preview_music" <?php echo $image_id ? '' : 'style="display:none;"'; ?>>
+                                Odstrániť obrázok
                             </button>
                             <p class="description">ID obrázku z media library, ktorý sa zobrazí po splnení kvízu</p>
                         </div>
 
-                        <!-- Conditional: Text -->
-                        <div id="text_container" style="margin-top: 15px; <?php echo $format_pri_splneni === 'text' ? 'display: block;' : 'display: none;'; ?>">
+                        <div id="text_container_music" style="margin-top: 15px; <?php echo $format_pri_splneni === 'text' ? 'display: block;' : 'display: none;'; ?>">
                             <label><strong>Text pri splnení kvízu:</strong></label><br>
                             <textarea name="event_music[text_pri_splneni_kvizu]" rows="6" class="large-text"><?php echo esc_textarea( $text_pri_splneni ); ?></textarea>
                             <p class="description">Custom text, ktorý sa zobrazí po splnení kvízu (podporuje HTML).</p>
@@ -721,81 +777,8 @@ private function render_music_tab( $post, $meta ) {
                     </td>
                 </tr>
             </tbody>
-
         </table>
     </div>
-
-    <script>
-    jQuery(function($) {
-        // Conditional pre celý Music obsah
-        function toggleMusicFields() {
-            if ($('#music_quiz_active_cb').is(':checked')) {
-                $('#music_fields_container').show();
-            } else {
-                $('#music_fields_container').hide();
-            }
-        }
-        $('#music_quiz_active_cb').on('change', toggleMusicFields);
-        toggleMusicFields();
-
-        // Ostatné conditional (admin_mail, format_pri_splneni, uploader) – ostávajú rovnaké
-        function toggleAdminMail() {
-            if ($('#poslat_vysledok_mailom_cb').is(':checked')) {
-                $('#admin_mail_container').show();
-            } else {
-                $('#admin_mail_container').hide();
-            }
-        }
-        $('#poslat_vysledok_mailom_cb').on('change', toggleAdminMail);
-        toggleAdminMail();
-
-        function toggleFormatPriSplneni() {
-            var value = $('#format_pri_splneni_select').val();
-            if (value === 'obrazok') {
-                $('#obrazok_container').show();
-                $('#text_container').hide();
-            } else if (value === 'text') {
-                $('#obrazok_container').hide();
-                $('#text_container').show();
-            }
-        }
-        $('#format_pri_splneni_select').on('change', toggleFormatPriSplneni);
-        toggleFormatPriSplneni();
-
-        // Media Uploader
-        $('.upload_obrazok_button').on('click', function(e) {
-            e.preventDefault();
-            var button = $(this);
-            var target = $(button.data('target'));
-            var preview = $(button.data('preview'));
-
-            var frame = wp.media({
-                title: 'Vybrať obrázok',
-                button: { text: 'Použiť tento obrázok' },
-                multiple: false
-            });
-
-            frame.on('select', function() {
-                var attachment = frame.state().get('selection').first().toJSON();
-                target.val(attachment.id);
-                preview.html('<img src="' + attachment.url + '" style="max-width: 300px; height: auto;" />');
-                button.siblings('.remove_obrazok_button').show();
-            });
-
-            frame.open();
-        });
-
-        $('.remove_obrazok_button').on('click', function(e) {
-            e.preventDefault();
-            var button = $(this);
-            var target = $(button.data('target'));
-            var preview = $(button.data('preview'));
-            target.val('');
-            preview.html('');
-            button.hide();
-        });
-    });
-    </script>
     <?php
 }
 
@@ -803,24 +786,20 @@ private function render_music_tab( $post, $meta ) {
  * Render Movies tabu
  */
 private function render_movies_tab( $post, $meta ) {
-    // Načítaj aktuálne hodnoty
     $image_id = isset( $meta['event_movies_obrazok_pri_splneni_kvizu'][0] ) ? (int) $meta['event_movies_obrazok_pri_splneni_kvizu'][0] : 0;
     $image_src = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
 
-    $format_pri_splneni = isset( $meta['event_movies_format_pri_splneni'][0] ) ? $meta['event_movies_format_pri_splneni'][0] : 'obrazok'; // default obrazok
+    $format_pri_splneni = isset( $meta['event_movies_format_pri_splneni'][0] ) ? $meta['event_movies_format_pri_splneni'][0] : 'obrazok';
     $text_pri_splneni = isset( $meta['event_movies_text_pri_splneni_kvizu'][0] ) ? $meta['event_movies_text_pri_splneni_kvizu'][0] : '';
 
-    // Načítaj credits hodnoty (len corr_movie)
     $credits_corr_movie = isset( $meta['event_movies_credits_corr_movie'][0] ) ? (int) $meta['event_movies_credits_corr_movie'][0] : 100;
 
-    // Aktívny kvíz – pre conditional
     $movies_active = isset( $meta['event_movies_movies_quiz_active'][0] ) ? $meta['event_movies_movies_quiz_active'][0] : '1';
     ?>
-    <div id="tab-movies" class="tab-content">
+    <div id="tab-movies" class="tab-panel">
         <h3>Movies kvíz nastavenia</h3>
         <table class="form-table" role="presentation">
 
-            <!-- Aktívny Movies kvíz (vždy viditeľný) -->
             <tr>
                 <th><label>Aktívny Movies kvíz</label></th>
                 <td>
@@ -829,7 +808,6 @@ private function render_movies_tab( $post, $meta ) {
                 </td>
             </tr>
 
-            <!-- VŠETKY OSTATNÉ POLIA (conditional podľa aktívneho kvízu) -->
             <tbody id="movies_fields_container" style="<?php echo $movies_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
                 <!-- show_entry_form -->
                 <tr>
@@ -858,7 +836,7 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Bodovanie / kredity - len jedno pole -->
+                <!-- Bodovanie -->
                 <tr>
                     <th><label>Bodovanie</label></th>
                     <td>
@@ -908,7 +886,7 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- poslat_vysledok_usera_mailom + conditional admin_mail -->
+                <!-- poslat_vysledok_usera_mailom + conditional -->
                 <tr>
                     <th><label>Poslať výsledok mailom</label></th>
                     <td>
@@ -918,7 +896,7 @@ private function render_movies_tab( $post, $meta ) {
                         <div id="admin_mail_container_movies" style="margin-top: 10px; <?php echo ( $meta['event_movies_poslat_vysledok_usera_mailom'][0] ?? '0' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
                             <label><strong>Admin email pre výsledky:</strong></label><br>
                             <input type="email" name="event_movies[admin_mail]" value="<?php echo esc_attr( $meta['event_movies_admin_mail'][0] ?? 'mahroch@gmail.com' ); ?>" class="regular-text" />
-                            <p class="description">možnosť poslať aktuálny výsledok používateľa po odoslaní na zadaný email</p>
+                            <p class="description">možnosť poslať aktučný výsledok používateľa po odoslaní na zadaný email</p>
                         </div>
                     </td>
                 </tr>
@@ -972,7 +950,6 @@ private function render_movies_tab( $post, $meta ) {
                         </select>
                         <p class="description">Vyberte, čo sa zobrazí používateľovi po splnení kvízu (po dosiahnutí minimálnych bodov).</p>
 
-                        <!-- Conditional: Obrázok -->
                         <div id="obrazok_container_movies" style="margin-top: 15px; <?php echo $format_pri_splneni === 'obrazok' ? 'display: block;' : 'display: none;'; ?>">
                             <input type="hidden" name="event_movies[obrazok_pri_splneni_kvizu]" id="obrazok_pri_splneni_kvizu_id_movies" value="<?php echo esc_attr( $image_id ); ?>" />
                             <div id="obrazok_preview_movies" style="margin-bottom: 10px;">
@@ -981,15 +958,14 @@ private function render_movies_tab( $post, $meta ) {
                                 <?php endif; ?>
                             </div>
                             <button type="button" class="button upload_obrazok_button" data-target="#obrazok_pri_splneni_kvizu_id_movies" data-preview="#obrazok_preview_movies">
-                                <?php _e( 'Vybrať obrázok', 'eventkviz' ); ?>
+                                Vybrať obrázok
                             </button>
                             <button type="button" class="button remove_obrazok_button" data-target="#obrazok_pri_splneni_kvizu_id_movies" data-preview="#obrazok_preview_movies" <?php echo $image_id ? '' : 'style="display:none;"'; ?>>
-                                <?php _e( 'Odstrániť obrázok', 'eventkviz' ); ?>
+                                Odstrániť obrázok
                             </button>
                             <p class="description">ID obrázku z media library, ktorý sa zobrazí po splnení kvízu</p>
                         </div>
 
-                        <!-- Conditional: Text -->
                         <div id="text_container_movies" style="margin-top: 15px; <?php echo $format_pri_splneni === 'text' ? 'display: block;' : 'display: none;'; ?>">
                             <label><strong>Text pri splnení kvízu:</strong></label><br>
                             <textarea name="event_movies[text_pri_splneni_kvizu]" rows="6" class="large-text"><?php echo esc_textarea( $text_pri_splneni ); ?></textarea>
@@ -998,82 +974,8 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
             </tbody>
-
         </table>
     </div>
-
-    <script>
-    jQuery(function($) {
-        // Conditional pre celý Movies obsah
-        function toggleMoviesFields() {
-            if ($('#movies_quiz_active_cb').is(':checked')) {
-                $('#movies_fields_container').show();
-            } else {
-                $('#movies_fields_container').hide();
-            }
-        }
-        $('#movies_quiz_active_cb').on('change', toggleMoviesFields);
-        toggleMoviesFields();
-
-        // Conditional pre admin_mail
-        function toggleAdminMailMovies() {
-            if ($('#poslat_vysledok_mailom_cb_movies').is(':checked')) {
-                $('#admin_mail_container_movies').show();
-            } else {
-                $('#admin_mail_container_movies').hide();
-            }
-        }
-        $('#poslat_vysledok_mailom_cb_movies').on('change', toggleAdminMailMovies);
-        toggleAdminMailMovies();
-
-        // Conditional pre formát pri splnení
-        function toggleFormatPriSplneniMovies() {
-            var value = $('#format_pri_splneni_select_movies').val();
-            if (value === 'obrazok') {
-                $('#obrazok_container_movies').show();
-                $('#text_container_movies').hide();
-            } else if (value === 'text') {
-                $('#obrazok_container_movies').hide();
-                $('#text_container_movies').show();
-            }
-        }
-        $('#format_pri_splneni_select_movies').on('change', toggleFormatPriSplneniMovies);
-        toggleFormatPriSplneniMovies();
-
-        // Media Uploader
-        $('.upload_obrazok_button').on('click', function(e) {
-            e.preventDefault();
-            var button = $(this);
-            var target = $(button.data('target'));
-            var preview = $(button.data('preview'));
-
-            var frame = wp.media({
-                title: 'Vybrať obrázok',
-                button: { text: 'Použiť tento obrázok' },
-                multiple: false
-            });
-
-            frame.on('select', function() {
-                var attachment = frame.state().get('selection').first().toJSON();
-                target.val(attachment.id);
-                preview.html('<img src="' + attachment.url + '" style="max-width: 300px; height: auto;" />');
-                button.siblings('.remove_obrazok_button').show();
-            });
-
-            frame.open();
-        });
-
-        $('.remove_obrazok_button').on('click', function(e) {
-            e.preventDefault();
-            var button = $(this);
-            var target = $(button.data('target'));
-            var preview = $(button.data('preview'));
-            target.val('');
-            preview.html('');
-            button.hide();
-        });
-    });
-    </script>
     <?php
 }
 
@@ -1081,30 +983,26 @@ private function render_movies_tab( $post, $meta ) {
  * Render Knowledge tabu
  */
 private function render_knowledge_tab( $post, $meta ) {
-    // Načítaj aktuálne hodnoty
     $image_id = isset( $meta['event_knowledge_obrazok_pri_splneni_kvizu'][0] ) ? (int) $meta['event_knowledge_obrazok_pri_splneni_kvizu'][0] : 0;
     $image_src = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
 
-    $format_pri_splneni = isset( $meta['event_knowledge_format_pri_splneni'][0] ) ? $meta['event_knowledge_format_pri_splneni'][0] : 'obrazok'; // default obrazok
+    $format_pri_splneni = isset( $meta['event_knowledge_format_pri_splneni'][0] ) ? $meta['event_knowledge_format_pri_splneni'][0] : 'obrazok';
     $text_pri_splneni = isset( $meta['event_knowledge_text_pri_splneni_kvizu'][0] ) ? $meta['event_knowledge_text_pri_splneni_kvizu'][0] : '';
 
-    // Credits
     $credits_corr_answer = isset( $meta['event_knowledge_credits_corr_answer'][0] ) ? (int) $meta['event_knowledge_credits_corr_answer'][0] : 100;
 
-    // Dynamicky načítaj topics z taxonomie 'topic'
+    // Dynamické topics z taxonomie 'topic'
     $topics = get_terms( array(
         'taxonomy'   => 'topic',
         'hide_empty' => false,
     ) );
 
-    // Aktívny kvíz – pre conditional
     $knowledge_active = isset( $meta['event_knowledge_knowledge_quiz_active'][0] ) ? $meta['event_knowledge_knowledge_quiz_active'][0] : '1';
     ?>
-    <div id="tab-knowledge" class="tab-content">
+    <div id="tab-knowledge" class="tab-panel">
         <h3>Knowledge kvíz nastavenia</h3>
         <table class="form-table" role="presentation">
 
-            <!-- Aktívny Knowledge kvíz (vždy viditeľný) -->
             <tr>
                 <th><label>Aktívny Knowledge kvíz</label></th>
                 <td>
@@ -1113,7 +1011,6 @@ private function render_knowledge_tab( $post, $meta ) {
                 </td>
             </tr>
 
-            <!-- VŠETKY OSTATNÉ POLIA (conditional podľa aktívneho kvízu) -->
             <tbody id="knowledge_fields_container" style="<?php echo $knowledge_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
                 <!-- show_entry_form -->
                 <tr>
@@ -1127,7 +1024,7 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Bodovanie / kredity - len jedno pole -->
+                <!-- Bodovanie -->
                 <tr>
                     <th><label>Bodovanie</label></th>
                     <td>
@@ -1159,7 +1056,7 @@ private function render_knowledge_tab( $post, $meta ) {
                         <input type="number" name="event_knowledge[pocet_otazok_v_sete]" value="<?php echo esc_attr( $meta['event_knowledge_pocet_otazok_v_sete'][0] ?? '0' ); ?>" min="0" class="small-text" />
                         <p class="description">
                             0/číslo - možnosť zvoliť si koľko otázok v sete dostane používateľ.<br>
-                            0 znamená, že sa vyberá podľa zadaneho množstva v topic settingu.
+                            0 znamená, že sa vyberá podľa žiadneho množstva v topic settingu.
                         </p>
                     </td>
                 </tr>
@@ -1198,7 +1095,7 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- poslat_vysledok_usera_mailom + conditional admin_mail -->
+                <!-- poslat_vysledok_usera_mailom + conditional -->
                 <tr>
                     <th><label>Poslať výsledok mailom</label></th>
                     <td>
@@ -1262,7 +1159,6 @@ private function render_knowledge_tab( $post, $meta ) {
                         </select>
                         <p class="description">Vyberte, čo sa zobrazí používateľovi po splnení kvízu (po dosiahnutí minimálnych bodov).</p>
 
-                        <!-- Conditional: Obrázok -->
                         <div id="obrazok_container_knowledge" style="margin-top: 15px; <?php echo $format_pri_splneni === 'obrazok' ? 'display: block;' : 'display: none;'; ?>">
                             <input type="hidden" name="event_knowledge[obrazok_pri_splneni_kvizu]" id="obrazok_pri_splneni_kvizu_id_knowledge" value="<?php echo esc_attr( $image_id ); ?>" />
                             <div id="obrazok_preview_knowledge" style="margin-bottom: 10px;">
@@ -1271,15 +1167,14 @@ private function render_knowledge_tab( $post, $meta ) {
                                 <?php endif; ?>
                             </div>
                             <button type="button" class="button upload_obrazok_button" data-target="#obrazok_pri_splneni_kvizu_id_knowledge" data-preview="#obrazok_preview_knowledge">
-                                <?php _e( 'Vybrať obrázok', 'eventkviz' ); ?>
+                                Vybrať obrázok
                             </button>
                             <button type="button" class="button remove_obrazok_button" data-target="#obrazok_pri_splneni_kvizu_id_knowledge" data-preview="#obrazok_preview_knowledge" <?php echo $image_id ? '' : 'style="display:none;"'; ?>>
-                                <?php _e( 'Odstrániť obrázok', 'eventkviz' ); ?>
+                                Odstrániť obrázok
                             </button>
                             <p class="description">ID obrázku z media library, ktorý sa zobrazí po splnení kvízu</p>
                         </div>
 
-                        <!-- Conditional: Text -->
                         <div id="text_container_knowledge" style="margin-top: 15px; <?php echo $format_pri_splneni === 'text' ? 'display: block;' : 'display: none;'; ?>">
                             <label><strong>Text pri splnení kvízu:</strong></label><br>
                             <textarea name="event_knowledge[text_pri_splneni_kvizu]" rows="6" class="large-text"><?php echo esc_textarea( $text_pri_splneni ); ?></textarea>
@@ -1288,82 +1183,8 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
             </tbody>
-
         </table>
     </div>
-
-    <script>
-    jQuery(function($) {
-        // Conditional pre celý Knowledge obsah
-        function toggleKnowledgeFields() {
-            if ($('#knowledge_quiz_active_cb').is(':checked')) {
-                $('#knowledge_fields_container').show();
-            } else {
-                $('#knowledge_fields_container').hide();
-            }
-        }
-        $('#knowledge_quiz_active_cb').on('change', toggleKnowledgeFields);
-        toggleKnowledgeFields();
-
-        // Conditional pre admin_mail
-        function toggleAdminMailKnowledge() {
-            if ($('#poslat_vysledok_mailom_cb_knowledge').is(':checked')) {
-                $('#admin_mail_container_knowledge').show();
-            } else {
-                $('#admin_mail_container_knowledge').hide();
-            }
-        }
-        $('#poslat_vysledok_mailom_cb_knowledge').on('change', toggleAdminMailKnowledge);
-        toggleAdminMailKnowledge();
-
-        // Conditional pre formát pri splnení
-        function toggleFormatPriSplneniKnowledge() {
-            var value = $('#format_pri_splneni_select_knowledge').val();
-            if (value === 'obrazok') {
-                $('#obrazok_container_knowledge').show();
-                $('#text_container_knowledge').hide();
-            } else if (value === 'text') {
-                $('#obrazok_container_knowledge').hide();
-                $('#text_container_knowledge').show();
-            }
-        }
-        $('#format_pri_splneni_select_knowledge').on('change', toggleFormatPriSplneniKnowledge);
-        toggleFormatPriSplneniKnowledge();
-
-        // Media Uploader (globálny kód)
-        $('.upload_obrazok_button').on('click', function(e) {
-            e.preventDefault();
-            var button = $(this);
-            var target = $(button.data('target'));
-            var preview = $(button.data('preview'));
-
-            var frame = wp.media({
-                title: 'Vybrať obrázok',
-                button: { text: 'Použiť tento obrázok' },
-                multiple: false
-            });
-
-            frame.on('select', function() {
-                var attachment = frame.state().get('selection').first().toJSON();
-                target.val(attachment.id);
-                preview.html('<img src="' + attachment.url + '" style="max-width: 300px; height: auto;" />');
-                button.siblings('.remove_obrazok_button').show();
-            });
-
-            frame.open();
-        });
-
-        $('.remove_obrazok_button').on('click', function(e) {
-            e.preventDefault();
-            var button = $(this);
-            var target = $(button.data('target'));
-            var preview = $(button.data('preview'));
-            target.val('');
-            preview.html('');
-            button.hide();
-        });
-    });
-    </script>
     <?php
 }
 
@@ -1371,28 +1192,24 @@ private function render_knowledge_tab( $post, $meta ) {
  * Render Sudoku tabu
  */
 private function render_sudoku_tab( $post, $meta ) {
-    // Načítaj aktuálne hodnoty
     $image_id = isset( $meta['event_sudoku_obrazok_pri_splneni_kvizu'][0] ) ? (int) $meta['event_sudoku_obrazok_pri_splneni_kvizu'][0] : 0;
     $image_src = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
 
-    $format_pri_splneni = isset( $meta['event_sudoku_format_pri_splneni'][0] ) ? $meta['event_sudoku_format_pri_splneni'][0] : 'obrazok'; // default obrazok
+    $format_pri_splneni = isset( $meta['event_sudoku_format_pri_splneni'][0] ) ? $meta['event_sudoku_format_pri_splneni'][0] : 'obrazok';
     $text_pri_splneni = isset( $meta['event_sudoku_text_pri_splneni_kvizu'][0] ) ? $meta['event_sudoku_text_pri_splneni_kvizu'][0] : '';
 
-    // Credits
     $credits = array(
         'easy'   => isset( $meta['event_sudoku_credits_easy'][0] ) ? (int) $meta['event_sudoku_credits_easy'][0] : 10,
         'medium' => isset( $meta['event_sudoku_credits_medium'][0] ) ? (int) $meta['event_sudoku_credits_medium'][0] : 20,
         'hard'   => isset( $meta['event_sudoku_credits_hard'][0] ) ? (int) $meta['event_sudoku_credits_hard'][0] : 35,
     );
 
-    // Aktívny kvíz – pre conditional
     $sudoku_active = isset( $meta['event_sudoku_sudoku_quiz_active'][0] ) ? $meta['event_sudoku_sudoku_quiz_active'][0] : '0';
     ?>
-    <div id="tab-sudoku" class="tab-content">
+    <div id="tab-sudoku" class="tab-panel">
         <h3>Sudoku kvíz nastavenia</h3>
         <table class="form-table" role="presentation">
 
-            <!-- Aktívny Sudoku kvíz (vždy viditeľný) -->
             <tr>
                 <th><label>Aktívny Sudoku kvíz</label></th>
                 <td>
@@ -1401,7 +1218,6 @@ private function render_sudoku_tab( $post, $meta ) {
                 </td>
             </tr>
 
-            <!-- VŠETKY OSTATNÉ POLIA (conditional podľa aktívneho kvízu) -->
             <tbody id="sudoku_fields_container" style="<?php echo $sudoku_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
                 <!-- show_entry_form -->
                 <tr>
@@ -1415,7 +1231,7 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Bodovanie / kredity - samostatné polia -->
+                <!-- Bodovanie -->
                 <tr>
                     <th><label>Bodovanie</label></th>
                     <td>
@@ -1485,7 +1301,7 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- poslat_vysledok_usera_mailom + conditional admin_mail -->
+                <!-- poslat_vysledok_usera_mailom + conditional -->
                 <tr>
                     <th><label>Poslať výsledok mailom</label></th>
                     <td>
@@ -1495,7 +1311,7 @@ private function render_sudoku_tab( $post, $meta ) {
                         <div id="admin_mail_container_sudoku" style="margin-top: 10px; <?php echo ( $meta['event_sudoku_poslat_vysledok_usera_mailom'][0] ?? '0' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
                             <label><strong>Admin email pre výsledky:</strong></label><br>
                             <input type="email" name="event_sudoku[admin_mail]" value="<?php echo esc_attr( $meta['event_sudoku_admin_mail'][0] ?? 'mahroch@gmail.com' ); ?>" class="regular-text" />
-                            <p class="description">možnosť poslať aktuálny výsledok používateľa po odoslaní na zadaný email</p>
+                            <p class="description">možnosť poslať aktučný výsledok používateľa po odoslaní na zadaný email</p>
                         </div>
                     </td>
                 </tr>
@@ -1537,7 +1353,6 @@ private function render_sudoku_tab( $post, $meta ) {
                         </select>
                         <p class="description">Vyberte, čo sa zobrazí používateľovi po splnení kvízu.</p>
 
-                        <!-- Conditional: Obrázok -->
                         <div id="obrazok_container_sudoku" style="margin-top: 15px; <?php echo $format_pri_splneni === 'obrazok' ? 'display: block;' : 'display: none;'; ?>">
                             <input type="hidden" name="event_sudoku[obrazok_pri_splneni_kvizu]" id="obrazok_pri_splneni_kvizu_id_sudoku" value="<?php echo esc_attr( $image_id ); ?>" />
                             <div id="obrazok_preview_sudoku" style="margin-bottom: 10px;">
@@ -1546,15 +1361,14 @@ private function render_sudoku_tab( $post, $meta ) {
                                 <?php endif; ?>
                             </div>
                             <button type="button" class="button upload_obrazok_button" data-target="#obrazok_pri_splneni_kvizu_id_sudoku" data-preview="#obrazok_preview_sudoku">
-                                <?php _e( 'Vybrať obrázok', 'eventkviz' ); ?>
+                                Vybrať obrázok
                             </button>
                             <button type="button" class="button remove_obrazok_button" data-target="#obrazok_pri_splneni_kvizu_id_sudoku" data-preview="#obrazok_preview_sudoku" <?php echo $image_id ? '' : 'style="display:none;"'; ?>>
-                                <?php _e( 'Odstrániť obrázok', 'eventkviz' ); ?>
+                                Odstrániť obrázok
                             </button>
                             <p class="description">ID obrázku z media library, ktorý sa zobrazí po splnení kvízu</p>
                         </div>
 
-                        <!-- Conditional: Text -->
                         <div id="text_container_sudoku" style="margin-top: 15px; <?php echo $format_pri_splneni === 'text' ? 'display: block;' : 'display: none;'; ?>">
                             <label><strong>Text pri splnení kvízu:</strong></label><br>
                             <textarea name="event_sudoku[text_pri_splneni_kvizu]" rows="6" class="large-text"><?php echo esc_textarea( $text_pri_splneni ); ?></textarea>
@@ -1563,82 +1377,8 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
             </tbody>
-
         </table>
     </div>
-
-    <script>
-    jQuery(function($) {
-        // Conditional pre celý Sudoku obsah
-        function toggleSudokuFields() {
-            if ($('#sudoku_quiz_active_cb').is(':checked')) {
-                $('#sudoku_fields_container').show();
-            } else {
-                $('#sudoku_fields_container').hide();
-            }
-        }
-        $('#sudoku_quiz_active_cb').on('change', toggleSudokuFields);
-        toggleSudokuFields();
-
-        // Conditional pre admin_mail
-        function toggleAdminMailSudoku() {
-            if ($('#poslat_vysledok_mailom_cb_sudoku').is(':checked')) {
-                $('#admin_mail_container_sudoku').show();
-            } else {
-                $('#admin_mail_container_sudoku').hide();
-            }
-        }
-        $('#poslat_vysledok_mailom_cb_sudoku').on('change', toggleAdminMailSudoku);
-        toggleAdminMailSudoku();
-
-        // Conditional pre formát pri splnení
-        function toggleFormatPriSplneniSudoku() {
-            var value = $('#format_pri_splneni_select_sudoku').val();
-            if (value === 'obrazok') {
-                $('#obrazok_container_sudoku').show();
-                $('#text_container_sudoku').hide();
-            } else if (value === 'text') {
-                $('#obrazok_container_sudoku').hide();
-                $('#text_container_sudoku').show();
-            }
-        }
-        $('#format_pri_splneni_select_sudoku').on('change', toggleFormatPriSplneniSudoku);
-        toggleFormatPriSplneniSudoku();
-
-        // Media Uploader (globálny kód)
-        $('.upload_obrazok_button').on('click', function(e) {
-            e.preventDefault();
-            var button = $(this);
-            var target = $(button.data('target'));
-            var preview = $(button.data('preview'));
-
-            var frame = wp.media({
-                title: 'Vybrať obrázok',
-                button: { text: 'Použiť tento obrázok' },
-                multiple: false
-            });
-
-            frame.on('select', function() {
-                var attachment = frame.state().get('selection').first().toJSON();
-                target.val(attachment.id);
-                preview.html('<img src="' + attachment.url + '" style="max-width: 300px; height: auto;" />');
-                button.siblings('.remove_obrazok_button').show();
-            });
-
-            frame.open();
-        });
-
-        $('.remove_obrazok_button').on('click', function(e) {
-            e.preventDefault();
-            var button = $(this);
-            var target = $(button.data('target'));
-            var preview = $(button.data('preview'));
-            target.val('');
-            preview.html('');
-            button.hide();
-        });
-    });
-    </script>
     <?php
 }
 
