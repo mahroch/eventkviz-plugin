@@ -53,6 +53,26 @@ class Eventkviz_Public {
 
 	}
 
+	private function should_load_autocomplete() {
+		// Získaj aktuálnu URL cestu
+		$current_path = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+		
+		// Povolené stránky
+		$allowed_pages = array(
+			'merdfghh',  // movies kviz
+			'aqljk'      // music kviz
+		);
+		
+		// Skontroluj či sme na povolenej stránke
+		foreach ($allowed_pages as $page) {
+			if (strpos($current_path, $page) !== false) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
 	/**
 	 * Register the stylesheets for the public-facing side of the site.
 	 *
@@ -74,12 +94,16 @@ class Eventkviz_Public {
 
 		wp_enqueue_style( $this->eventkviz, plugin_dir_url( __FILE__ ) . 'css/eventkviz-public.css', array(), $this->version, 'all' );
 
-		wp_enqueue_style( 
-			'jquery-ui-smoothness',
-			'//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css',
-			array(),
-			'1.12.1'
-		);
+
+
+		if ($this->should_load_autocomplete()) {
+			wp_enqueue_style( 
+				'jquery-ui-smoothness',
+				'//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css',
+				array(),
+				'1.12.1'
+			);
+		}
 
 	}
 
@@ -104,22 +128,26 @@ class Eventkviz_Public {
 
 		wp_enqueue_script( $this->eventkviz, plugin_dir_url( __FILE__ ) . 'js/eventkviz-public.js', array( 'jquery' ), $this->version, false );
 		
-		// PRIDAJ: jQuery UI Autocomplete
-		wp_enqueue_script( 'jquery-ui-autocomplete' );
-		
-		// PRIDAJ: Tvoj autocomplete JS
-		wp_enqueue_script(
-			$this->eventkviz . '-autocomplete',
-			plugin_dir_url( __FILE__ ) . 'js/eventkviz-autocomplete.js',
-			array( 'jquery', 'jquery-ui-autocomplete' ),
-			$this->version,
-			true
-		);
+		if ($this->should_load_autocomplete()) {
+			wp_enqueue_script( 'jquery-ui-autocomplete' );
+			
+			wp_enqueue_script(
+				$this->eventkviz . '-autocomplete',
+				plugin_dir_url( __FILE__ ) . 'js/eventkviz-autocomplete.js',
+				array( 'jquery', 'jquery-ui-autocomplete' ),
+				'1.1.1',
+				true
+			);
+		}
 	}
 
 	public function localize_autocomplete_data() {
 		global $wpdb;
 		
+		if (!$this->should_load_autocomplete()) {
+			return;
+		}
+
 		// Artists - PRESNE ako si to mal ty
 		$artists = array();
 		$table_name = 'pmgonijet_cct_artists';
