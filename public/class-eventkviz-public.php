@@ -74,6 +74,13 @@ class Eventkviz_Public {
 
 		wp_enqueue_style( $this->eventkviz, plugin_dir_url( __FILE__ ) . 'css/eventkviz-public.css', array(), $this->version, 'all' );
 
+		wp_enqueue_style( 
+			'jquery-ui-smoothness',
+			'//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css',
+			array(),
+			'1.12.1'
+		);
+
 	}
 
 	/**
@@ -96,7 +103,57 @@ class Eventkviz_Public {
 		 */
 
 		wp_enqueue_script( $this->eventkviz, plugin_dir_url( __FILE__ ) . 'js/eventkviz-public.js', array( 'jquery' ), $this->version, false );
+		
+		// PRIDAJ: jQuery UI Autocomplete
+		wp_enqueue_script( 'jquery-ui-autocomplete' );
+		
+		// PRIDAJ: Tvoj autocomplete JS
+		wp_enqueue_script(
+			$this->eventkviz . '-autocomplete',
+			plugin_dir_url( __FILE__ ) . 'js/eventkviz-autocomplete.js',
+			array( 'jquery', 'jquery-ui-autocomplete' ),
+			$this->version,
+			true
+		);
+	}
 
+	public function localize_autocomplete_data() {
+		global $wpdb;
+		
+		// Artists - PRESNE ako si to mal ty
+		$artists = array();
+		$table_name = 'pmgonijet_cct_artists';
+		$artists_array = $wpdb->get_results( "SELECT * FROM $table_name" );
+		foreach ($artists_array as $item) {
+			$artists[ addslashes($item->artist) ] = $item->_ID;
+		}
+		
+		// Songs - PRESNE ako si to mal ty
+		$songs = array();
+		$table_name = 'pmgonijet_cct_songs';
+		$songs_array = $wpdb->get_results( "SELECT * FROM $table_name" );
+		foreach ($songs_array as $item) {
+			$songs[ addslashes($item->song) ] = $item->_ID;
+		}
+		
+		// Movies - PRESNE ako si to mal ty
+		$movies = array();
+		$table_name = 'pmgonijet_cct_movies';
+		$movies_array = $wpdb->get_results( "SELECT * FROM $table_name" );
+		foreach ($movies_array as $item) {
+			$movies[ addslashes($item->original_title) ] = $item->_ID;
+		}
+		
+		// Pošli do JS
+		wp_localize_script(
+			$this->eventkviz . '-autocomplete',
+			'eventkvizAutocomplete',
+			array(
+				'artists' => $artists,
+				'songs' => $songs,
+				'movies' => $movies
+			)
+		);
 	}
 
 }
