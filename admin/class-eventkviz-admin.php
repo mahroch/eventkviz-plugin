@@ -64,7 +64,7 @@ add_action( 'trashed_post', array( $this, 'delete_event_pages' ) );
 
 // Pre permanent delete (vyprázdnenie koša alebo force delete)
 add_action( 'deleted_post', array( $this, 'delete_event_pages' ), 10, 2 ); // 2 parametre pre deleted_post
-wp_enqueue_style( 'eventkviz-admin-tabs', plugin_dir_url( __FILE__ ) . 'css/eventkviz-admin-tabs.css', array(), '1.1.0' );
+wp_enqueue_style( 'eventkviz-admin-tabs', plugin_dir_url( __FILE__ ) . '../admin/css/eventkviz-admin-tabs.css', array(), $this->version );
 	}
 
 	/**
@@ -244,16 +244,17 @@ public function render_settings_tabs( $post ) {
             e.preventDefault();
             var target = $(this).attr('href');
 
-            $('.eventkviz-tab-content .tab-panel').removeClass('active').hide();
-            $(target).addClass('active').show();
+            $('.eventkviz-tab-content > div').hide().removeClass('active');
+            $(target).show().addClass('active');
 
             $('.eventkviz-tabs-nav li').removeClass('active');
             $(this).parent().addClass('active');
         });
 
-        // Initial
+        // Otvor General
         $('.eventkviz-tabs-nav li.active a').trigger('click');
 
+        // Conditional show/hide (unique ID pre každý tab)
         // General
         $('#select_from_teams_array_cb_general').on('change', function() {
             $('#select_teams_container_general').toggle($(this).is(':checked'));
@@ -314,15 +315,15 @@ public function render_settings_tabs( $post ) {
             $('#text_container_sudoku').toggle(value === 'text');
         });
 
-        // Initial toggle pre všetky
+        // Initial toggle (po load)
         $('.eventkviz-tabs-nav a').each(function() {
             if ($(this).parent().hasClass('active')) {
                 var target = $(this).attr('href');
-                $(target + ' input[type="checkbox"], select[id^="format_pri_splneni_select"], input[id^="select_from_teams_array_cb"], input[id^="use_seed_cb"]').trigger('change');
+                $(target + ' input[type="checkbox"], select[id^="format_pri_splneni_select"]').trigger('change');
             }
         });
 
-        // Uploader (globálny)
+        // Uploader
         $('.upload_obrazok_button').on('click', function(e) {
             e.preventDefault();
             var button = $(this);
@@ -515,7 +516,7 @@ private function render_general_tab( $post, $meta ) {
                 </td>
             </tr>
 
-            <!-- select_from_teams_array + conditional textarea -->
+            <!-- select_from_teams_array + conditional -->
             <tr>
                 <th><label>Výber tímu zo zoznamu</label></th>
                 <td>
@@ -524,16 +525,28 @@ private function render_general_tab( $post, $meta ) {
 
                     <div id="select_teams_container_general" style="margin-top: 10px; <?php echo ( $meta['event_general_select_from_teams_array'][0] ?? '1' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
                         <label><strong>Zoznam tímov (JSON formát objektu):</strong></label><br>
-                        <textarea name="event_general[select_teams_json]" rows="10" class="large-text" placeholder='{"": "Select ...", "team1": "Team 1", "team2": "Team 2"}'><?php 
+                        <textarea name="event_general[select_teams_json]" rows="10" class="large-text"><?php 
                             $teams = get_post_meta( $post->ID, 'event_general_select_teams', true );
-                            echo esc_textarea( json_encode( $teams ?: array('' => 'Select ...', 'team1' => 'Team 1', 'team2' => 'Team 2', 'team3' => 'Team 3', 'team4' => 'Team 4', 'team5' => 'Team 5', 'team6' => 'Team 6', 'team7' => 'Team 7', 'team8' => 'Team 8', 'team9' => 'Team 9', 'team10' => 'Team 10'), JSON_PRETTY_PRINT ) );
+                            echo esc_textarea( json_encode( $teams ?: array(
+                                ''      => 'Select ...',
+                                'team1' => 'Team 1',
+                                'team2' => 'Team 2',
+                                'team3' => 'Team 3',
+                                'team4' => 'Team 4',
+                                'team5' => 'Team 5',
+                                'team6' => 'Team 6',
+                                'team7' => 'Team 7',
+                                'team8' => 'Team 8',
+                                'team9' => 'Team 9',
+                                'team10'=> 'Team 10'
+                            ), JSON_PRETTY_PRINT ) );
                         ?></textarea>
-                        <p class="description">Formát: {"key": "Názov tímu", ...} – key je hodnota, názov sa zobrazí.</p>
+                        <p class="description">Formát: {"key": "Názov tímu", ...}</p>
                     </div>
                 </td>
             </tr>
 
-            <!-- use_seed + conditional textareas -->
+            <!-- use_seed + conditional -->
             <tr>
                 <th><label>Použiť seed (kódy pre stanovištia)</label></th>
                 <td>
@@ -542,7 +555,7 @@ private function render_general_tab( $post, $meta ) {
 
                     <div id="places_container_general" style="margin-top: 10px; <?php echo ( $meta['event_general_use_seed'][0] ?? '0' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
                         <label><strong>Poradie stanovísk (places – JSON indexed array):</strong></label><br>
-                        <textarea name="event_general[places_json]" rows="8" class="large-text" placeholder='[[ "sudoku", "Sudoku quiz" ], [ "movies", "Movies quiz" ]]'><?php 
+                        <textarea name="event_general[places_json]" rows="8" class="large-text"><?php 
                             $places = get_post_meta( $post->ID, 'event_general_places', true );
                             echo esc_textarea( json_encode( $places ?: array(
                                 array('sudoku', 'Sudoku quiz'),
@@ -551,19 +564,17 @@ private function render_general_tab( $post, $meta ) {
                                 array('knowledge', 'Knowledge quiz')
                             ), JSON_PRETTY_PRINT ) );
                         ?></textarea>
-                        <p class="description">Používa sa len ak sa používajú seeds. Formát: [["typ", "Názov"], ...] – indexované pole.</p>
 
                         <label><strong>Názvy stanovísk (names_of_places – JSON objekt):</strong></label><br>
-                        <textarea name="event_general[names_of_places_json]" rows="6" class="large-text" placeholder='{"sudoku": "Sudoku quiz", "movies": "Movies quiz"}'><?php 
+                        <textarea name="event_general[names_of_places_json]" rows="6" class="large-text"><?php 
                             $names = get_post_meta( $post->ID, 'event_general_names_of_places', true );
                             echo esc_textarea( json_encode( $names ?: array(
-                                'sudoku' => 'Sudoku quiz',
-                                'movies' => 'Movies quiz',
-                                'music' => 'Music quiz',
+                                'sudoku'    => 'Sudoku quiz',
+                                'movies'    => 'Movies quiz',
+                                'music'     => 'Music quiz',
                                 'knowledge' => 'Knowledge quiz'
                             ), JSON_PRETTY_PRINT ) );
                         ?></textarea>
-                        <p class="description">Používa sa len ak sa používajú seeds. Formát: {"typ": "Názov", ...}</p>
                     </div>
                 </td>
             </tr>
@@ -603,7 +614,6 @@ private function render_music_tab( $post, $meta ) {
         <h3>Music kvíz nastavenia</h3>
         <table class="form-table" role="presentation">
 
-            <!-- Aktívny Music kvíz -->
             <tr>
                 <th><label>Aktívny Music kvíz</label></th>
                 <td>
@@ -613,7 +623,6 @@ private function render_music_tab( $post, $meta ) {
             </tr>
 
             <tbody id="music_fields_container" style="<?php echo $music_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
-                <!-- show_entry_form -->
                 <tr>
                     <th><label>Zobraziť entry formulár</label></th>
                     <td>
@@ -625,7 +634,6 @@ private function render_music_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Bodovanie -->
                 <tr>
                     <th><label>Bodovanie</label></th>
                     <td>
@@ -664,7 +672,6 @@ private function render_music_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- pocet_otazok_v_sete -->
                 <tr>
                     <th><label>Počet otázok v sete</label></th>
                     <td>
@@ -676,7 +683,6 @@ private function render_music_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- production -->
                 <tr>
                     <th><label>Production (typ hudby)</label></th>
                     <td>
@@ -689,7 +695,6 @@ private function render_music_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- poslat_vysledok_usera_mailom + conditional admin_mail -->
                 <tr>
                     <th><label>Poslať výsledok mailom</label></th>
                     <td>
@@ -699,12 +704,11 @@ private function render_music_tab( $post, $meta ) {
                         <div id="admin_mail_container_music" style="margin-top: 10px; <?php echo ( $meta['event_music_poslat_vysledok_usera_mailom'][0] ?? '0' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
                             <label><strong>Admin email pre výsledky:</strong></label><br>
                             <input type="email" name="event_music[admin_mail]" value="<?php echo esc_attr( $meta['event_music_admin_mail'][0] ?? 'mahroch@gmail.com' ); ?>" class="regular-text" />
-                            <p class="description">možnosť poslať aktuálny výsledok používateľa po odoslaní na zadaný email</p>
+                            <p class="description">možnosť poslať aktučný výsledok používateľa po odoslaní na zadaný email</p>
                         </div>
                     </td>
                 </tr>
 
-                <!-- zobraz_spravne_odpovede -->
                 <tr>
                     <th><label>Zobraziť správne odpovede</label></th>
                     <td>
@@ -713,7 +717,6 @@ private function render_music_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- zobraz_spravne_uhadnute_odpovede -->
                 <tr>
                     <th><label>Zobraziť správne uhádnuté odpovede používateľa</label></th>
                     <td>
@@ -722,7 +725,6 @@ private function render_music_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- pocet_pokusov -->
                 <tr>
                     <th><label>Počet pokusov</label></th>
                     <td>
@@ -731,7 +733,6 @@ private function render_music_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- min_body_na_postup -->
                 <tr>
                     <th><label>Minimálne body na postup</label></th>
                     <td>
@@ -743,7 +744,6 @@ private function render_music_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Formát pri splnení kvízu + conditional -->
                 <tr>
                     <th><label>Formát pri splnení kvízu</label></th>
                     <td>
@@ -809,7 +809,6 @@ private function render_movies_tab( $post, $meta ) {
             </tr>
 
             <tbody id="movies_fields_container" style="<?php echo $movies_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
-                <!-- show_entry_form -->
                 <tr>
                     <th><label>Zobraziť entry formulár</label></th>
                     <td>
@@ -821,7 +820,6 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- movies_quiz_type -->
                 <tr>
                     <th><label>Typ Movies kvízu</label></th>
                     <td>
@@ -836,7 +834,6 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Bodovanie -->
                 <tr>
                     <th><label>Bodovanie</label></th>
                     <td>
@@ -861,7 +858,6 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- pocet_otazok_v_sete -->
                 <tr>
                     <th><label>Počet otázok v sete</label></th>
                     <td>
@@ -873,7 +869,6 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- production -->
                 <tr>
                     <th><label>Production (typ filmov)</label></th>
                     <td>
@@ -886,7 +881,6 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- poslat_vysledok_usera_mailom + conditional -->
                 <tr>
                     <th><label>Poslať výsledok mailom</label></th>
                     <td>
@@ -901,7 +895,6 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- zobraz_spravne_odpovede -->
                 <tr>
                     <th><label>Zobraziť správne odpovede</label></th>
                     <td>
@@ -910,7 +903,6 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- zobraz_spravne_uhadnute_odpovede -->
                 <tr>
                     <th><label>Zobraziť správne uhádnuté odpovede používateľa</label></th>
                     <td>
@@ -919,7 +911,6 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- pocet_pokusov -->
                 <tr>
                     <th><label>Počet pokusov</label></th>
                     <td>
@@ -928,7 +919,6 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- min_body_na_postup -->
                 <tr>
                     <th><label>Minimálne body na postup</label></th>
                     <td>
@@ -940,7 +930,6 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Formát pri splnení kvízu + conditional -->
                 <tr>
                     <th><label>Formát pri splnení kvízu</label></th>
                     <td>
@@ -1012,7 +1001,6 @@ private function render_knowledge_tab( $post, $meta ) {
             </tr>
 
             <tbody id="knowledge_fields_container" style="<?php echo $knowledge_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
-                <!-- show_entry_form -->
                 <tr>
                     <th><label>Zobraziť entry formulár</label></th>
                     <td>
@@ -1024,7 +1012,6 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Bodovanie -->
                 <tr>
                     <th><label>Bodovanie</label></th>
                     <td>
@@ -1049,7 +1036,6 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- pocet_otazok_v_sete -->
                 <tr>
                     <th><label>Počet otázok v sete</label></th>
                     <td>
@@ -1061,7 +1047,6 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Dynamické Počet otázok v topicu -->
                 <tr>
                     <th><label>Počet otázok v topicu</label></th>
                     <td>
@@ -1095,7 +1080,6 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- poslat_vysledok_usera_mailom + conditional -->
                 <tr>
                     <th><label>Poslať výsledok mailom</label></th>
                     <td>
@@ -1110,7 +1094,6 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- zobraz_spravne_odpovede -->
                 <tr>
                     <th><label>Zobraziť správne odpovede</label></th>
                     <td>
@@ -1119,7 +1102,6 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- zobraz_spravne_uhadnute_odpovede -->
                 <tr>
                     <th><label>Zobraziť správne uhádnuté odpovede používateľa</label></th>
                     <td>
@@ -1128,7 +1110,6 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- pocet_pokusov -->
                 <tr>
                     <th><label>Počet pokusov</label></th>
                     <td>
@@ -1137,7 +1118,6 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- min_body_na_postup -->
                 <tr>
                     <th><label>Minimálne body na postup</label></th>
                     <td>
@@ -1149,7 +1129,6 @@ private function render_knowledge_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Formát pri splnení kvízu + conditional -->
                 <tr>
                     <th><label>Formát pri splnení kvízu</label></th>
                     <td>
@@ -1219,7 +1198,6 @@ private function render_sudoku_tab( $post, $meta ) {
             </tr>
 
             <tbody id="sudoku_fields_container" style="<?php echo $sudoku_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
-                <!-- show_entry_form -->
                 <tr>
                     <th><label>Zobraziť entry formulár</label></th>
                     <td>
@@ -1231,7 +1209,6 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Bodovanie -->
                 <tr>
                     <th><label>Bodovanie</label></th>
                     <td>
@@ -1267,7 +1244,6 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- pocet_otazok_v_sete -->
                 <tr>
                     <th><label>Počet otázok v sete</label></th>
                     <td>
@@ -1276,7 +1252,6 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- moze_si_vybrat_difficulty -->
                 <tr>
                     <th><label>Môže si vybrať obtiažnosť</label></th>
                     <td>
@@ -1288,7 +1263,6 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- default_difficulty -->
                 <tr>
                     <th><label>Predvolená obtiažnosť</label></th>
                     <td>
@@ -1301,7 +1275,6 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- poslat_vysledok_usera_mailom + conditional -->
                 <tr>
                     <th><label>Poslať výsledok mailom</label></th>
                     <td>
@@ -1316,7 +1289,6 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- zobraz_spravne_odpovede -->
                 <tr>
                     <th><label>Zobraziť správne odpovede</label></th>
                     <td>
@@ -1325,7 +1297,6 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- zobraz_spravne_uhadnute_odpovede -->
                 <tr>
                     <th><label>Zobraziť správne uhádnuté odpovede používateľa</label></th>
                     <td>
@@ -1334,7 +1305,6 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- pocet_pokusov -->
                 <tr>
                     <th><label>Počet pokusov</label></th>
                     <td>
@@ -1343,7 +1313,6 @@ private function render_sudoku_tab( $post, $meta ) {
                     </td>
                 </tr>
 
-                <!-- Formát pri splnení kvízu + conditional -->
                 <tr>
                     <th><label>Formát pri splnení kvízu</label></th>
                     <td>

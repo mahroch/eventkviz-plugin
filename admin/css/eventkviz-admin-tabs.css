@@ -1,16 +1,18 @@
-/* Elementor-like metabox */
-.eventkviz-metabox {
-    background: #f0f0f1;
+/* Vylepšený Elementor-like dizajn – vzdusnejší a profesionálnejší */
+.eventkviz-metabox-tabs {
+    background: #f6f7f7;
     border: 1px solid #c3c4c7;
     box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
     margin: 20px 0;
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .eventkviz-tabs-nav {
     list-style: none;
     display: flex;
     margin: 0;
-    padding: 0 20px;
+    padding: 0 30px;
     background: #fff;
     border-bottom: 1px solid #c3c4c7;
 }
@@ -20,42 +22,125 @@
 }
 
 .eventkviz-tabs-nav a {
-    padding: 15px 20px;
+    padding: 18px 25px;
     display: block;
     text-decoration: none;
     color: #646970;
-    font-size: 14px;
-    border-bottom: 3px solid transparent;
+    font-size: 15px;
+    font-weight: 500;
+    border-bottom: 4px solid transparent;
+    transition: all 0.2s;
 }
 
 .eventkviz-tabs-nav li.active a {
     color: #2271b1;
-    border-bottom: 3px solid #2271b1;
+    border-bottom: 4px solid #2271b1;
     font-weight: 600;
 }
 
 .eventkviz-tab-content>div {
     display: none;
     background: #fff;
-    padding: 30px;
+    padding: 40px 30px;
 }
 
 .eventkviz-tab-content>div.active {
     display: block;
 }
 
-/* Clean form */
+/* Vzdusnejšia form-table */
+.eventkviz-tab-content .form-table {
+    margin: 0;
+}
+
 .eventkviz-tab-content .form-table th {
-    width: 250px;
-    padding: 20px 10px 20px 0;
+    width: 280px;
+    padding: 25px 20px 25px 0;
     font-weight: 600;
+    font-size: 14px;
+    color: #23282d;
+    vertical-align: top;
 }
 
 .eventkviz-tab-content .form-table td {
-    padding: 20px 10px;
+    padding: 25px 10px;
+}
+
+.eventkviz-tab-content .form-table tr {
+    border-bottom: 1px solid #f0f0f1;
 }
 
 .eventkviz-tab-content .description {
-    margin-top: 8px;
+    margin-top: 10px;
+    color: #646970;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Široké tabuľky v bodovaní – vzdusnejšie */
+.eventkviz-tab-content .widefat th {
+    padding: 15px;
+    font-weight: 600;
+}
+
+.eventkviz-tab-content .widefat td {
+    padding: 15px;
+}
+
+/* Inputy – čistejšie */
+.eventkviz-tab-content input[type="text"],
+.eventkviz-tab-content input[type="number"],
+.eventkviz-tab-content input[type="email"],
+.eventkviz-tab-content select,
+.eventkviz-tab-content textarea {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Vylepšené tabuľky v bodovaní – vzdusnejšie a čistejšie */
+.eventkviz-tab-content .widefat {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    width: auto;
+    margin: 0;
+}
+
+.eventkviz-tab-content .widefat thead th {
+    background: #f9f9f9;
+    border-bottom: 2px solid #c3c4c7;
+    padding: 15px 20px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.eventkviz-tab-content .widefat tbody tr {
+    background: #fff;
+    border-bottom: 1px solid #e1e1e1;
+    transition: background 0.2s;
+}
+
+.eventkviz-tab-content .widefat tbody tr:hover {
+    background: #f6f7f7;
+}
+
+.eventkviz-tab-content .widefat tbody td {
+    padding: 20px;
+    vertical-align: middle;
+}
+
+.eventkviz-tab-content .widefat tbody td:first-child {
+    font-weight: 600;
+    color: #23282d;
+    width: 350px;
+}
+
+.eventkviz-tab-content .widefat input.small-text {
+    width: 100px;
+}
+
+.eventkviz-tab-content .widefat .description {
+    margin-top: 5px;
+    font-size: 12px;
     color: #646970;
 }
