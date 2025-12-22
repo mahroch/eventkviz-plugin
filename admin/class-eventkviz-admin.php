@@ -446,6 +446,16 @@ public function save_event_meta( $post_id ) {
         }
     }
     // Explicit handling pre checkboxy v kvízoch (ak nie sú v POST, ulož '0')
+
+    if ( isset( $_POST['event_general']['minimal_number_of_correct_seeds'] ) ) {
+        update_post_meta( $post_id, 'event_general_minimal_number_of_correct_seeds', (int) $_POST['event_general']['minimal_number_of_correct_seeds'] );
+    }
+
+    if ( isset( $_POST['event_general']['final_place_pocet_pokusov'] ) ) {
+        update_post_meta( $post_id, 'event_general_final_place_pocet_pokusov', (int) $_POST['event_general']['final_place_pocet_pokusov'] );
+    }
+
+
     $quiz_checkbox_keys = [
         'music'     => ['music_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede'],
         'movies'    => ['movies_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede'],
