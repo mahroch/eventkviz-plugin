@@ -400,7 +400,8 @@ public function save_event_meta( $post_id ) {
         $json_fields = [
             'select_teams_json' => 'event_general_select_teams',
             'places_json' => 'event_general_places',
-            'names_of_places_json' => 'event_general_names_of_places'
+            'names_of_places_json' => 'event_general_names_of_places',
+            'credits_json' => 'event_general_credits' 
         ];
 
         foreach ( $json_fields as $post_key => $meta_key ) {
@@ -565,7 +566,7 @@ private function render_general_tab( $post, $meta ) {
                             ), JSON_PRETTY_PRINT ) );
                         ?></textarea>
 
-                        <label><strong>Názvy stanovísk (names_of_places – JSON objekt):</strong></label><br>
+                        <label><br><strong>Názvy stanovísk (names_of_places – JSON objekt):</strong></label><br>
                         <textarea name="event_general[names_of_places_json]" rows="6" class="large-text"><?php 
                             $names = get_post_meta( $post->ID, 'event_general_names_of_places', true );
                             echo esc_textarea( json_encode( $names ?: array(
@@ -575,6 +576,43 @@ private function render_general_tab( $post, $meta ) {
                                 'knowledge' => 'Knowledge quiz'
                             ), JSON_PRETTY_PRINT ) );
                         ?></textarea>
+
+                     <label><br><strong>Kredity za seed miesta</strong><br></label>
+                   <p class="description">
+                        Kredity za nájdenie miesta bez kvízu a vygenerovanie seedu.<br>
+                        Počet a tag miest musí sedieť s počtom nekvízových.<br>
+                        Formát: {"tag_miesta": body, ...}
+                    </p>
+                    <textarea name="event_general[credits_json]" rows="12" class="large-text"><?php 
+                        $credits = get_post_meta( $post->ID, 'event_general_credits', true );
+                        echo esc_textarea( json_encode( $credits ?: array(
+                            'horse'          => 10,
+                            'racing'         => 20,
+                            'stadium'        => 40,
+                            'bridge'         => 50,
+                            'hotel'          => 30,
+                            'danube'         => 60,
+                            'final'          => 20,
+                            'chest_success'  => 100,
+                            'unspecified'    => 30
+                        ), JSON_PRETTY_PRINT ) );
+                    ?></textarea>
+                    
+                    <!-- NOVÉ PREMENNÉ – conditional v use_seed -->
+                        <div style="margin-top: 20px;">
+                            <label><strong>Minimálny počet správnych seedov na otvorenie truhlice:</strong></label><br>
+                            <input type="number" name="event_general[minimal_number_of_correct_seeds]" value="<?php echo esc_attr( $meta['event_general_minimal_number_of_correct_seeds'][0] ?? '3' ); ?>" min="0" class="small-text" />
+                            <p class="description">Minimálny počet správnych seedov potrebných na otvorenie truhlice.</p>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <label><strong>Max počet pokusov na otvorenie truhlice:</strong></label><br>
+                            <input type="number" name="event_general[final_place_pocet_pokusov]" value="<?php echo esc_attr( $meta['event_general_final_place_pocet_pokusov'][0] ?? '3' ); ?>" min="1" class="small-text" />
+                            <p class="description">Maximálny počet pokusov na otvorenie truhlice na finálnom mieste.</p>
+                        </div>
+
+
+
                     </div>
                 </td>
             </tr>
@@ -587,6 +625,9 @@ private function render_general_tab( $post, $meta ) {
                     <p class="description">true/false - zobraz linku na preklik späť na všetky kvízy</p>
                 </td>
             </tr>
+
+         
+
 
         </table>
     </div>
@@ -809,6 +850,7 @@ private function render_movies_tab( $post, $meta ) {
             </tr>
 
             <tbody id="movies_fields_container" style="<?php echo $movies_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
+                <!-- show_entry_form -->
                 <tr>
                     <th><label>Zobraziť entry formulár</label></th>
                     <td>
@@ -820,6 +862,7 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
+                <!-- movies_quiz_type -->
                 <tr>
                     <th><label>Typ Movies kvízu</label></th>
                     <td>
@@ -834,6 +877,7 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
+                <!-- Bodovanie -->
                 <tr>
                     <th><label>Bodovanie</label></th>
                     <td>
@@ -858,29 +902,41 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
+                <!-- pocet_otazok_v_sete -->
+              
+
+                <!-- NOVÉ: Počet otázok podľa produkcie -->
                 <tr>
-                    <th><label>Počet otázok v sete</label></th>
+                    <th><label>Počet otázok podľa produkcie</label></th>
                     <td>
-                        <input type="number" name="event_movies[pocet_otazok_v_sete]" value="<?php echo esc_attr( $meta['event_movies_pocet_otazok_v_sete'][0] ?? '10' ); ?>" min="0" class="small-text" />
-                        <p class="description">
-                            0/číslo - možnosť zvoliť si koľko otázok v sete dostane používateľ.<br>
-                            0 znamená, že sa vyberá podľa žiadneho množstva v production settingu.
-                        </p>
+                        <table class="widefat fixed" style="width: auto;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left; width: 300px;">Produkcia</th>
+                                    <th style="text-align: left;">Počet otázok</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>SK/CZ</td>
+                                    <td>
+                                        <input type="number" name="event_movies[number_question_in_production_skcz]" value="<?php echo esc_attr( $meta['event_movies_number_question_in_production_skcz'][0] ?? '2' ); ?>" min="0" class="small-text" />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Zahraničné</td>
+                                    <td>
+                                        <input type="number" name="event_movies[number_question_in_production_zahranicne]" value="<?php echo esc_attr( $meta['event_movies_number_question_in_production_zahranicne'][0] ?? '8' ); ?>" min="0" class="small-text" />
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="description">Nastavenie počtu otázok podľa typu produkcie (používa sa pri generovaní setu otázok).</p>
                     </td>
                 </tr>
 
-                <tr>
-                    <th><label>Production (typ filmov)</label></th>
-                    <td>
-                        <select name="event_movies[production]">
-                            <option value="all" <?php selected( $meta['event_movies_production'][0] ?? 'all', 'all' ); ?>>All</option>
-                            <option value="skcz" <?php selected( $meta['event_movies_production'][0] ?? 'all', 'skcz' ); ?>>SK/CZ</option>
-                            <option value="zahranicne" <?php selected( $meta['event_movies_production'][0] ?? 'all', 'zahranicne' ); ?>>Zahraničné</option>
-                        </select>
-                        <p class="description">skcz/zahranicne/all - výber typu filmovej produkcie</p>
-                    </td>
-                </tr>
 
+                <!-- poslat_vysledok_usera_mailom + conditional -->
                 <tr>
                     <th><label>Poslať výsledok mailom</label></th>
                     <td>
@@ -895,6 +951,7 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
+                <!-- zobraz_spravne_odpovede -->
                 <tr>
                     <th><label>Zobraziť správne odpovede</label></th>
                     <td>
@@ -903,6 +960,7 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
+                <!-- zobraz_spravne_uhadnute_odpovede -->
                 <tr>
                     <th><label>Zobraziť správne uhádnuté odpovede používateľa</label></th>
                     <td>
@@ -911,6 +969,7 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
+                <!-- pocet_pokusov -->
                 <tr>
                     <th><label>Počet pokusov</label></th>
                     <td>
@@ -919,6 +978,7 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
+                <!-- min_body_na_postup -->
                 <tr>
                     <th><label>Minimálne body na postup</label></th>
                     <td>
@@ -930,6 +990,7 @@ private function render_movies_tab( $post, $meta ) {
                     </td>
                 </tr>
 
+                <!-- Formát pri splnení kvízu + conditional -->
                 <tr>
                     <th><label>Formát pri splnení kvízu</label></th>
                     <td>

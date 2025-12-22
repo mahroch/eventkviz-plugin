@@ -106,6 +106,10 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
         $saved_names_of_places = isset( $all_meta['event_general_names_of_places'][0] ) ? maybe_unserialize( $all_meta['event_general_names_of_places'][0] ) : array();
         $this->all_quizes_settings['names_of_places'] = is_array( $saved_names_of_places ) && ! empty( $saved_names_of_places ) ? $saved_names_of_places : $default_names_of_places;
 
+		$this->all_quizes_settings['minimal_number_of_correct_seeds'] = isset( $all_meta['event_general_minimal_number_of_correct_seeds'][0] ) ? (int) $all_meta['event_general_minimal_number_of_correct_seeds'][0] : 3;
+
+		$this->all_quizes_settings['final_place_pocet_pokusov'] = isset( $all_meta['event_general_final_place_pocet_pokusov'][0] ) ? (int) $all_meta['event_general_final_place_pocet_pokusov'][0] : 3;
+
         // === KVÍZ SPECIFICKÉ SETTINGS ===
         $quiz_types = array(
             'music'     => 'music_settings',
@@ -148,6 +152,11 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
                 $this->{$property}['credits'] = array(
                     'corr_movie' => isset( $this->{$property}['credits_corr_movie'] ) ? (int) $this->{$property}['credits_corr_movie'] : 0,
                 );
+
+				$this->{$property}['number_question_in_production'] = array(
+					'skcz'       => isset( $this->{$property}['number_question_in_production_skcz'] ) ? (int) $this->{$property}['number_question_in_production_skcz'] : 2,
+					'zahranicne' => isset( $this->{$property}['number_question_in_production_zahranicne'] ) ? (int) $this->{$property}['number_question_in_production_zahranicne'] : 8,
+				);
             }
 
             if ( $type === 'knowledge' ) {
@@ -772,6 +781,130 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 			}
 	}
 
+	private function set_default_event_settings() {
+    // General – presne podľa pôvodného kódu
+    $this->all_quizes_settings = array(
+        'startup_form'                  => true,
+        'identifikacia_kodom_usera'     => false,
+        'verify_users_in_db'            => false,
+        'identifikacia_userov_timu'     => true,
+        'select_from_teams_array'       => true,
+        'select_teams'                  => array(
+            ''      => 'Select ...',
+            'team1' => 'Team 1',
+            'team2' => 'Team 2',
+            'team3' => 'Team 3',
+            'team4' => 'Team 4',
+            'team5' => 'Team 5',
+            'team6' => 'Team 6',
+            'team7' => 'Team 7',
+            'team8' => 'Team 8',
+            'team9' => 'Team 9',
+            'team10'=> 'Team 10'
+        ),
+        'use_seed'                      => false,
+        'places'                        => array(
+            array( 'sudoku', 'Sudoku quiz' ),
+            array( 'movies', 'Movies quiz' ),
+            array( 'music', 'Music quiz' ),
+            array( 'knowledge', 'Knowledge quiz' )
+        ),
+        'names_of_places'               => array(
+            'sudoku'    => 'Sudoku quiz',
+            'movies'    => 'Movies quiz',
+            'music'     => 'Music quiz',
+            'knowledge' => 'Knowledge quiz'
+        ),
+        'show_link_back_to_all_quizes'  => false,
+        'minimal_number_of_correct_seeds' => 3,
+        'final_place_pocet_pokusov'    => 3
+    );
+
+    // Music – defaults podľa pôvodného
+    $this->music_settings = array(
+        'music_quiz_active'               => true,
+        'show_entry_form'                 => true,
+        'credits'                         => array(
+            'corr_art_corr_pos_corr_song_corr_pos' => 100,
+            'corr_art_corr_pos_incorr_song'       => 50,
+            'incorr_art_corr_song_corr_pos'       => 50,
+        ),
+        'pocet_otazok_v_sete'             => 10,
+        'production'                      => 'all',
+        'poslat_vysledok_usera_mailom'    => false,
+        'admin_mail'                      => 'mahroch@gmail.com',
+        'zobraz_spravne_odpovede'         => false,
+        'zobraz_spravne_uhadnute_odpovede'=> true,
+        'pocet_pokusov'                   => 10,
+        'min_body_na_postup'              => 400,
+        'obrazok_pri_splneni_kvizu'       => 1852,
+    );
+
+    // Movies – defaults podľa pôvodného
+    $this->movies_settings = array(
+        'movies_quiz_active'              => true,
+        'show_entry_form'                 => true,
+        'movies_quiz_type'                => 'full',
+        'credits'                         => array(
+            'corr_movie' => 100,
+            'corr_movie_wrong_pos' => 0,
+        ),
+        'pocet_otazok_v_sete'             => 10,
+        'production'                      => 'all',
+        'poslat_vysledok_usera_mailom'    => false,
+        'admin_mail'                      => 'mahroch@gmail.com',
+        'zobraz_spravne_odpovede'         => false,
+        'zobraz_spravne_uhadnute_odpovede'=> true,
+        'pocet_pokusov'                   => 10,
+        'min_body_na_postup'              => 400,
+        'obrazok_pri_splneni_kvizu'       => 1852,
+    );
+
+    // Knowledge – defaults podľa pôvodného
+    $this->knowledge_settings = array(
+        'knowledge_quiz_active'           => true,
+        'show_entry_form'                 => true,
+        'credits'                         => array(
+            'corr_answer' => 100
+        ),
+        'pocet_otazok_v_sete'             => 0,
+        'topic'                           => 'all',
+        'number_question_in_topic'        => array(
+            'visual'       => 0,
+            'mathematical' => 0,
+            'geography'    => 0,
+            'general'      => 0,
+            'movies'       => 0,
+            'viglas'       => 15
+        ),
+        'poslat_vysledok_usera_mailom'    => false,
+        'admin_mail'                      => 'mahroch@gmail.com',
+        'zobraz_spravne_odpovede'         => false,
+        'zobraz_spravne_uhadnute_odpovede'=> true,
+        'pocet_pokusov'                   => 10,
+        'min_body_na_postup'              => 400,
+        'obrazok_pri_splneni_kvizu'       => 1851,
+    );
+
+    // Sudoku – defaults podľa pôvodného
+    $this->sudoku_settings = array(
+        'sudoku_quiz_active'              => false,
+        'show_entry_form'                 => false,
+        'credits'                         => array(
+            'easy'   => 10,
+            'medium' => 20,
+            'hard'   => 35,
+        ),
+        'pocet_otazok_v_sete'             => 1,
+        'moze_si_vybrat_difficulty'       => 'yes',
+        'default_difficulty'              => 'hard',
+        'poslat_vysledok_usera_mailom'    => false,
+        'admin_mail'                      => 'mahroch@gmail.com',
+        'zobraz_spravne_odpovede'         => true,
+        'zobraz_spravne_uhadnute_odpovede'=> true,
+        'pocet_pokusov'                   => 1,
+    );
+}
 
      
 }

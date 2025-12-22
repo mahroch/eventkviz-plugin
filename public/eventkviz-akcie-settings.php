@@ -69,8 +69,9 @@ class Eventkviz_samorin_Class extends Eventkviz_Akcia_Class {
 
     
         $this->all_quizes_settings['use_seed'] = false; // pri ziskani stanovista sa userovi ukaze kod za dane stanoviste
-        $this->all_quizes_settings['minimal_number_of_correct_seeds'] = 3; // minimlalny pocet spravnych seedov na otvorenie truhlice
-        $this->all_quizes_settings['final_place_pocet_pokusov'] = 3; // max pocet pokusov na otvorenie truhlice
+    
+        /* TOTO CHYBA */$this->all_quizes_settings['minimal_number_of_correct_seeds'] = 3; // minimlalny pocet spravnych seedov na otvorenie truhlice
+            /* TOTO CHYBA */$this->all_quizes_settings['final_place_pocet_pokusov'] = 3; // max pocet pokusov na otvorenie truhlice
         $this->all_quizes_settings['places'] = array ( // pouziva sa len ak sa pouzivaju seeds
             	0 => array ('sudoku', 'Manga Boy'),
                 1 => array ('movies', 'Charlie Chaplin'),
@@ -170,7 +171,7 @@ $this->all_quizes_settings['show_link_back_to_all_quizes'] = false;  // tru/fals
         $this->movies_settings['pocet_otazok_v_sete'] = 10; // 0/cislo .... 0 znamena, ze sa vybera podla zadneho mnozstva v production settingu , 
         $this->movies_settings['production'] = 'all'; // skcz/zahranicne/all 
         
-        $movies_settings['number_question_in_production'] = array ( 
+           $movies_settings['number_question_in_production'] = array ( 
             'skcz' => 2,
             'zahranicne' => 8
             );
