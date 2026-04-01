@@ -371,7 +371,10 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 		}
 		
 		if(!empty($results[0]->seeds)) {
-			$seeds = unserialize($results[0]->seeds);
+			$seeds = json_decode($results[0]->seeds, true);
+			if ($seeds === null) {
+				$seeds = maybe_unserialize($results[0]->seeds);
+			}
 		} else {
 			$seeds = array();
 		}
@@ -421,14 +424,14 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 					if(!empty($user_code)){
 						$data = array(
 							'user' => $this->standardize($user_code),
-							'seeds' => serialize($seeds),
+							'seeds' => json_encode($seeds),
 							'akcia' => $akcia,
 							'team' => $team_code,
 						);
 					} elseif(empty($user_code) && !empty($team_code)){
 							$data = array(
 							'team' => $this->standardize($team_code),
-							'seeds' => serialize($seeds),
+							'seeds' => json_encode($seeds),
 							'akcia' => $akcia,
 							'user' => '',
 						);
@@ -741,7 +744,10 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 
 		}
 		if(!empty($results[0]->question_set)) {
-			$this->questions_set = unserialize($results[0]->question_set);
+			$this->questions_set = json_decode($results[0]->question_set, true);
+			if ($this->questions_set === null) {
+				$this->questions_set = maybe_unserialize($results[0]->question_set);
+			}
 		} else {
 			$this->questions_set = '';
 		}

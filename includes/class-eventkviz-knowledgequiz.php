@@ -105,9 +105,9 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                     echo '<input type="hidden" name="team" value = "' . $team_code . '">';
                     echo '<input type="hidden" name="user" value = "' . $user_code . '">';
                     echo '<input type="hidden" name="akcia" value = "' . $akcia_code . '">';
-                    $serialized_question_set = serialize($questions);
+                    $serialized_question_set = json_encode($questions);
 
-                    echo '<input type="hidden" name="set" value = "' . $serialized_question_set . '">';
+                    echo '<input type="hidden" name="set" value = "' . esc_attr($serialized_question_set) . '">';
                     echo '</br></br>';
                     echo '<input type="submit" value="Odoslať">';
                     echo '</form>';
@@ -225,7 +225,7 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
         
         $akcia = $_POST['akcia'];
         $this->load_basic_event_settings( $akcia);
-        $questions = unserialize($_POST['set']);
+        $questions = json_decode(wp_unslash($_POST['set']), true);
         //print_r($questions);
         $user = $_POST['user'];
         $team = $_POST['team'];
