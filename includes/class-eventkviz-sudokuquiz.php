@@ -63,7 +63,7 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 $url = 'https://eventkviz.sk/sudoku-quiz-evaluation-dynamic/';
             }
 
-            echo '<form action="'. $url . '"method="post">';
+            echo '<form action="'. esc_url($url) . '" method="post">';
         
             for($i=0;$i<$number_of_questions; $i++) {
                 $human_number = $i+1;
@@ -100,9 +100,9 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 $questions[] = $current_question_id;
             }
 
-            echo '<input type="hidden" name="team" value = "' . $team_code . '">';
-            echo '<input type="hidden" name="user" value = "' . $user_code . '">';
-            echo '<input type="hidden" name="akcia" value = "' . $akcia_code . '">';
+            echo '<input type="hidden" name="team" value = "' . esc_attr($team_code) . '">';
+            echo '<input type="hidden" name="user" value = "' . esc_attr($user_code) . '">';
+            echo '<input type="hidden" name="akcia" value = "' . esc_attr($akcia_code) . '">';
             $serialized_question_set = json_encode($questions);
 
             echo '<input type="hidden" name="set" value = "' . esc_attr($serialized_question_set) . '">';

@@ -43,12 +43,12 @@ class Eventkviz_OneLink_Quiz_Class extends Eventkviz_Quiz_Class{
             
             if($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true){
                     echo '<label for="inputField1">Zadaj svoj používateľský kód, alebo meno:</label>';
-                    echo '<input type="text" value= "' . $_GET['user'] . '" id="inputField1" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, \'\')">';
+                    echo '<input type="text" value= "' . esc_attr($_GET['user'] ?? '') . '" id="inputField1" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, \'\')">';
             }	
 
             if($this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true && $this->cAkcia->all_quizes_settings['select_from_teams_array'] === false){
                     echo '<label for="inputField2">Zadajte meno vášho tímu:</label>';
-                    echo '<input type="text" value= "' . $_GET['team'] . '" id="inputField2" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, \'\')">';
+                    echo '<input type="text" value= "' . esc_attr($_GET['team'] ?? '') . '" id="inputField2" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, \'\')">';
             } elseif ($this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true && $this->cAkcia->all_quizes_settings['select_from_teams_array'] === true){
 
                 echo '<label for="inputField2">Vyberte svoj tím:</label>';
@@ -59,10 +59,10 @@ class Eventkviz_OneLink_Quiz_Class extends Eventkviz_Quiz_Class{
                         while($index < count($keys)) {
                             $key = $keys[$index];
                             $valu = $this->cAkcia->all_quizes_settings['select_teams'][$key];
-                            if($_GET['team'] == $key) {
+                            if(($_GET['team'] ?? '') == $key) {
                                 $selected = 'selected';
                             }
-                            echo "<option value='" . $key . "' " . $selected . ">" . $valu . "</option>";
+                            echo "<option value='" . esc_attr($key) . "' " . $selected . ">" . esc_html($valu) . "</option>";
                             $index++;
                             $selected = '';
                         }	

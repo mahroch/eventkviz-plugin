@@ -49,7 +49,7 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                     }
                         
 
-                    echo '<form action="'. $url . '"method="post">';
+                    echo '<form action="'. esc_url($url) . '" method="post">';
 
                     $question_set_exists = $this->check_if_questions_set_exists( $akcia_code,'knowledge',$user_code,$team_code);
 
@@ -102,9 +102,9 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                         }
                     }
 
-                    echo '<input type="hidden" name="team" value = "' . $team_code . '">';
-                    echo '<input type="hidden" name="user" value = "' . $user_code . '">';
-                    echo '<input type="hidden" name="akcia" value = "' . $akcia_code . '">';
+                    echo '<input type="hidden" name="team" value = "' . esc_attr($team_code) . '">';
+                    echo '<input type="hidden" name="user" value = "' . esc_attr($user_code) . '">';
+                    echo '<input type="hidden" name="akcia" value = "' . esc_attr($akcia_code) . '">';
                     $serialized_question_set = json_encode($questions);
 
                     echo '<input type="hidden" name="set" value = "' . esc_attr($serialized_question_set) . '">';
@@ -253,7 +253,7 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
                     echo "Získali ste dosť bodov na postup a zobrazenie ďalšej indície.<br><br>";
                     echo "Vaša ďalšia indícia je:<br><br>";
                     $url = wp_get_attachment_image_src( $this->cAkcia->knowledge_settings['obrazok_pri_splneni_kvizu'],'large' );
-                    echo "<img src='" . $url[0] . "' width='100%'>";
+                    echo "<img src='" . esc_url($url[0]) . "' width='100%'>";
                 
             } else {
                 $akcia_tag = $this->akcia_tag;
