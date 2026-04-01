@@ -308,7 +308,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         
         global $wpdb,$table_prefix;
         $user_ID = get_current_user_id();
-        $sql = 'SELECT artist FROM '.$table_prefix.'jet_cct_artists WHERE _ID = '.$id;
+        $sql = $wpdb->prepare('SELECT artist FROM '.$table_prefix.'jet_cct_artists WHERE _ID = %d', $id);
         $value = $wpdb->get_var($sql);
         if(!$value) {
             $value = 'Nezadané';
@@ -319,7 +319,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
     function get_song_name($id){
         global $wpdb,$table_prefix;
         $user_ID = get_current_user_id();
-        $sql = 'SELECT song FROM '.$table_prefix.'jet_cct_songs WHERE _ID = '.$id;
+        $sql = $wpdb->prepare('SELECT song FROM '.$table_prefix.'jet_cct_songs WHERE _ID = %d', $id);
         $value = $wpdb->get_var($sql);
         
         if(!$value) {

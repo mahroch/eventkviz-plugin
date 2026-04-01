@@ -297,7 +297,7 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
         
         global $wpdb,$table_prefix;
         $user_ID = get_current_user_id();
-        $sql = 'SELECT original_title FROM '.$table_prefix.'jet_cct_movies WHERE _ID = '.$id;
+        $sql = $wpdb->prepare('SELECT original_title FROM '.$table_prefix.'jet_cct_movies WHERE _ID = %d', $id);
         $value = $wpdb->get_var($sql);
         
           if(empty($value)) {
