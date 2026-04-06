@@ -64,7 +64,6 @@ add_action( 'trashed_post', array( $this, 'delete_event_pages' ) );
 
 // Pre permanent delete (vyprázdnenie koša alebo force delete)
 add_action( 'deleted_post', array( $this, 'delete_event_pages' ), 10, 2 ); // 2 parametre pre deleted_post
-wp_enqueue_style( 'eventkviz-admin-tabs', plugin_dir_url( __FILE__ ) . '../admin/css/eventkviz-admin-tabs.css', array(), $this->version );
 	}
 
 	/**
@@ -87,6 +86,7 @@ wp_enqueue_style( 'eventkviz-admin-tabs', plugin_dir_url( __FILE__ ) . '../admin
 		 */
 
 		wp_enqueue_style( $this->eventkviz, plugin_dir_url( __FILE__ ) . 'css/eventkviz-admin.css', array(), $this->version, 'all' );
+		wp_enqueue_style( 'eventkviz-admin-tabs', plugin_dir_url( __FILE__ ) . 'css/eventkviz-admin-tabs.css', array(), $this->version );
 
 	}
 
