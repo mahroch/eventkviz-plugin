@@ -27,7 +27,7 @@ class Eventkviz_Seedpage_Class extends Eventkviz_Quiz_Class{
        // global $all_quizes_settings;
        
         $this->load_basic_event_settings( $value['akcia']);
-        $this->all_quizes_settings($value['akcia']);
+        //$this->all_quizes_settings($value['akcia']);
         
         $user_code = get_query_var( 'user' );
         $akcia_code = get_query_var( 'akcia' ); 

@@ -135,10 +135,15 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
                     'corr_movie' => isset( $this->{$property}['credits_corr_movie'] ) ? (int) $this->{$property}['credits_corr_movie'] : 0,
                 );
 
-				$this->{$property}['number_question_in_production'] = array(
-					'skcz'       => isset( $this->{$property}['number_question_in_production_skcz'] ) ? (int) $this->{$property}['number_question_in_production_skcz'] : 2,
-					'zahranicne' => isset( $this->{$property}['number_question_in_production_zahranicne'] ) ? (int) $this->{$property}['number_question_in_production_zahranicne'] : 8,
-				);
+				$production_terms = get_terms( array( 'taxonomy' => 'production', 'hide_empty' => false ) );
+				$number_question_in_production = array();
+				if ( ! is_wp_error( $production_terms ) ) {
+					foreach ( $production_terms as $term ) {
+						$key = 'number_question_in_production_' . $term->slug;
+						$number_question_in_production[ $term->slug ] = isset( $this->{$property}[ $key ] ) ? (int) $this->{$property}[ $key ] : 0;
+					}
+				}
+				$this->{$property}['number_question_in_production'] = $number_question_in_production;
             }
 
             if ( $type === 'knowledge' ) {
@@ -486,37 +491,42 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 		return $random_string;
 	}  
 
-	public function show_answer($text, $quiz_type='', $class='eventkviz_standard_answer'){
-		
+	public function show_answer($text, $quiz_type='', $class='eventkviz_standard_answer', $answer_type='correct_answer'){
+
 		global $remember_answer;
-		
+
 		if($quiz_type == 'music'){
-			//global $music_settings;
 			$show = $this->cAkcia->music_settings['zobraz_spravne_odpovede'];
 			$show_jeho = $this->cAkcia->music_settings['zobraz_spravne_uhadnute_odpovede'];
 		} elseif($quiz_type == 'movies'){
-			//global $movies_settings;
 			$show = $this->cAkcia->movies_settings['zobraz_spravne_odpovede'];
 			$show_jeho = $this->cAkcia->movies_settings['zobraz_spravne_uhadnute_odpovede'];
 		} elseif($quiz_type == 'knowledge'){
-			//global $knowledge_settings;
 			$show = $this->cAkcia->knowledge_settings['zobraz_spravne_odpovede'];
 			$show_jeho = $this->cAkcia->knowledge_settings['zobraz_spravne_uhadnute_odpovede'];
 		} elseif($quiz_type == 'sudoku'){
-			//global $sudoku_settings;
 			$show = $this->cAkcia->sudoku_settings['zobraz_spravne_odpovede'];
-			$show_jeho = $this->cAkcia->sudoku_settings['zobraz_spravne_uhadnute_odpovede'];	
+			$show_jeho = $this->cAkcia->sudoku_settings['zobraz_spravne_uhadnute_odpovede'];
 		} else {
 			$show = true;
+			$show_jeho = true;
 		}
-		if($show === true || $show_jeho === true) {
-			echo '<div class="' . $class . '">' . $text . '</div><br>';
-		} else {
-			if(!$remember_answer) {
-				echo "<div  class='eventkviz_warning_correct_answers'>Správne odpovede na nevyplnené, alebo nesprávne zodpovedané otázky sa nezobrazujú z dôvodov určených organizátormi.</div><br>";
-				$remember_answer = 'already_showed';
-			} 
-			
+
+		// correct_answer = "Správna odpoveď: X" → riadené cez zobraz_spravne_odpovede
+		// user_result = "Film určený správne, +100 bodov" → riadené cez zobraz_spravne_uhadnute_odpovede
+		if($answer_type === 'correct_answer') {
+			if($show === true) {
+				echo '<div class="' . $class . '">' . $text . '</div><br>';
+			} else {
+				if(!$remember_answer) {
+					echo "<div  class='eventkviz_warning_correct_answers'>Správne odpovede na nevyplnené, alebo nesprávne zodpovedané otázky sa nezobrazujú z dôvodov určených organizátormi.</div><br>";
+					$remember_answer = 'already_showed';
+				}
+			}
+		} elseif($answer_type === 'user_result') {
+			if($show_jeho === true) {
+				echo '<div class="' . $class . '">' . $text . '</div><br>';
+			}
 		}
 	}
 

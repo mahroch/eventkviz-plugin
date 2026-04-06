@@ -473,6 +473,17 @@ public function save_event_meta( $post_id ) {
             }
         }
     }
+
+    if ( isset( $_POST['event_general']['credits_json'] ) ) {
+        $json = stripslashes( $_POST['event_general']['credits_json'] );
+        $array = json_decode( $json, true );
+        if ( json_last_error() === JSON_ERROR_NONE && is_array( $array ) ) {
+            update_post_meta( $post_id, 'event_general_credits', $array );
+        } else {
+            delete_post_meta( $post_id, 'event_general_credits' );
+        }
+    }
+
 }
 
 	/**
@@ -535,24 +546,59 @@ private function render_general_tab( $post, $meta ) {
                     <p class="description">true/false - má sa tím vybrať z vopred zadaného zoznamu, zoznam nižšie.</p>
 
                     <div id="select_teams_container_general" style="margin-top: 10px; <?php echo ( $meta['event_general_select_from_teams_array'][0] ?? '1' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
-                        <label><strong>Zoznam tímov (JSON formát objektu):</strong></label><br>
-                        <textarea name="event_general[select_teams_json]" rows="10" class="large-text"><?php 
-                            $teams = get_post_meta( $post->ID, 'event_general_select_teams', true );
-                            echo esc_textarea( json_encode( $teams ?: array(
-                                ''      => 'Select ...',
-                                'team1' => 'Team 1',
-                                'team2' => 'Team 2',
-                                'team3' => 'Team 3',
-                                'team4' => 'Team 4',
-                                'team5' => 'Team 5',
-                                'team6' => 'Team 6',
-                                'team7' => 'Team 7',
-                                'team8' => 'Team 8',
-                                'team9' => 'Team 9',
-                                'team10'=> 'Team 10'
-                            ), JSON_PRETTY_PRINT ) );
-                        ?></textarea>
-                        <p class="description">Formát: {"key": "Názov tímu", ...}</p>
+                        <label><strong>Zoznam tímov:</strong></label><br>
+                        <input type="hidden" name="event_general[select_teams_json]" id="select_teams_json_hidden" value="">
+                        <table id="select_teams_table" class="widefat" style="max-width:500px; margin-top:5px; border-spacing:0;">
+                            <thead><tr><th style="padding:4px 8px;">Kód tímu</th><th style="padding:4px 8px;">Názov tímu</th><th style="width:32px; padding:4px;"></th></tr></thead>
+                            <tbody>
+                            <?php
+                                $teams = get_post_meta( $post->ID, 'event_general_select_teams', true );
+                                if ( empty( $teams ) ) {
+                                    $teams = array('team1' => 'Team 1', 'team2' => 'Team 2');
+                                } else {
+                                    unset( $teams[''] );
+                                }
+                                foreach ( $teams as $key => $label ) :
+                            ?>
+                                <tr>
+                                    <td style="padding:2px 4px;"><input type="text" class="team-key" value="<?php echo esc_attr($key); ?>" style="width:100%; padding:2px 4px;"></td>
+                                    <td style="padding:2px 4px;"><input type="text" class="team-label" value="<?php echo esc_attr($label); ?>" style="width:100%; padding:2px 4px;"></td>
+                                    <td style="padding:2px 4px;"><button type="button" class="button remove-team-row" style="padding:0 6px; line-height:24px;">&times;</button></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        <button type="button" class="button" id="add_team_row" style="margin-top:5px;">+ Pridať tím</button>
+                        <script>
+                        (function(){
+                            function syncTeamsJson(){
+                                var obj = {"": "Select ..."};
+                                document.querySelectorAll('#select_teams_table tbody tr').forEach(function(tr){
+                                    var k = tr.querySelector('.team-key').value;
+                                    var v = tr.querySelector('.team-label').value;
+                                    if(k !== '') obj[k] = v;
+                                });
+                                document.getElementById('select_teams_json_hidden').value = JSON.stringify(obj);
+                            }
+                            document.getElementById('add_team_row').addEventListener('click', function(){
+                                var tbody = document.querySelector('#select_teams_table tbody');
+                                var tr = document.createElement('tr');
+                                tr.innerHTML = '<td style="padding:2px 4px;"><input type="text" class="team-key" value="" style="width:100%; padding:2px 4px;"></td>'
+                                    + '<td style="padding:2px 4px;"><input type="text" class="team-label" value="" style="width:100%; padding:2px 4px;"></td>'
+                                    + '<td style="padding:2px 4px;"><button type="button" class="button remove-team-row" style="padding:0 6px; line-height:24px;">&times;</button></td>';
+                                tbody.appendChild(tr);
+                                syncTeamsJson();
+                            });
+                            document.getElementById('select_teams_table').addEventListener('click', function(e){
+                                if(e.target.classList.contains('remove-team-row')){
+                                    e.target.closest('tr').remove();
+                                    syncTeamsJson();
+                                }
+                            });
+                            document.getElementById('select_teams_table').addEventListener('input', syncTeamsJson);
+                            syncTeamsJson();
+                        })();
+                        </script>
                     </div>
                 </td>
             </tr>
@@ -574,41 +620,36 @@ private function render_general_tab( $post, $meta ) {
                                 array('music', 'Music quiz'),
                                 array('knowledge', 'Knowledge quiz')
                             ), JSON_PRETTY_PRINT ) );
-                        ?></textarea>
+                        ?></textarea><br><br>
 
-                        <label><br><strong>Názvy stanovísk (names_of_places – JSON objekt):</strong></label><br>
+                        <label><strong>Názvy stanovísk (names_of_places – JSON objekt):</strong></label><br>
                         <textarea name="event_general[names_of_places_json]" rows="6" class="large-text"><?php 
                             $names = get_post_meta( $post->ID, 'event_general_names_of_places', true );
                             echo esc_textarea( json_encode( $names ?: array(
-                                'sudoku'    => 'Sudoku quiz',
-                                'movies'    => 'Movies quiz',
-                                'music'     => 'Music quiz',
+                                'sudoku' => 'Sudoku quiz',
+                                'movies' => 'Movies quiz',
+                                'music' => 'Music quiz',
                                 'knowledge' => 'Knowledge quiz'
                             ), JSON_PRETTY_PRINT ) );
-                        ?></textarea>
+                        ?></textarea><br><br>
 
-                     <label><br><strong>Kredity za seed miesta</strong><br></label>
-                   <p class="description">
-                        Kredity za nájdenie miesta bez kvízu a vygenerovanie seedu.<br>
-                        Počet a tag miest musí sedieť s počtom nekvízových.<br>
-                        Formát: {"tag_miesta": body, ...}
-                    </p>
-                    <textarea name="event_general[credits_json]" rows="12" class="large-text"><?php 
-                        $credits = get_post_meta( $post->ID, 'event_general_credits', true );
-                        echo esc_textarea( json_encode( $credits ?: array(
-                            'horse'          => 10,
-                            'racing'         => 20,
-                            'stadium'        => 40,
-                            'bridge'         => 50,
-                            'hotel'          => 30,
-                            'danube'         => 60,
-                            'final'          => 20,
-                            'chest_success'  => 100,
-                            'unspecified'    => 30
-                        ), JSON_PRETTY_PRINT ) );
-                    ?></textarea>
-                    
-                    <!-- NOVÉ PREMENNÉ – conditional v use_seed -->
+                        <label><strong>Kredity za stanovištia (JSON objekt):</strong></label><br>
+                        <textarea name="event_general[credits_json]" rows="12" class="large-text"><?php 
+                            $credits = get_post_meta( $post->ID, 'event_general_credits', true );
+                            echo esc_textarea( json_encode( $credits ?: array(
+                                'horse'          => 10,
+                                'racing'         => 20,
+                                'stadium'        => 40,
+                                'bridge'         => 50,
+                                'hotel'          => 30,
+                                'danube'         => 60,
+                                'final'          => 20,
+                                'chest_success'  => 100,
+                                'unspecified'    => 30
+                            ), JSON_PRETTY_PRINT ) );
+                        ?></textarea>
+                        <p class="description">Formát: {"key": body, ...} – key je názov stanovišťa (seed), body za splnenie.</p>
+
                         <div style="margin-top: 20px;">
                             <label><strong>Minimálny počet správnych seedov na otvorenie truhlice:</strong></label><br>
                             <input type="number" name="event_general[minimal_number_of_correct_seeds]" value="<?php echo esc_attr( $meta['event_general_minimal_number_of_correct_seeds'][0] ?? '3' ); ?>" min="0" class="small-text" />
@@ -620,9 +661,6 @@ private function render_general_tab( $post, $meta ) {
                             <input type="number" name="event_general[final_place_pocet_pokusov]" value="<?php echo esc_attr( $meta['event_general_final_place_pocet_pokusov'][0] ?? '3' ); ?>" min="1" class="small-text" />
                             <p class="description">Maximálny počet pokusov na otvorenie truhlice na finálnom mieste.</p>
                         </div>
-
-
-
                     </div>
                 </td>
             </tr>
@@ -635,9 +673,6 @@ private function render_general_tab( $post, $meta ) {
                     <p class="description">true/false - zobraz linku na preklik späť na všetky kvízy</p>
                 </td>
             </tr>
-
-         
-
 
         </table>
     </div>
@@ -913,9 +948,15 @@ private function render_movies_tab( $post, $meta ) {
                 </tr>
 
                 <!-- pocet_otazok_v_sete -->
-              
+                <tr>
+                    <th><label>Počet otázok v sete</label></th>
+                    <td>
+                        <input type="number" name="event_movies[pocet_otazok_v_sete]" value="<?php echo esc_attr( $meta['event_movies_pocet_otazok_v_sete'][0] ?? '10' ); ?>" min="0" class="small-text" />
+                        <p class="description">Celkový počet otázok v kvíze. 0 = podľa nastavenia produkcie nižšie.</p>
+                    </td>
+                </tr>
 
-                <!-- NOVÉ: Počet otázok podľa produkcie -->
+                <!-- Počet otázok podľa produkcie (dynamicky z taxonomie) -->
                 <tr>
                     <th><label>Počet otázok podľa produkcie</label></th>
                     <td>
@@ -927,21 +968,26 @@ private function render_movies_tab( $post, $meta ) {
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php
+                                $production_terms = get_terms( array( 'taxonomy' => 'production', 'hide_empty' => false ) );
+                                if ( ! is_wp_error( $production_terms ) && ! empty( $production_terms ) ) :
+                                    foreach ( $production_terms as $term ) :
+                                        $meta_key = 'event_movies_number_question_in_production_' . $term->slug;
+                                        $saved_value = $meta[ $meta_key ][0] ?? '0';
+                                ?>
                                 <tr>
-                                    <td>SK/CZ</td>
+                                    <td><?php echo esc_html( $term->name ); ?></td>
                                     <td>
-                                        <input type="number" name="event_movies[number_question_in_production_skcz]" value="<?php echo esc_attr( $meta['event_movies_number_question_in_production_skcz'][0] ?? '2' ); ?>" min="0" class="small-text" />
+                                        <input type="number" name="event_movies[number_question_in_production_<?php echo esc_attr( $term->slug ); ?>]" value="<?php echo esc_attr( $saved_value ); ?>" min="0" class="small-text" />
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td>Zahraničné</td>
-                                    <td>
-                                        <input type="number" name="event_movies[number_question_in_production_zahranicne]" value="<?php echo esc_attr( $meta['event_movies_number_question_in_production_zahranicne'][0] ?? '8' ); ?>" min="0" class="small-text" />
-                                    </td>
-                                </tr>
+                                <?php
+                                    endforeach;
+                                endif;
+                                ?>
                             </tbody>
                         </table>
-                        <p class="description">Nastavenie počtu otázok podľa typu produkcie (používa sa pri generovaní setu otázok).</p>
+                        <p class="description">Zadaj počet otázok pre každú produkciu. Ak sú všetky 0, vyberú sa náhodné filmy zo všetkých (podľa "Počet otázok v sete" vyššie).</p>
                     </td>
                 </tr>
 

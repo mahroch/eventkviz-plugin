@@ -44,38 +44,58 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
         
         if($check_result === true) {
 
-            $number_of_questions = $this->cAkcia->movies_settings['pocet_otazok_v_sete']; 
-            
-            if($this->cAkcia->movies_settings['production'] != 'all') {
-                
-                $args = array(
-                    'post_type'   => 'questions-movies',
-                    'numberposts' => -1,
-                    'tax_query' => array(
-                        array(
-                            'taxonomy' => 'production', 
-                            'field' => 'slug',
-                            'terms' => $this->cAkcia->movies_settings['production'] 
-                        )
-                    )
-                );
-            } else {
-                $args = array(
-                    'post_type'   => 'questions-movies',
-                    'numberposts' => -1,
-                );
-            }
-            
-            $available_questions = get_posts( $args );
-            //TODO overit vyber filmov, ci sa tam nerobi len jednoducho asociovany array - potrebujeme asi ID filmov ako keys 
+            $number_of_questions = $this->cAkcia->movies_settings['pocet_otazok_v_sete'];
+            $production_counts = isset($this->cAkcia->movies_settings['number_question_in_production']) ? $this->cAkcia->movies_settings['number_question_in_production'] : array();
 
-            $number_of_available_questions = count($available_questions)-1;
+            // Zisti, ci sa pouziva per-production rozdelenie (aspon 1 produkcia ma > 0)
+            $use_per_production = false;
+            foreach ($production_counts as $slug => $count) {
+                if ((int) $count > 0) { $use_per_production = true; break; }
+            }
 
             $question_set_exists = $this->check_if_questions_set_exists( $akcia_code,'movies',$user_code,$team_code);
 
             if( !$question_set_exists) {
-                $this->questions_set = $this->UniqueRandomNumbersWithinRange($number_of_available_questions, $number_of_questions); 
-               
+                if ($use_per_production) {
+                    // Vyber otazky per produkcia
+                    $selected_ids = array();
+                    foreach ($production_counts as $slug => $count) {
+                        $count = (int) $count;
+                        if ($count <= 0) continue;
+                        $args = array(
+                            'post_type'   => 'questions-movies',
+                            'numberposts' => -1,
+                            'tax_query' => array(
+                                array(
+                                    'taxonomy' => 'production',
+                                    'field' => 'slug',
+                                    'terms' => $slug
+                                )
+                            )
+                        );
+                        $posts_for_production = get_posts( $args );
+                        if (!empty($posts_for_production)) {
+                            shuffle($posts_for_production);
+                            $picked = array_slice($posts_for_production, 0, min($count, count($posts_for_production)));
+                            foreach ($picked as $p) {
+                                $selected_ids[] = $p->ID;
+                            }
+                        }
+                    }
+                    shuffle($selected_ids);
+                    $this->questions_set = $selected_ids;
+                    $number_of_questions = count($selected_ids);
+                    $available_questions = null; // nepotrebujeme
+                } else {
+                    // Vsetky produkcie su 0 — vyber nahodne zo vsetkych filmov
+                    $args = array(
+                        'post_type'   => 'questions-movies',
+                        'numberposts' => -1,
+                    );
+                    $available_questions = get_posts( $args );
+                    $number_of_available_questions = count($available_questions)-1;
+                    $this->questions_set = $this->UniqueRandomNumbersWithinRange($number_of_available_questions, $number_of_questions);
+                }
             }
 
             if($_SERVER['HTTP_HOST'] == 'localhost:8888') {
@@ -90,9 +110,11 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
             for($i=0;$i<$number_of_questions; $i++) {
                 $human_number = $i+1;
 
-                if( $question_set_exists) {
+                if( $question_set_exists || $available_questions === null) {
+                    // question_set obsahuje priamo post ID
                     $current_question_id = $this->questions_set[$i];
                 } else {
+                    // question_set obsahuje indexy do available_questions
                     $current_question_id = $available_questions[$this->questions_set[$i]]->ID;
                 }
 
@@ -247,9 +269,16 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
 
             if($this->cAkcia->movies_settings['min_body_na_postup'] > 0 && $gained_credits >= $this->cAkcia->movies_settings['min_body_na_postup']) {
                     echo "Získali ste dosť bodov na postup a zobrazenie ďalšej indície.<br><br>";
-                    echo "Vaša ďalšia indícia je:<br><br>";
-                    $url = wp_get_attachment_image_src( $this->cAkcia->movies_settings['obrazok_pri_splneni_kvizu'],'large' );
-                    echo "<img src='" . esc_url($url[0]) . "' width='100%'>";
+                    $format = $this->cAkcia->movies_settings['format_pri_splneni'] ?? 'obrazok';
+                    if ($format === 'text' && !empty($this->cAkcia->movies_settings['text_pri_splneni_kvizu'])) {
+                        echo '<div class="eventkviz_splnenie_kvizu">' . wp_kses_post($this->cAkcia->movies_settings['text_pri_splneni_kvizu']) . '</div>';
+                    } else {
+                        echo "Vaša ďalšia indícia je:<br><br>";
+                        $url = wp_get_attachment_image_src( $this->cAkcia->movies_settings['obrazok_pri_splneni_kvizu'],'large' );
+                        if ($url) {
+                            echo "<img src='" . esc_url($url[0]) . "' width='100%'>";
+                        }
+                    }
                 
             } else {
                 $akcia_tag = $this->akcia_tag;
@@ -316,11 +345,11 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
         if(!empty($form_movie) && is_int($this->is_in_array_of_correct_movie_answers($form_movie)) && !in_array($form_movie, $used_movies)) {
             // add credit for correct song on wrong position
             $gained_credits += $credits['corr_movie_wrong_pos'];
-            $this->show_answer("Správny fipm na zlej pozícii, hráč získava +" . $credits['corr_movie_wrong_pos'] . " bodov", 'movies');
+            $this->show_answer("Správny film na zlej pozícii, hráč získava +" . $credits['corr_movie_wrong_pos'] . " bodov", 'movies', 'eventkviz_standard_answer', 'user_result');
             $used_movies[] = $form_movie;
             return 2;
         } elseif(in_array($form_movie, $used_movies)) {
-            $this->show_answer("Duplicita, hráč získava +0 bodov", 'movies');
+            $this->show_answer("Duplicita, hráč získava +0 bodov", 'movies', 'eventkviz_standard_answer', 'user_result');
             return 1;
         } else {
             return 0;
@@ -364,50 +393,41 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
         $this->show_media_file($movie_file_url);
 
         if($this->cAkcia->movies_settings['movies_quiz_type'] == "full") {
-            $this->show_answer("Správna odpoveď: " . $this->get_movie_name($correct_movie), 'movies');
+            $this->show_answer("Správna odpoveď: " . $this->get_movie_name($correct_movie), 'movies', 'eventkviz_standard_answer', 'correct_answer');
         } else {
-            $this->show_answer("Správna odpoveď: " . $correct_movie, 'movies');
+            $this->show_answer("Správna odpoveď: " . $correct_movie, 'movies', 'eventkviz_standard_answer', 'correct_answer');
         }
         echo "Odpoveď hráča: ";
-
 
         if($this->cAkcia->movies_settings['movies_quiz_type'] == "full") {
             $odpoved_hraca = $this->get_movie_name($form_movie) . '<br><br>';
         } else {
             $odpoved_hraca = addslashes($form_movie) . '<br><br>';
         }
-        
+
         echo $odpoved_hraca;
-        
-      
-         
 
         if($correct_movie == $form_movie ) {
-            // movie  correct 
-            // add credit for correct movie
-            
-            //TODO: asi vsade nielen movie - ak je uz film zapocitany ale tu sa objavi na spravnom mieste, tak je to za viac bodov a mali by dostat tychto viac bodov
             if(!empty($form_movie) && !in_array($form_movie, $used_movies)) {
                 $gained_credits += $credits['corr_movie'];
-                $this->show_answer("Film určený správne, hráč získava +" . $credits['corr_movie'] . " bodov", 'movies');
+                $this->show_answer("Film určený správne, hráč získava +" . $credits['corr_movie'] . " bodov", 'movies', 'eventkviz_standard_answer', 'user_result');
                 $used_movies[] = $form_movie;
             } elseif(empty($form_movie)) {
-                
-                $this->show_answer("Odpoveď nebola zadaná", 'movies');
+                $this->show_answer("Odpoveď nebola zadaná", 'movies', 'eventkviz_standard_answer', 'user_result');
             } else {
-                $this->show_answer("Film zarátaný už predtým", 'movies');
+                $this->show_answer("Film zarátaný už predtým", 'movies', 'eventkviz_standard_answer', 'user_result');
             }
-            
+
         } else {
             if (empty($form_movie)) {
-                $this->show_answer("Odpoveď nebola zadaná, hráč získava +0 bodov", 'movies');
+                $this->show_answer("Odpoveď nebola zadaná, hráč získava +0 bodov", 'movies', 'eventkviz_standard_answer', 'user_result');
             } else {
                 $movieres = $this->check_movie_elswhere($form_movie);
                 if ($movieres < 1 ) {
-                    $this->show_answer("Film nesprávne určený, hráč získava +0 bodov", 'movies');
+                    $this->show_answer("Film nesprávne určený, hráč získava +0 bodov", 'movies', 'eventkviz_standard_answer', 'user_result');
                 }
             }
-            
+
         }
             
     }

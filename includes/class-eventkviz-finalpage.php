@@ -42,6 +42,7 @@ class Eventkviz_Finalpage_Class extends Eventkviz_Quiz_Class{
             
         if(empty($user_code) && empty($team_code) ){
             // je tu prvy krat, len ide zadat kod
+            /*
             echo "<!--[if lt IE 9]><script>document.createElement('video');</script><![endif]-->";
             echo '<video autoplay id="my-video" controls>';
                     echo '<source src="' . BASE_URL . 'wp-content/uploads/2023/05/correct2.mp4" type="video/mp4">';
@@ -53,7 +54,21 @@ class Eventkviz_Finalpage_Class extends Eventkviz_Quiz_Class{
             echo 'video.autoplay = true;';
             echo 'video.load();';
             echo '</script>';
+*/
 
+            echo "<!--[if lt IE 9]><script>document.createElement('video');</script><![endif]-->";
+            echo '<video autoplay muted id="my-video" controls>';
+                echo '<source src="' . get_site_url() . '/wp-content/uploads/2023/05/correct2.mp4" type="video/mp4">';
+                echo 'Your browser does not support the video tag.';
+            echo '</video>';
+
+            echo '<script>';
+            echo 'var video = document.getElementById("my-video");';
+            echo 'video.autoplay = true;';
+            echo 'video.muted = true;'; // muted je potrebné pre autoplay v moderných browseroch (Chrome/Firefox atď.)
+            echo 'video.load();';
+            echo 'video.play();'; // extra play pre istotu
+            echo '</script>';
 
 
                 echo "<h2>Please fill this form:</h2>";
@@ -122,12 +137,28 @@ class Eventkviz_Finalpage_Class extends Eventkviz_Quiz_Class{
                     //echo 'Spravne.';
                     //https://www.youtube.com/watch?v=BCJ6tGBZiH8
                     //https://www.youtube.com/shorts/I-j0HpGm5OA 
-                    //The scene with the treasure chest in "Pirates of the Caribbean: The Curse of the Black Pearl" occurs at approximately 18 minutes and 30 seconds into the movie. 
+                    /*The scene with the treasure chest in "Pirates of the Caribbean: The Curse of the Black Pearl" occurs at approximately 18 minutes and 30 seconds into the movie. 
                     echo "<!--[if lt IE 9]><script>document.createElement('video');</script><![endif]-->";
                     echo '<video autoplay controls="controls">';
-                        echo '<source src="' . BASE_URL . 'wp-content/uploads/2023/05/correct1.mp4" type="video/mp4">';
+                        echo '<source src="' . get_site_url()  . 'wp-content/uploads/2023/05/correct1.mp4" type="video/mp4">';
                         echo 'Your browser does not support the video tag.';
                     echo '</video>';
+                    */
+
+                     echo "<!--[if lt IE 9]><script>document.createElement('video');</script><![endif]-->";
+                    echo '<video autoplay muted  id="my-video" controls>';
+                        echo '<source src="' . get_site_url() . '/wp-content/uploads/2023/05/correct1.mp4" type="video/mp4">';
+                        echo 'Your browser does not support the video tag.';
+                    echo '</video>';
+
+                    echo '<script>';
+                    echo 'var video = document.getElementById("my-video");';
+                    echo 'video.autoplay = true;';
+                    echo 'video.muted = true;'; // muted je potrebné pre autoplay v moderných browseroch (Chrome/Firefox atď.)
+                    echo 'video.load();';
+                    echo 'video.play();'; // extra play pre istotu
+                    echo '</script>';
+
 
                      echo '<h2>Yoooohooooo!!!! <br><br> You opened the Jack Sparrow\'s chest. <br><br>CONGRATULATION :) </h2>';
                      echo '<h2>Now run to get some quality pirate rum and celebrate it with your team mates. </h2>';
@@ -160,13 +191,23 @@ class Eventkviz_Finalpage_Class extends Eventkviz_Quiz_Class{
                         echo "}, 3000);";
                     echo "</script>";
                         */
-
-                    echo "<!--[if lt IE 9]><script>document.createElement('video');</script><![endif]-->";
-                    echo '<video autoplay controls="controls">';
-                    echo '<source src="' . BASE_URL . 'wp-content/uploads/2023/05/incorrect.mp4" type="video/mp4">';
-                    echo 'Your browser does not support the video tag.';
-                    echo '</video>';
                     
+
+                     echo "<!--[if lt IE 9]><script>document.createElement('video');</script><![endif]-->";
+                    echo '<video autoplay muted  id="my-video" controls>';
+                        echo '<source src="' . get_site_url() . '/wp-content/uploads/2023/05/incorrect.mp4" type="video/mp4">';
+                        echo 'Your browser does not support the video tag.';
+                    echo '</video>';
+
+                    echo '<script>';
+                    echo 'var video = document.getElementById("my-video");';
+                    echo 'video.autoplay = true;';
+                    echo 'video.muted = true;'; // muted je potrebné pre autoplay v moderných browseroch (Chrome/Firefox atď.)
+                    echo 'video.load();';
+                    echo 'video.play();'; // extra play pre istotu
+                    echo '</script>';
+
+
                     echo '<h2>The chest will not open. You did not provide enough correct seeds.</h2>';
 
                     foreach ($places_status as $plac => $status_array) {
