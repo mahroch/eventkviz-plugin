@@ -252,26 +252,28 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
         $check_result = $this->check_number_of_tries($user, $akcia,'knowledge',$team);
         
         if($check_result === true) {
-            
+
+            echo '<div class="ek-quiz">';
+            echo '<div class="ek-quiz-content">';
+            echo '<h1 class="ek-quiz-title">Vyhodnotenie vedomostného kvízu</h1>';
+
             for($i=0;$i<count($questions);$i++) {
                 $correct_answers[] = $this->get_correct_knowledge_answers( $questions[$i]);
             }
 
-
             for($i=0;$i<count($questions);$i++) {
-                //echo $questions[$i];
-
                 $this->evaluate_knowledge($questions[$i], $i, 1, 'dynamic');
             }
             if(!$gained_credits) $gained_credits = 0;
-            //echo "<h1>Sumár získaných bodov:" . $gained_credits . " bodov (" . $user . ", " . $team .")</h1>";
             $this->show_total_credits_gained($gained_credits, $user, $team);
 
             if($this->cAkcia->knowledge_settings['min_body_na_postup'] > 0 && $gained_credits >= $this->cAkcia->knowledge_settings['min_body_na_postup']) {
-                    echo "Získali ste dosť bodov na postup a zobrazenie ďalšej indície.<br><br>";
-                    echo "Vaša ďalšia indícia je:<br><br>";
+                    echo '<div class="ek-quiz-message ek-quiz-message--success">';
+                    echo '<p>Získali ste dosť bodov na postup a zobrazenie ďalšej indície.</p>';
+                    echo '<p>Vaša ďalšia indícia je:</p>';
                     $url = wp_get_attachment_image_src( $this->cAkcia->knowledge_settings['obrazok_pri_splneni_kvizu'],'large' );
-                    echo "<img src='" . esc_url($url[0]) . "' width='100%'>";
+                    echo "<img src='" . esc_url($url[0]) . "' style='width:100%;border-radius:12px;display:block;margin-top:12px;'>";
+                    echo '</div>';
 
                     $this->show_geochallenge_return($gained_credits);
 
@@ -283,20 +285,21 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
                 } else {
                     $link_to_quiz_url = 'https://eventkviz.sk/kwersdfzx/?team=' . $team . '&user=' . $user . '&akcia=' . $akcia_tag;
                 }
-                 echo "Nezískali ste dosť bodov na postup a zobrazenie ďalšej indície. Je potrebné dosiahnuť aspoň " . $this->cAkcia->knowledge_settings['min_body_na_postup'] . "bodov.  <a href='" . $link_to_quiz_url . "'>Opakujte kvíz kliknutím na túto linku</a>. <br>";
+                echo '<div class="ek-quiz-message ek-quiz-message--fail">';
+                echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->knowledge_settings['min_body_na_postup']) . '</strong> bodov.</p>';
+                echo '<a href="' . esc_url($link_to_quiz_url) . '" class="ek-quiz-submit ek-quiz-link-btn">Opakovať kvíz</a>';
+                echo '</div>';
             }
-
-
-           //$this->show_link_back($user, $team);
 
             // zapis do databazy bodove hodnotenie uzivatela
             $this->write_results_to_db($user, $team, $akcia, $gained_credits, $_POST['set'], 'knowledge', 'insert');
-
             $this->send_results_by_email($user, $team, $akcia, $gained_credits, 'knowledge');
-
             $this->show_seed($user, $akcia, 'knowledge',$team);
+
+            echo '</div>'; // .ek-quiz-content
+            echo '</div>'; // .ek-quiz
         }
-    } 
+    }
 
     public function get_correct_knowledge_answers($current_question_id){
         
@@ -365,24 +368,29 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
         
         $knowledge_string = 'knowledge'.$iteration_no_real;
 
+        $this->post_title = get_the_title( $current_question_id );
+
+        echo '<div class="ek-question">';
+        echo '<div class="ek-question-header">';
+        echo '<span class="ek-question-num">' . esc_html($iteration_no_real) . '</span>';
+        echo '<span class="ek-question-label">' . esc_html($this->post_title) . '</span>';
+        echo '</div>';
+
         if(array_key_exists($knowledge_string, $_POST)){
             $form_knowledge = $_POST[$knowledge_string];
-
             if(empty($form_knowledge)) {
                 $form_knowledge = 'Odpoveď nebola zadaná';
             }
 
-            echo "<h2>Odpoveď na vedomostnú otázku číslo " . $iteration_no_real . "</h2>";
-            $this->post_title = get_the_title( $current_question_id );
-             echo '<div>';
-             echo '<br><h3>' . $this->post_title . '</h3>';
-            $this->show_media_file($current_question_id, false);   
+            echo '<div class="ek-question-audio">';
+            $this->show_media_file($current_question_id, false);
+            echo '</div>';
 
             $this->show_knowledge_answer( $correct_knowledge, $current_question_id);
-            echo "Tvoja odpoveď: " . $form_knowledge . '<br>';
-            
+            echo '<div class="ek-user-answer">Vaša odpoveď: ' . esc_html($form_knowledge) . '</div>';
+
             $result = $this->check_correct_knowledge_answer($form_knowledge, $iteration_no);
-            
+
             if($result === true && $this->cAkcia->knowledge_settings['zobraz_spravne_uhadnute_odpovede'] === true ) {
                 $gained_credits += $credits['corr_answer'];
                 $this->show_answer("Odpoveď je správna, hráč získava +" . $credits['corr_answer'] . " bodov", 'knowledge', 'eventkviz_correct_answer');
@@ -391,11 +399,11 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
             }
 
         } else {
-            echo "<h2>Odpoveď na vedomostnú otázku číslo  " . $iteration_no_real . "</h2>";
             $this->show_answer("Správna odpoveď: " . implode(',',$correct_knowledge) , 'knowledge');
-            echo "Hráčova odpoveď: Nezadaná. <br>";
+            echo '<div class="ek-user-answer">Vaša odpoveď: Nezadaná</div>';
         }
-            
+
+        echo '</div>'; // .ek-question
     }
 
 

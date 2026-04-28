@@ -163,14 +163,15 @@ class Eventkviz_SudokuEval_Quiz_Class extends Eventkviz_Quiz_Class{
         
         if($check_result === true) {
 
+            echo '<div class="ek-quiz">';
+            echo '<div class="ek-quiz-content">';
+            echo '<h1 class="ek-quiz-title">Vyhodnotenie sudoku kvízu</h1>';
+
             for($i=0;$i<count($questions);$i++) {
                 $correct_answers[] = $this->get_correct_sudoku_answers( $questions[$i]);
             }
 
-
             for($i=0;$i<count($questions);$i++) {
-                //echo $questions[$i];
-
                 $this->evaluate_sudoku($i, 1, 'dynamic', $questions[$i]);
             }
             if(!$gained_credits) $gained_credits = 0;
@@ -186,6 +187,9 @@ class Eventkviz_SudokuEval_Quiz_Class extends Eventkviz_Quiz_Class{
             if ($gained_credits > 0) {
                 $this->show_geochallenge_return($gained_credits);
             }
+
+            echo '</div>'; // .ek-quiz-content
+            echo '</div>'; // .ek-quiz
         }
     }
 
@@ -226,21 +230,25 @@ class Eventkviz_SudokuEval_Quiz_Class extends Eventkviz_Quiz_Class{
 
 
         
-        echo "<h2>Answers for sudoku question no. " . $iteration_no_real . "</h2>";
-        $this->show_media_file($current_question_id, false);   
+        echo '<div class="ek-question">';
+        echo '<div class="ek-question-header">';
+        echo '<span class="ek-question-num">' . esc_html($iteration_no_real) . '</span>';
+        echo '<span class="ek-question-label">Sudoku ' . esc_html($iteration_no_real) . '</span>';
+        echo '</div>';
+        echo '<div class="ek-question-audio">';
+        $this->show_media_file($current_question_id, false);
+        echo '</div>';
 
         $this->show_sudoku_answer( $correct_sudoku, $current_question_id);
-        //$this->show_answer("Correct answer: " . $correct_sudoku , 'sudoku');
-        echo "User answer: " . $form_sudoku . '<br>';
-        
+        echo '<div class="ek-user-answer">Vaša odpoveď: ' . esc_html($form_sudoku) . '</div>';
+
         if($form_sudoku == $correct_sudoku) {
-            
             $credits_for_difficulty = $this->get_credits_for_difficulty($iteration_no);
-            
             $gained_credits += $credits_for_difficulty;
-            $this->show_answer("Answer was correct, user gets +" . $credits_for_difficulty . " points", 'sudoku');
+            $this->show_answer("Odpoveď bola správna, hráč získava +" . $credits_for_difficulty . " bodov", 'sudoku');
         }
-            
+
+        echo '</div>'; // .ek-question
     }
     public function show_sudoku_answer($correct_sudoku, $current_question_id){
 

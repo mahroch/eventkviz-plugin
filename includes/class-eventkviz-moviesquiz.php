@@ -259,39 +259,40 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
         //$this->movies_quiz_settings($akcia,$user,$team);
         $check_result = $this->check_number_of_tries($user, $akcia,'movies',$team);
         
-        if($check_result === true) {	
-            //echo 'artist1:' . $_POST['artist1'] . '<br>';
+        if($check_result === true) {
+
+            echo '<div class="ek-quiz">';
+            echo '<div class="ek-quiz-content">';
+            echo '<h1 class="ek-quiz-title">Vyhodnotenie filmového kvízu</h1>';
 
             for($i=0;$i<count($questions);$i++) {
-
-                 if ($this->cAkcia->movies_settings['movies_quiz_type'] == "full") {
+                if ($this->cAkcia->movies_settings['movies_quiz_type'] == "full") {
                     $correct_answers[] = $this->get_related_ids( $questions[$i], 17 );
                 } else {
                     $correct_answers[] = $this->get_correct_movies_answers( $questions[$i]);
                 }
             }
 
-
             for($i=0;$i<count($questions);$i++) {
-                //echo $questions[$i];
-
                 $this->evaluate_movie($questions[$i], $i, 1, 'dynamic');
             }
             if(!$gained_credits) $gained_credits = 0;
             $this->show_total_credits_gained($gained_credits, $user, $team);
 
             if($this->cAkcia->movies_settings['min_body_na_postup'] > 0 && $gained_credits >= $this->cAkcia->movies_settings['min_body_na_postup']) {
-                    echo "Získali ste dosť bodov na postup a zobrazenie ďalšej indície.<br><br>";
+                    echo '<div class="ek-quiz-message ek-quiz-message--success">';
+                    echo '<p>Získali ste dosť bodov na postup a zobrazenie ďalšej indície.</p>';
                     $format = $this->cAkcia->movies_settings['format_pri_splneni'] ?? 'obrazok';
                     if ($format === 'text' && !empty($this->cAkcia->movies_settings['text_pri_splneni_kvizu'])) {
                         echo '<div class="eventkviz_splnenie_kvizu">' . wp_kses_post($this->cAkcia->movies_settings['text_pri_splneni_kvizu']) . '</div>';
                     } else {
-                        echo "Vaša ďalšia indícia je:<br><br>";
+                        echo '<p>Vaša ďalšia indícia je:</p>';
                         $url = wp_get_attachment_image_src( $this->cAkcia->movies_settings['obrazok_pri_splneni_kvizu'],'large' );
                         if ($url) {
-                            echo "<img src='" . esc_url($url[0]) . "' width='100%'>";
+                            echo "<img src='" . esc_url($url[0]) . "' style='width:100%;border-radius:12px;display:block;margin-top:12px;'>";
                         }
                     }
+                    echo '</div>';
 
                     $this->show_geochallenge_return($gained_credits);
 
@@ -303,15 +304,19 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
                 } else {
                     $link_to_music_quiz_url = 'https://eventkviz.sk/merdfghh/?team=' . $team . '&user=' . $user . '&akcia=' . $akcia_tag;
                 }
-                 echo "Nezískali ste dosť bodov na postup a zobrazenie ďalšej indície. Je potrebné dosiahnuť aspoň " . $this->cAkcia->movies_settings['min_body_na_postup'] . "bodov.  <a href='" . $link_to_music_quiz_url . "'>Opakujte kvíz kliknutím na túto linku</a>. <br>";
+                echo '<div class="ek-quiz-message ek-quiz-message--fail">';
+                echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->movies_settings['min_body_na_postup']) . '</strong> bodov.</p>';
+                echo '<a href="' . esc_url($link_to_music_quiz_url) . '" class="ek-quiz-submit ek-quiz-link-btn">Opakovať kvíz</a>';
+                echo '</div>';
             }
-
-
 
             // zapis do databazy bodove hodnotenie uzivatela
             $this->write_results_to_db($user, $team, $akcia, $gained_credits, $_POST['set'], 'movies', 'insert');
-            $this->send_results_by_email($user, $team, $akcia, $gained_credits, 'movies');	
+            $this->send_results_by_email($user, $team, $akcia, $gained_credits, 'movies');
             $this->show_seed($user, $akcia, 'movies',$team);
+
+            echo '</div>'; // .ek-quiz-content
+            echo '</div>'; // .ek-quiz
         }
     }
 
@@ -401,26 +406,30 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
             $form_movie = $_POST[$movie_string];
         }
         
-        echo "<h2>Odpoveď pre film číslo  " . $iteration_no_real . "</h2>";
+        echo '<div class="ek-question">';
+        echo '<div class="ek-question-header">';
+        echo '<span class="ek-question-num">' . esc_html($iteration_no_real) . '</span>';
+        echo '<span class="ek-question-label">Film ' . esc_html($iteration_no_real) . '</span>';
+        echo '</div>';
 
         $media_id = get_post_meta( $current_question_id, 'media', true );
-        $movie_file_url = wp_get_attachment_url( $media_id );  
+        $movie_file_url = wp_get_attachment_url( $media_id );
+        echo '<div class="ek-question-audio">';
         $this->show_media_file($movie_file_url);
+        echo '</div>';
 
         if($this->cAkcia->movies_settings['movies_quiz_type'] == "full") {
             $this->show_answer("Správna odpoveď: " . $this->get_movie_name($correct_movie), 'movies', 'eventkviz_standard_answer', 'correct_answer');
         } else {
             $this->show_answer("Správna odpoveď: " . $correct_movie, 'movies', 'eventkviz_standard_answer', 'correct_answer');
         }
-        echo "Odpoveď hráča: ";
 
         if($this->cAkcia->movies_settings['movies_quiz_type'] == "full") {
-            $odpoved_hraca = $this->get_movie_name($form_movie) . '<br><br>';
+            $odpoved_hraca = $this->get_movie_name($form_movie);
         } else {
-            $odpoved_hraca = addslashes($form_movie) . '<br><br>';
+            $odpoved_hraca = $form_movie;
         }
-
-        echo $odpoved_hraca;
+        echo '<div class="ek-user-answer">Vaša odpoveď: ' . esc_html($odpoved_hraca) . '</div>';
 
         if($correct_movie == $form_movie ) {
             if(!empty($form_movie) && !in_array($form_movie, $used_movies)) {
@@ -444,7 +453,8 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
             }
 
         }
-            
+
+        echo '</div>'; // .ek-question
     }
 
 

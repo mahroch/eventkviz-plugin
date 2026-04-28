@@ -4,6 +4,22 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-04-28
+
+### Added
+- Glass-morphism dizajn aplikovaný na všetky **evaluačné stránky** kvízov (`/audio-quiz-dynamic-evaluation/`, `/movies-quiz-dynamic-evaluation/`, `/knowledge-quiz-evaluation-dynamic/`, `/sudoku-quiz-evaluation-dynamic/`):
+  - Wrapper `.ek-quiz` / `.ek-quiz-content` glass karta
+  - Hlavička "Vyhodnotenie hudobného/filmového/vedomostného/sudoku kvízu"
+  - Každá otázka v `.ek-question` boxe s gradient číselným badgeom
+  - `.ek-user-answer` — štylizovaný riadok s odpoveďou hráča (tmavé pozadie, ľavý border)
+  - `.ek-quiz-message--success/--fail` — banner pri úspechu/neúspechu (zelené/ružové pozadie)
+  - "Opakovať kvíz" link teraz štýlovaný ako `.ek-quiz-submit` button
+- CSS pre eval-specific obsah: `h1/h2/h3/p` typografiu, `.eventkviz_correct_answer`/`_gained_points` (bright green `#4ade80`), `.eventkviz_incorrect_answer`/`_warning_correct_answers` (bright rose `#fb7185`), `.explanation-of-correct-answer`, `.seed_block`/`.seed_for_place` (amber `#fbbf24`).
+
+### Changed
+- Refaktored `evaluate_combination_music`, `evaluate_movie`, `evaluate_knowledge`, `evaluate_sudoku` — každá otázka teraz wrapnutá v `.ek-question` (vrátane gradient badge + audio/video containera).
+- Sudoku eval texty preložené z angličtiny do slovenčiny.
+
 ## [1.3.3] - 2026-04-28
 
 ### Fixed

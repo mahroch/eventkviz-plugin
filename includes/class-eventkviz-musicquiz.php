@@ -240,31 +240,27 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         
         if($check_result === true) {
 
-            //echo 'artist1:' . $_POST['artist1'] . '<br>';
+            echo '<div class="ek-quiz">';
+            echo '<div class="ek-quiz-content">';
+            echo '<h1 class="ek-quiz-title">Vyhodnotenie hudobného kvízu</h1>';
 
             for($i=0;$i<count($questions);$i++) {
                 $correct_answers[] = $this->get_correct_answer_according_id($questions[$i]);
             }
 
-            /*
-            echo "<pre>";
-            print_r($_POST);
-            echo "</pre>";
-            */
-
             for($i=0;$i<count($questions);$i++) {
-                //echo $questions[$i];
-
                 $this->evaluate_combination_music($i, $questions[$i], 1, 'dynamic');
             }
             if(!$gained_credits) $gained_credits = 0;
             $this->show_total_credits_gained($gained_credits, $user, $team, );
-            
+
             if($this->cAkcia->music_settings['min_body_na_postup'] > 0 && $gained_credits >= $this->cAkcia->music_settings['min_body_na_postup']) {
-                    echo "Získali ste dosť bodov na postup a zobrazenie ďalšej indície.<br><br>";
-                    echo "Vaša ďalšia indícia je:<br><br>";
+                    echo '<div class="ek-quiz-message ek-quiz-message--success">';
+                    echo '<p>Získali ste dosť bodov na postup a zobrazenie ďalšej indície.</p>';
+                    echo '<p>Vaša ďalšia indícia je:</p>';
                     $url = wp_get_attachment_image_src( $this->cAkcia->music_settings['obrazok_pri_splneni_kvizu'],'large' );
-                    echo "<img src='" . esc_url($url[0]) . "' width='100%'>";
+                    echo "<img src='" . esc_url($url[0]) . "' style='width:100%;border-radius:12px;display:block;margin-top:12px;'>";
+                    echo '</div>';
 
                     $this->show_geochallenge_return($gained_credits);
 
@@ -276,16 +272,22 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
                 } else {
                     $link_to_music_quiz_url = 'https://eventkviz.sk/aqljk/?team=' . $team . '&user=' . $user . '&akcia=' . $akcia_tag;
                 }
-                 echo "Nezískali ste dosť bodov na postup a zobrazenie ďalšej indície. Je potrebné dosiahnuť aspoň " . $this->cAkcia->music_settings['min_body_na_postup'] . "bodov.  <a href='" . $link_to_music_quiz_url . "'>Opakujte kvíz kliknutím na túto linku</a>. <br>";
+                echo '<div class="ek-quiz-message ek-quiz-message--fail">';
+                echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->music_settings['min_body_na_postup']) . '</strong> bodov.</p>';
+                echo '<a href="' . esc_url($link_to_music_quiz_url) . '" class="ek-quiz-submit ek-quiz-link-btn">Opakovať kvíz</a>';
+                echo '</div>';
             }
 
-            
+
             // zapis do databazy bodove hodnotenie uzivatela
            $this-> write_results_to_db($user, $team, $akcia, $gained_credits, $_POST['set'], 'music', 'insert');
 
             $this->send_results_by_email($user, $team,$akcia, $gained_credits, 'music');
 
             $this->show_seed($user, $akcia, 'music',$team);
+
+            echo '</div>'; // .ek-quiz-content
+            echo '</div>'; // .ek-quiz
         }
         
     }
@@ -423,14 +425,20 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         $form_artist = $_POST[$artist_string];
         $form_song = $_POST[$song_string ];
         
-        echo "<h2>Odpoveď pre pieseň číslo " . $iteration_no_real . "</h2>";
-        
+        echo '<div class="ek-question">';
+        echo '<div class="ek-question-header">';
+        echo '<span class="ek-question-num">' . esc_html($iteration_no_real) . '</span>';
+        echo '<span class="ek-question-label">Pieseň ' . esc_html($iteration_no_real) . '</span>';
+        echo '</div>';
+
         $media_id = get_post_meta( $current_question_id, 'media', true );
-        $audio_file_url = wp_get_attachment_url( $media_id ); 
+        $audio_file_url = wp_get_attachment_url( $media_id );
+        echo '<div class="ek-question-audio">';
         $this->show_media_controls($audio_file_url );
+        echo '</div>';
 
         $this->show_answer("Správna odpoveď: " .  $this->get_artist_name($correct_artist) . ' - ' . $this->get_song_name($correct_song), 'music');
-        echo "<div class=''>Vaša odpoveď: " . $this->get_artist_name($form_artist) . ' - ' . $this->get_song_name($form_song)  . '</div>';
+        echo "<div class='ek-user-answer'>Vaša odpoveď: " . esc_html($this->get_artist_name($form_artist) . ' - ' . $this->get_song_name($form_song))  . '</div>';
         
         if(!empty($form_artist) && $form_artist == $correct_artist && $form_song == $correct_song) {
             // artist & song on correct position
@@ -491,10 +499,11 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             if ($songres < 1 &&  $artisres < 1) {
                 $this->show_answer("Nesprávna pieseň, nesprávny umelec, získavate +0 bodov", 'music');
             }
-            
-            
+
+
         }
-            
+
+        echo '</div>'; // .ek-question
     }
 
        public function load_autocomplete_script() {
