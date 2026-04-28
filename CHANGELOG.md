@@ -4,6 +4,15 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.2.3] - 2026-04-28
+
+### Changed
+- Redizajn hudobného kvízu (`Eventkviz_MusicForm_Quiz_Class::eventkviz_music_form`, slug `/aqljk/`) — glass-morphism karta na gradient pozadí, hlavička s nadpisom + podtitulkom, jednotlivé otázky vo vlastných „question card" boxoch s číselným badge (gradient circle), audio playerom a inputmi s placeholdermi.
+- Submit button: `<input type="submit">` → `<button type="submit" class="ek-quiz-submit">` so štýlom zhodným s úvodnou kartou.
+- jQuery UI autocomplete dropdown štýlovaný do glass-morphism vzhľadu (override `.ui-autocomplete`, `.ui-menu-item-wrapper`).
+- Skrytý duplicitný WP page title aj na quiz stránkach.
+- Nové triedy: `.ek-quiz`, `.ek-quiz-content`, `.ek-quiz-title`, `.ek-quiz-subtitle`, `.ek-quiz-form`, `.ek-question`, `.ek-question-header/num/label/audio/fields`, `.ek-quiz-submit`.
+
 ## [1.2.2] - 2026-04-28
 
 ### Changed
