@@ -4,6 +4,11 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-04-28
+
+### Fixed
+- Text "Odoslať odpovede" na submit tlačidle bol prebíjaný témou/Elementorom na tmavú farbu — pridané `body` prefix pre vyššiu špecificitu + `!important` na `color: #ffffff`, `font-weight: 700`, `background` a `border`. Plus `text-shadow: 0 1px 2px rgba(0,0,0,0.25)` pre extra čitateľnosť. Font size zvýšený 16 → 17px.
+
 ## [1.3.1] - 2026-04-28
 
 ### Added
