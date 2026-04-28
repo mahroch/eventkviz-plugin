@@ -178,29 +178,34 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
 
         if ($this->cAkcia->all_quizes_settings['startup_form'] === true) {
 
-            echo "<h2>Prosím, vyplňte tento formulár – odkaz na kvíz(y) sa zobrazí po odoslaní formulára.</h2>";
+            echo '<div class="ek-startup">';
+            echo '<div class="ek-startup-card">';
+            echo '<h1 class="ek-startup-title">Pripravte sa na kvíz</h1>';
+            echo '<p class="ek-startup-subtitle">Vyplňte údaje a otvoríme vám kvíz</p>';
+            echo '<form class="ek-startup-form" onsubmit="return false;">';
 
             if ($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true) {
-                echo '<label>Zadaj svoje meno (používateľský kód):</label><br><br>';
                 if (!empty($_GET['user'])) {
                     $preselected_user = $_GET['user'];
                 }
-                echo '<input type="text" value="' . esc_attr($preselected_user) . '" id="inputField1"
-                    oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,\'\');checkFields();">';
+                echo '<div class="ek-input-group">';
+                echo '<input type="text" id="inputField1" placeholder="Vaše meno alebo kód" value="' . esc_attr($preselected_user) . '" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,\'\');checkFields();">';
+                echo '</div>';
             }
 
             if ($this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true &&
                 $this->cAkcia->all_quizes_settings['select_from_teams_array'] === false) {
 
-                echo '<label>Zadajte meno svojho tímu:</label>';
-                echo '<input type="text" value="' . esc_attr($_GET['team'] ?? '') . '" id="inputField2"
-                    oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,\'\');checkFields();">';
+                echo '<div class="ek-input-group">';
+                echo '<input type="text" id="inputField2" placeholder="Názov tímu" value="' . esc_attr($_GET['team'] ?? '') . '" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,\'\');checkFields();">';
+                echo '</div>';
 
             } elseif ($this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true &&
                     $this->cAkcia->all_quizes_settings['select_from_teams_array'] === true) {
 
-                echo '<label>Vyberte svoj tím:</label><br><br>';
-                echo '<center><select id="inputField2" onchange="checkFields();" style="width:30%;"></center>';
+                echo '<div class="ek-input-group ek-input-group--select">';
+                echo '<select id="inputField2" onchange="checkFields();">';
+                echo '<option value="" disabled selected>Vyberte svoj tím</option>';
 
                 foreach ($this->cAkcia->all_quizes_settings['select_teams'] as $k => $v) {
                     $sel = (($_GET['team'] ?? '') == $k) ? 'selected' : '';
@@ -208,36 +213,41 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 }
 
                 echo '</select>';
+                echo '</div>';
             }
 
-            echo '<br><br><button type="button" id="submitBtn" onclick="submitClicked()">Pokračovať</button>';
-            echo '<p id="output"></p>';
+            echo '<button type="button" id="submitBtn" onclick="submitClicked()" disabled>Pokračovať</button>';
+            echo '</form>';
+            echo '<div id="output" class="ek-output"></div>';
+            echo '</div>'; // .ek-startup-card
+            echo '</div>'; // .ek-startup
 
             echo '<script>
             function checkFields() {
                 let user = document.getElementById("inputField1")?.value.trim() || "";
                 let team = document.getElementById("inputField2")?.value.trim() || "";
                 let btn  = document.getElementById("submitBtn");
-                btn.style.opacity = "0.5";';
+                let valid = false;';
 
             if ($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] &&
                 $this->cAkcia->all_quizes_settings['identifikacia_userov_timu']) {
 
-                echo 'if(user && team) btn.style.opacity="1";';
+                echo 'valid = !!(user && team);';
 
             } elseif ($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera']) {
 
-                echo 'if(user) btn.style.opacity="1";';
+                echo 'valid = !!user;';
 
             } elseif ($this->cAkcia->all_quizes_settings['identifikacia_userov_timu']) {
 
-                echo 'if(team) btn.style.opacity="1";';
+                echo 'valid = !!team;';
 
             } else {
-                echo 'btn.style.opacity="1";';
+                echo 'valid = true;';
             }
 
-            echo '}
+            echo 'btn.disabled = !valid;
+            }
             function submitClicked() {
                 let user = document.getElementById("inputField1")?.value.trim() || "";
                 let team = document.getElementById("inputField2")?.value.trim() || "";';
@@ -294,16 +304,16 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 out.innerHTML="";';
 
             if ($this->cAkcia->music_settings['music_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="music"){out.innerHTML+=`<a href="${link1}" target="_blank">Hudobný kvíz</a><br>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="music"){out.innerHTML+=`<a href="${link1}" class="ek-quiz-card ek-quiz-music" target="_blank"><span class="ek-quiz-icon">🎵</span><span class="ek-quiz-label">Hudobný kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
             }
             if ($this->cAkcia->movies_settings['movies_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="movies"){out.innerHTML+=`<a href="${link2}" target="_blank">Filmový kvíz</a><br>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="movies"){out.innerHTML+=`<a href="${link2}" class="ek-quiz-card ek-quiz-movies" target="_blank"><span class="ek-quiz-icon">🎬</span><span class="ek-quiz-label">Filmový kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
             }
             if ($this->cAkcia->knowledge_settings['knowledge_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="knowledge"){out.innerHTML+=`<a href="${link3}" target="_blank">Vedomostný kvíz</a><br>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="knowledge"){out.innerHTML+=`<a href="${link3}" class="ek-quiz-card ek-quiz-knowledge" target="_blank"><span class="ek-quiz-icon">🧠</span><span class="ek-quiz-label">Vedomostný kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
             }
             if ($this->cAkcia->sudoku_settings['sudoku_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="sudoku"){out.innerHTML+=`<a href="${link4}" target="_blank">Sudoku kvíz</a><br>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="sudoku"){out.innerHTML+=`<a href="${link4}" class="ek-quiz-card ek-quiz-sudoku" target="_blank"><span class="ek-quiz-icon">🔢</span><span class="ek-quiz-label">Sudoku kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
             }
 
             echo '}
@@ -311,8 +321,166 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             </script>
 
             <style>
-            #submitBtn{padding:14px 30px;font-size:18px;cursor:pointer;opacity:.5}
-            #submitBtn:hover{opacity:1}
+            .ek-startup{
+                min-height: 70vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 40px 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 24px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+                position: relative;
+                overflow: hidden;
+            }
+            .ek-startup::before{
+                content: "";
+                position: absolute;
+                inset: 0;
+                background:
+                    radial-gradient(circle at 20% 20%, rgba(255,255,255,0.15) 0%, transparent 40%),
+                    radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 40%);
+                pointer-events: none;
+            }
+            .ek-startup-card{
+                position: relative;
+                width: 100%;
+                max-width: 480px;
+                padding: 48px 40px;
+                background: rgba(255,255,255,0.15);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(255,255,255,0.25);
+                border-radius: 24px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+                color: #fff;
+                text-align: center;
+                box-sizing: border-box;
+            }
+            .ek-startup-title{
+                font-size: 30px;
+                font-weight: 700;
+                margin: 0 0 8px;
+                color: #fff;
+                letter-spacing: -0.5px;
+                line-height: 1.2;
+            }
+            .ek-startup-subtitle{
+                font-size: 15px;
+                margin: 0 0 28px;
+                opacity: 0.85;
+                line-height: 1.5;
+                color: #fff;
+            }
+            .ek-startup-form{
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+                margin: 0;
+            }
+            .ek-input-group input,
+            .ek-input-group select{
+                width: 100%;
+                box-sizing: border-box;
+                padding: 14px 16px;
+                font-size: 16px;
+                font-family: inherit;
+                background: rgba(255,255,255,0.2);
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 12px;
+                color: #fff;
+                transition: all 0.2s ease;
+            }
+            .ek-input-group input::placeholder{
+                color: rgba(255,255,255,0.7);
+            }
+            .ek-input-group select option{
+                color: #333;
+            }
+            .ek-input-group input:focus,
+            .ek-input-group select:focus{
+                outline: none;
+                background: rgba(255,255,255,0.3);
+                border-color: rgba(255,255,255,0.6);
+                box-shadow: 0 0 0 3px rgba(255,255,255,0.15);
+            }
+            #submitBtn{
+                width: 100%;
+                padding: 16px 24px;
+                margin-top: 6px;
+                font-size: 16px;
+                font-weight: 600;
+                font-family: inherit;
+                background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                color: #fff;
+                border: none;
+                border-radius: 12px;
+                cursor: pointer;
+                transition: all 0.25s ease;
+                box-shadow: 0 4px 16px rgba(245,87,108,0.4);
+            }
+            #submitBtn:hover:not(:disabled){
+                transform: translateY(-2px);
+                box-shadow: 0 8px 24px rgba(245,87,108,0.5);
+            }
+            #submitBtn:disabled{
+                opacity: 0.5;
+                cursor: not-allowed;
+                transform: none;
+                box-shadow: none;
+            }
+            .ek-output{
+                margin-top: 24px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .ek-output:empty{
+                margin-top: 0;
+            }
+            .ek-quiz-card{
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                padding: 16px 20px;
+                background: rgba(255,255,255,0.18);
+                border: 1px solid rgba(255,255,255,0.25);
+                border-radius: 14px;
+                text-decoration: none !important;
+                color: #fff !important;
+                font-weight: 600;
+                font-size: 16px;
+                transition: all 0.25s ease;
+            }
+            .ek-quiz-card:hover{
+                transform: translateX(4px);
+                background: rgba(255,255,255,0.28);
+                border-color: rgba(255,255,255,0.4);
+                color: #fff !important;
+                text-decoration: none !important;
+            }
+            .ek-quiz-icon{
+                font-size: 26px;
+                line-height: 1;
+            }
+            .ek-quiz-label{
+                flex: 1;
+                text-align: left;
+            }
+            .ek-quiz-arrow{
+                font-size: 20px;
+                opacity: 0.7;
+                transition: all 0.2s ease;
+            }
+            .ek-quiz-card:hover .ek-quiz-arrow{
+                opacity: 1;
+                transform: translateX(4px);
+            }
+            @media (max-width: 480px){
+                .ek-startup{ padding: 24px 12px; min-height: 60vh; }
+                .ek-startup-card{ padding: 36px 24px; }
+                .ek-startup-title{ font-size: 24px; }
+            }
             </style>';
         }
     }

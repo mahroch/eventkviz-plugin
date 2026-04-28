@@ -4,6 +4,14 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-04-28
+
+### Changed
+- Redizajn úvodnej user stránky `[show_team_links]` (napr. `/akcia/akcia-all-team-links/`) — glass-morphism karta na gradient pozadí, modernejšie inputy s placeholdermi, gradient CTA tlačidlo s `disabled` stavom a hover lift, výstupné quiz-cards s emoji ikonkami (🎵 🎬 🧠 🔢) namiesto plain `<a>` linkov. Mobile-responsive (`@media max-width: 480px`).
+  - `includes/class-eventkviz-links.php` — metóda `Eventkviz_AllLinks_Quiz_Class::show_team_links()`
+  - JS validácia teraz používa `disabled` atribút na buttone namiesto opacity hacku.
+  - Opravené malformované HTML `<center><select ...></center>` pri team-select výbere.
+
 ## [1.2.0] - 2026-04-28
 
 ### Added
