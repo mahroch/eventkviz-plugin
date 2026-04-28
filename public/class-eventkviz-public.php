@@ -232,15 +232,21 @@ function eventkviz_add_body_class( $classes ) {
 	return $classes;
 }
 
-// Floating jazykový prepínač (GTranslate) pre eventkviz pages — site header je skrytý cez CSS,
-// switcher renderujeme priamo cez [gtranslate] shortcode v pravom hornom rohu (fixed position).
+// Floating jazykový prepínač pre eventkviz pages — site header je skrytý cez CSS,
+// switcher renderujeme priamo cez shortcode v pravom hornom rohu (fixed position).
+// Podporované pluginy: Google Language Translator ([google-translator]), GTranslate ([gtranslate]).
 add_action( 'wp_footer', 'eventkviz_render_lang_switcher' );
 function eventkviz_render_lang_switcher() {
 	if ( ! eventkviz_is_eventkviz_page() ) {
 		return;
 	}
-	if ( ! shortcode_exists( 'gtranslate' ) ) {
-		return; // GTranslate plugin nie je aktívny
+	$shortcode = '';
+	if ( shortcode_exists( 'google-translator' ) ) {
+		$shortcode = '[google-translator]';
+	} elseif ( shortcode_exists( 'gtranslate' ) ) {
+		$shortcode = '[gtranslate]';
+	} else {
+		return; // žiadny lang switcher plugin nie je aktívny
 	}
-	echo '<div class="ek-langswitch">' . do_shortcode( '[gtranslate]' ) . '</div>';
+	echo '<div class="ek-langswitch">' . do_shortcode( $shortcode ) . '</div>';
 }

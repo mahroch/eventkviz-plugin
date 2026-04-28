@@ -4,6 +4,12 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-04-28
+
+### Fixed
+- Floating language switcher nebol viditeľný — používaný plugin je **Google Language Translator** so shortcodom `[google-translator]`, nie `[gtranslate]`. Footer hook teraz skúša `[google-translator]` ako prvý a `[gtranslate]` ako fallback.
+- Pridané CSS overrides pre Google Translate špecifické selektory (`.goog-te-gadget`, `.goog-te-menu-value`) — biele písmo, transparent pozadie, schované Google logo.
+
 ## [1.3.2] - 2026-04-28
 
 ### Fixed

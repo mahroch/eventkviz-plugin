@@ -479,9 +479,35 @@ body.eventkviz-page .page-title {
 }
 .ek-langswitch .gtranslate_wrapper,
 .ek-langswitch .gt_container,
-.ek-langswitch .switcher {
+.ek-langswitch .switcher,
+.ek-langswitch #glt-translate-trigger,
+.ek-langswitch .glt-language-picker,
+.ek-langswitch #google_translate_element,
+.ek-langswitch .skiptranslate {
     margin: 0 !important;
     padding: 0 !important;
+}
+/* Google Language Translator plugin (goog-te-* classes) */
+.ek-langswitch .goog-te-gadget,
+.ek-langswitch .goog-te-gadget-simple {
+    background: transparent !important;
+    border: none !important;
+    color: #fff !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+}
+.ek-langswitch .goog-te-gadget-simple {
+    padding: 4px 8px !important;
+}
+.ek-langswitch .goog-te-gadget-simple span,
+.ek-langswitch .goog-te-gadget-simple a,
+.ek-langswitch .goog-te-menu-value span,
+.ek-langswitch .goog-te-menu-value {
+    color: #fff !important;
+    border: none !important;
+}
+.ek-langswitch .goog-te-gadget img {
+    display: none !important;
 }
 /* Dropdown mode (GTranslate "Default" / "Float" / "Dropdown") */
 .ek-langswitch select.gt_selector,
