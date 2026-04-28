@@ -481,12 +481,30 @@ body .ek-quiz-submit:disabled {
     margin: 6px 0;
     display: block;
 }
-.ek-quiz-content .eventkviz_incorrect_answer,
-.ek-quiz-content .eventkviz_warning_correct_answers {
+.ek-quiz-content .eventkviz_incorrect_answer {
     color: #fb7185 !important; /* bright rose */
     font-weight: 600;
     margin: 6px 0;
     display: block;
+}
+/* Warning banner — keď sa správne odpovede nezobrazujú (organizátorom určené nastavenie) */
+.ek-quiz-content .eventkviz_warning_correct_answers {
+    color: #fde68a !important; /* amber-200 */
+    background: rgba(251, 191, 36, 0.15);
+    border: 1px solid rgba(251, 191, 36, 0.5);
+    border-left: 4px solid #fbbf24;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 14px 0;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 1.5;
+    display: block;
+}
+.ek-quiz-content .eventkviz_warning_correct_answers::before {
+    content: "⚠ ";
+    margin-right: 4px;
+    font-weight: 700;
 }
 .ek-quiz-content .eventkviz_standard_answer {
     color: rgba(255,255,255,0.92);

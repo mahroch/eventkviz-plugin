@@ -4,6 +4,11 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-04-28
+
+### Changed
+- Warning text "Správne odpovede sa zámerne nezobrazia..." (`.eventkviz_warning_correct_answers`) prerobený z len-červeného textu na výrazný amber warning banner — `rgba(251,191,36,0.15)` pozadie, ľavý 4px amber border, `⚠` ikonka pred textom, padding + rounded corners. Teraz dobre čitateľné na glass-morphism pozadí.
+
 ## [1.4.0] - 2026-04-28
 
 ### Added
