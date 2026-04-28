@@ -203,16 +203,27 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             } elseif ($this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true &&
                     $this->cAkcia->all_quizes_settings['select_from_teams_array'] === true) {
 
-                echo '<div class="ek-input-group ek-input-group--select">';
-                echo '<select id="inputField2" onchange="checkFields();">';
-                echo '<option value="" disabled selected>Vyberte svoj tím</option>';
-
-                foreach ($this->cAkcia->all_quizes_settings['select_teams'] as $k => $v) {
-                    $sel = (($_GET['team'] ?? '') == $k) ? 'selected' : '';
-                    echo '<option value="' . esc_attr($k) . '" ' . $sel . '>' . esc_html($v) . '</option>';
+                $select_teams = $this->cAkcia->all_quizes_settings['select_teams'];
+                $preselected_team = $_GET['team'] ?? '';
+                $displayed_label = 'Vyberte svoj tím';
+                $is_placeholder = true;
+                if ($preselected_team !== '' && isset($select_teams[$preselected_team])) {
+                    $displayed_label = $select_teams[$preselected_team];
+                    $is_placeholder = false;
                 }
 
-                echo '</select>';
+                echo '<div class="ek-input-group ek-input-group--select">';
+                echo '<div class="ek-dropdown" id="ekDropdown" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">';
+                echo '<span class="ek-dropdown-value' . ($is_placeholder ? ' is-placeholder' : '') . '" id="ekDropdownValue">' . esc_html($displayed_label) . '</span>';
+                echo '<span class="ek-dropdown-chevron" aria-hidden="true">▾</span>';
+                echo '</div>';
+                echo '<ul class="ek-dropdown-menu" id="ekDropdownMenu" role="listbox">';
+                foreach ($select_teams as $k => $v) {
+                    $is_sel = ($preselected_team == $k);
+                    echo '<li class="ek-dropdown-option' . ($is_sel ? ' is-selected' : '') . '" role="option" data-value="' . esc_attr($k) . '"' . ($is_sel ? ' aria-selected="true"' : '') . '>' . esc_html($v) . '</li>';
+                }
+                echo '</ul>';
+                echo '<input type="hidden" id="inputField2" value="' . esc_attr($preselected_team) . '">';
                 echo '</div>';
             }
 
@@ -318,6 +329,71 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
 
             echo '}
             document.addEventListener("DOMContentLoaded",checkFields);
+
+            (function(){
+                var dropdown = document.getElementById("ekDropdown");
+                if (!dropdown) return;
+                var menu = document.getElementById("ekDropdownMenu");
+                var valueDisplay = document.getElementById("ekDropdownValue");
+                var hidden = document.getElementById("inputField2");
+                var options = menu.querySelectorAll(".ek-dropdown-option");
+                var activeIndex = -1;
+
+                function open(){
+                    dropdown.classList.add("is-open");
+                    menu.classList.add("is-open");
+                    dropdown.setAttribute("aria-expanded","true");
+                }
+                function close(){
+                    dropdown.classList.remove("is-open");
+                    menu.classList.remove("is-open");
+                    dropdown.setAttribute("aria-expanded","false");
+                    activeIndex = -1;
+                    options.forEach(function(o){ o.classList.remove("is-active"); });
+                }
+                function toggle(){
+                    menu.classList.contains("is-open") ? close() : open();
+                }
+                function pick(opt){
+                    hidden.value = opt.getAttribute("data-value");
+                    valueDisplay.textContent = opt.textContent;
+                    valueDisplay.classList.remove("is-placeholder");
+                    options.forEach(function(o){ o.classList.remove("is-selected"); o.removeAttribute("aria-selected"); });
+                    opt.classList.add("is-selected");
+                    opt.setAttribute("aria-selected","true");
+                    close();
+                    if (typeof checkFields === "function") checkFields();
+                }
+                function setActive(i){
+                    activeIndex = Math.max(0, Math.min(options.length - 1, i));
+                    options.forEach(function(o, idx){ o.classList.toggle("is-active", idx === activeIndex); });
+                    options[activeIndex].scrollIntoView({block:"nearest"});
+                }
+
+                dropdown.addEventListener("click", toggle);
+                options.forEach(function(opt){
+                    opt.addEventListener("click", function(e){ e.stopPropagation(); pick(opt); });
+                });
+                document.addEventListener("click", function(e){
+                    if (!dropdown.contains(e.target) && !menu.contains(e.target)) close();
+                });
+                dropdown.addEventListener("keydown", function(e){
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        if (!menu.classList.contains("is-open")) open();
+                        else if (activeIndex >= 0) pick(options[activeIndex]);
+                    } else if (e.key === "Escape") {
+                        close();
+                    } else if (e.key === "ArrowDown") {
+                        e.preventDefault();
+                        if (!menu.classList.contains("is-open")) { open(); setActive(0); }
+                        else setActive(activeIndex + 1);
+                    } else if (e.key === "ArrowUp") {
+                        e.preventDefault();
+                        if (menu.classList.contains("is-open")) setActive(activeIndex - 1);
+                    }
+                });
+            })();
             </script>
 
             <style>
@@ -475,6 +551,98 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             .ek-quiz-card:hover .ek-quiz-arrow{
                 opacity: 1;
                 transform: translateX(4px);
+            }
+            /* Custom dropdown */
+            .ek-input-group--select{
+                position: relative;
+            }
+            .ek-dropdown{
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                width: 100%;
+                box-sizing: border-box;
+                padding: 14px 16px;
+                font-size: 16px;
+                background: rgba(255,255,255,0.2);
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 12px;
+                color: #fff;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                user-select: none;
+            }
+            .ek-dropdown:focus, .ek-dropdown.is-open{
+                outline: none;
+                background: rgba(255,255,255,0.3);
+                border-color: rgba(255,255,255,0.6);
+                box-shadow: 0 0 0 3px rgba(255,255,255,0.15);
+            }
+            .ek-dropdown-value{
+                flex: 1;
+                color: #fff;
+                text-align: left;
+            }
+            .ek-dropdown-value.is-placeholder{
+                color: rgba(255,255,255,0.7);
+            }
+            .ek-dropdown-chevron{
+                font-size: 14px;
+                opacity: 0.85;
+                transition: transform 0.2s ease;
+            }
+            .ek-dropdown.is-open .ek-dropdown-chevron{
+                transform: rotate(180deg);
+            }
+            .ek-dropdown-menu{
+                display: none;
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: calc(100% + 6px);
+                margin: 0;
+                padding: 6px;
+                list-style: none;
+                background: rgba(70,60,120,0.85);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border: 1px solid rgba(255,255,255,0.3);
+                border-radius: 14px;
+                box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+                max-height: 240px;
+                overflow-y: auto;
+                z-index: 100;
+            }
+            .ek-dropdown-menu.is-open{
+                display: block;
+                animation: ekFadeIn 0.18s ease-out;
+            }
+            @keyframes ekFadeIn{
+                from{ opacity: 0; transform: translateY(-4px); }
+                to{ opacity: 1; transform: translateY(0); }
+            }
+            .ek-dropdown-option{
+                padding: 10px 14px;
+                border-radius: 10px;
+                color: #fff;
+                cursor: pointer;
+                transition: background 0.15s ease;
+                font-size: 15px;
+                text-align: left;
+            }
+            .ek-dropdown-option:hover,
+            .ek-dropdown-option.is-active{
+                background: rgba(255,255,255,0.2);
+            }
+            .ek-dropdown-option.is-selected{
+                background: rgba(255,255,255,0.28);
+                font-weight: 600;
+            }
+            /* Skry duplicitný WP page title len na stránkach s týmto shortcode */
+            body header.entry-header,
+            body .entry-title,
+            body .page-title{
+                display: none !important;
             }
             @media (max-width: 480px){
                 .ek-startup{ padding: 24px 12px; min-height: 60vh; }

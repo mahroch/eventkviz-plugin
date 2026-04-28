@@ -4,6 +4,14 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-04-28
+
+### Changed
+- Vlastný custom dropdown namiesto natívneho `<select>` pri výbere tímu (`Eventkviz_AllLinks_Quiz_Class::show_team_links` v `includes/class-eventkviz-links.php`) — glass-morphism menu s animáciou, hover/active stavy, klikateľné možnosti, fade-in animácia. Hodnota sa drží v `<input type="hidden" id="inputField2">`, takže existujúca `checkFields()` validácia funguje bez zmeny.
+- Klávesnicová ovládateľnosť dropdownu: Enter/Space toggle, Escape close, ArrowUp/ArrowDown navigácia, Enter na výber. ARIA atribúty (`role="combobox"`, `role="listbox"`, `role="option"`, `aria-expanded`, `aria-selected`).
+- Click-outside-to-close, animovaná chevron rotácia pri otvorení.
+- Skrytý WP page title (auto-generovaný plugin titulok "Všetky linky") na stránkach s `[show_team_links]` shortcode — CSS `body header.entry-header, body .entry-title, body .page-title { display: none !important; }`. Admin listing v WP zostáva nedotknutý.
+
 ## [1.2.1] - 2026-04-28
 
 ### Changed
