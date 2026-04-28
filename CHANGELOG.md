@@ -4,6 +4,16 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-04-28
+
+### Added
+- **Floating jazykový prepínač (GTranslate)** — `[gtranslate]` shortcode renderovaný cez `wp_footer` action v pravom hornom rohu na všetkých eventkviz stránkach. Glass-morphism `.ek-langswitch` kontajner (fixed position, blur, dark frosted bg). Štýly pokrývajú GTranslate dropdown aj flag mode.
+- Nová helper funkcia `eventkviz_is_eventkviz_page()` (`public/class-eventkviz-public.php`) — zdieľaná pre body_class filter aj footer hook.
+
+### Changed
+- **Skrytá celá WP site header** na `body.eventkviz-page` (selektory `header.site-header`, `#masthead`, `.elementor-location-header`, atď.) — kvíz stránky majú clean fullscreen vzhľad bez navigácie/loga, jazykový prepínač nahradzuje funkcionalitu.
+- **Vyšší kontrast tlačidla "Odoslať odpovede"** — `--ek-btn-grad` zmenené z svetlého růžovo-červeného `#f093fb → #f5576c` na sýtejší `#9333ea → #db2777` (fialová → magenta). Biele písmo je teraz dobre čitateľné. Shadow farba prispôsobená.
+
 ## [1.3.0] - 2026-04-28
 
 ### Added

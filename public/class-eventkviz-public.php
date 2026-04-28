@@ -201,13 +201,11 @@ function my_plugin_styles() {
 		wp_enqueue_style( 'eventkviz-css', plugins_url( 'css/eventkviz.css', __FILE__ ) );
 	}
 
-// Pridá body class "eventkviz-page" ak stránka obsahuje nejaký eventkviz shortcode.
-// Používa sa pre scoping CSS pravidiel (najmä skrývanie duplicitného WP page title).
-add_filter( 'body_class', 'eventkviz_add_body_class' );
-function eventkviz_add_body_class( $classes ) {
+// Vráti true ak aktuálny post obsahuje aspoň jeden eventkviz shortcode.
+function eventkviz_is_eventkviz_page() {
 	global $post;
 	if ( ! is_singular() || ! $post instanceof WP_Post ) {
-		return $classes;
+		return false;
 	}
 	$shortcodes = array(
 		'show_team_links', 'show_link_to_quiz',
@@ -219,9 +217,30 @@ function eventkviz_add_body_class( $classes ) {
 	);
 	foreach ( $shortcodes as $sc ) {
 		if ( has_shortcode( $post->post_content, $sc ) ) {
-			$classes[] = 'eventkviz-page';
-			break;
+			return true;
 		}
 	}
+	return false;
+}
+
+// Pridá body class "eventkviz-page" pre scoping CSS pravidiel.
+add_filter( 'body_class', 'eventkviz_add_body_class' );
+function eventkviz_add_body_class( $classes ) {
+	if ( eventkviz_is_eventkviz_page() ) {
+		$classes[] = 'eventkviz-page';
+	}
 	return $classes;
+}
+
+// Floating jazykový prepínač (GTranslate) pre eventkviz pages — site header je skrytý cez CSS,
+// switcher renderujeme priamo cez [gtranslate] shortcode v pravom hornom rohu (fixed position).
+add_action( 'wp_footer', 'eventkviz_render_lang_switcher' );
+function eventkviz_render_lang_switcher() {
+	if ( ! eventkviz_is_eventkviz_page() ) {
+		return;
+	}
+	if ( ! shortcode_exists( 'gtranslate' ) ) {
+		return; // GTranslate plugin nie je aktívny
+	}
+	echo '<div class="ek-langswitch">' . do_shortcode( '[gtranslate]' ) . '</div>';
 }
