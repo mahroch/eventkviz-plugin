@@ -150,23 +150,23 @@ class Eventkviz_Public {
 
 		// Artists - PRESNE ako si to mal ty
 		$artists = array();
-		$table_name = 'pmgonijet_cct_artists';
+		$table_name = $wpdb->prefix . 'jet_cct_artists';
 		$artists_array = $wpdb->get_results( "SELECT * FROM $table_name" );
 		foreach ($artists_array as $item) {
 			$artists[ addslashes($item->artist) ] = $item->_ID;
 		}
-		
+
 		// Songs - PRESNE ako si to mal ty
 		$songs = array();
-		$table_name = 'pmgonijet_cct_songs';
+		$table_name = $wpdb->prefix . 'jet_cct_songs';
 		$songs_array = $wpdb->get_results( "SELECT * FROM $table_name" );
 		foreach ($songs_array as $item) {
 			$songs[ addslashes($item->song) ] = $item->_ID;
 		}
-		
+
 		// Movies - PRESNE ako si to mal ty
 		$movies = array();
-		$table_name = 'pmgonijet_cct_movies';
+		$table_name = $wpdb->prefix . 'jet_cct_movies';
 		$movies_array = $wpdb->get_results( "SELECT * FROM $table_name" );
 		foreach ($movies_array as $item) {
 			$movies[ addslashes($item->original_title) ] = $item->_ID;

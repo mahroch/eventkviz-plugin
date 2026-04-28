@@ -31,7 +31,7 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
 
             $results = $wpdb->get_results($wpdb->prepare("
                 SELECT quiz_type, MAX(points) as points, user, team
-                FROM pmgonijet_cct_results
+                FROM {$wpdb->prefix}jet_cct_results
                 WHERE akcia = %s
                 GROUP BY quiz_type, user
             ", $value['akcia']));
@@ -79,9 +79,9 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             // Display users and their points for each team
 
             echo "<h2>Teams grouped by quiz</h2>";
-            //$sql = "SELECT quiz_type, MAX(points) as cumulative_points, team FROM pmgonijet_cct_results WHERE akcia = '" . $value['akcia'] . "' GROUP BY quiz_type, user";
+            //$sql = "SELECT quiz_type, MAX(points) as cumulative_points, team FROM {$wpdb->prefix}jet_cct_results WHERE akcia = '" . $value['akcia'] . "' GROUP BY quiz_type, user";
         $sql = $wpdb->prepare("SELECT quiz_type, user, MAX(points) AS max_points
-        FROM pmgonijet_cct_results
+        FROM {$wpdb->prefix}jet_cct_results
         WHERE akcia = %s
         GROUP BY quiz_type, user", $value['akcia']);
 
@@ -120,11 +120,11 @@ foreach ($cumulative_points as $quiz_type => $users) {
                     SELECT r.quiz_type, r.user, SUM(r.points) as total_points
                     FROM (
                         SELECT quiz_type, user, MAX(points) as points
-                        FROM pmgonijet_cct_results
+                        FROM {$wpdb->prefix}jet_cct_results
                         WHERE akcia = %s
                         GROUP BY quiz_type, user
                     ) as m
-                    INNER JOIN pmgonijet_cct_results as r
+                    INNER JOIN {$wpdb->prefix}jet_cct_results as r
                     ON m.quiz_type = r.quiz_type
                     AND m.user = r.user
                     AND m.points = r.points
@@ -139,7 +139,7 @@ foreach ($cumulative_points as $quiz_type => $users) {
 
                 $results = $wpdb->get_results($wpdb->prepare("
                 SELECT team, COUNT(DISTINCT user) as unique_users
-                FROM pmgonijet_cct_results
+                FROM {$wpdb->prefix}jet_cct_results
                 WHERE akcia = %s
                 GROUP BY team
                 ORDER BY unique_users DESC
@@ -154,7 +154,7 @@ foreach ($cumulative_points as $quiz_type => $users) {
                 echo "<h2>Users with total points</h2>";
                     $results = $wpdb->get_results($wpdb->prepare("
                     SELECT quiz_type, MAX(points) as cumulative_points, user
-                    FROM pmgonijet_cct_results
+                    FROM {$wpdb->prefix}jet_cct_results
                     WHERE akcia = %s
                     GROUP BY quiz_type, user
                 ", $value['akcia']));
@@ -188,7 +188,7 @@ foreach ($cumulative_points as $quiz_type => $users) {
             
             $results = $wpdb->get_results($wpdb->prepare("
                 SELECT quiz_type, MAX(points) as points, team
-                FROM pmgonijet_cct_results
+                FROM {$wpdb->prefix}jet_cct_results
                 WHERE akcia = %s
                 GROUP BY quiz_type, team
             ", $value['akcia']));
@@ -224,7 +224,7 @@ foreach ($cumulative_points as $quiz_type => $users) {
             echo "<h2>Teams grouped by quiz</h2>";
                 $results = $wpdb->get_results($wpdb->prepare("
                     SELECT quiz_type, MAX(points) as cumulative_points, team
-                    FROM pmgonijet_cct_results
+                    FROM {$wpdb->prefix}jet_cct_results
                     WHERE akcia = %s
                     GROUP BY quiz_type, team
                 ", $value['akcia']));

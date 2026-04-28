@@ -318,10 +318,10 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 			} else {
 
 				if($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true && !empty($user_code)){
-					$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM pmgonijet_cct_results WHERE user = %s AND akcia = %s AND quiz_type = %s", $this->standardize($user_code), $akcia_code, $place));
+					$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}jet_cct_results WHERE user = %s AND akcia = %s AND quiz_type = %s", $this->standardize($user_code), $akcia_code, $place));
 					//echo 1;
 				} elseif($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === false && $this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true && !empty($team_code)){
-					$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM pmgonijet_cct_results WHERE team = %s AND akcia = %s AND quiz_type = %s", $this->standardize($team_code), $akcia_code, $place));
+					$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}jet_cct_results WHERE team = %s AND akcia = %s AND quiz_type = %s", $this->standardize($team_code), $akcia_code, $place));
 					//echo 2;
 				} else {
 					$results = array();
@@ -411,9 +411,9 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 	public function get_all_seeds($user_code, $akcia, $team_code=''){
 		global $wpdb;
 		if($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true && !empty($user_code)){
-			$results = $wpdb->get_results($wpdb->prepare("SELECT seeds FROM pmgonijet_cct_seeds WHERE user = %s AND akcia = %s", $this->standardize($user_code), $akcia));
+			$results = $wpdb->get_results($wpdb->prepare("SELECT seeds FROM {$wpdb->prefix}jet_cct_seeds WHERE user = %s AND akcia = %s", $this->standardize($user_code), $akcia));
 		} elseif($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === false && $this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true && !empty($team_code)){
-			$results = $wpdb->get_results($wpdb->prepare("SELECT seeds FROM pmgonijet_cct_seeds WHERE team = %s AND akcia = %s", $this->standardize($team_code), $akcia));
+			$results = $wpdb->get_results($wpdb->prepare("SELECT seeds FROM {$wpdb->prefix}jet_cct_seeds WHERE team = %s AND akcia = %s", $this->standardize($team_code), $akcia));
 		} else {
 			$results = array();
 		}
@@ -456,9 +456,9 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 				
 
 				if(!empty($user_code)){
-					$results = $wpdb->get_results($wpdb->prepare("SELECT seeds FROM pmgonijet_cct_seeds WHERE user = %s AND akcia = %s", $this->standardize($user_code), $akcia));
+					$results = $wpdb->get_results($wpdb->prepare("SELECT seeds FROM {$wpdb->prefix}jet_cct_seeds WHERE user = %s AND akcia = %s", $this->standardize($user_code), $akcia));
 				} elseif(empty($user_code) && !empty($team_code)){
-					$results = $wpdb->get_results($wpdb->prepare("SELECT seeds FROM pmgonijet_cct_seeds WHERE team = %s AND akcia = %s", $this->standardize($team_code), $akcia));
+					$results = $wpdb->get_results($wpdb->prepare("SELECT seeds FROM {$wpdb->prefix}jet_cct_seeds WHERE team = %s AND akcia = %s", $this->standardize($team_code), $akcia));
 				} else {
 
 				}
@@ -488,7 +488,7 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 						//die;
 					}
 
-					$result = $wpdb->insert('pmgonijet_cct_seeds', $data);
+					$result = $wpdb->insert($wpdb->prefix . 'jet_cct_seeds', $data);
 
 					if (!$result) {
 						echo 'Error when creating seeds: ' . $wpdb->last_error;
@@ -790,9 +790,9 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 	public function check_if_questions_set_exists( $akcia_code,$quiz_type,$user_code = '', $team_code = ''){
 		global $wpdb;
 		if(!empty($user_code)){
-			$results = $wpdb->get_results($wpdb->prepare("SELECT question_set FROM pmgonijet_cct_results WHERE user = %s AND akcia = %s AND quiz_type = %s", $this->standardize($user_code), $akcia_code, $quiz_type));
+			$results = $wpdb->get_results($wpdb->prepare("SELECT question_set FROM {$wpdb->prefix}jet_cct_results WHERE user = %s AND akcia = %s AND quiz_type = %s", $this->standardize($user_code), $akcia_code, $quiz_type));
 		} elseif(empty($user_code) && !empty($team_code)){
-			$results = $wpdb->get_results($wpdb->prepare("SELECT question_set FROM pmgonijet_cct_results WHERE team = %s AND akcia = %s AND quiz_type = %s", $this->standardize($team_code), $akcia_code, $quiz_type));
+			$results = $wpdb->get_results($wpdb->prepare("SELECT question_set FROM {$wpdb->prefix}jet_cct_results WHERE team = %s AND akcia = %s AND quiz_type = %s", $this->standardize($team_code), $akcia_code, $quiz_type));
 		} else {
 
 		}

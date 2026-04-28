@@ -496,7 +496,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         $script = "$(function () {";
         $script .= "var artists = {";	
         global $wpdb;
-        $table_name = 'pmgonijet_cct_artists';
+        $table_name = $wpdb->prefix . 'jet_cct_artists';
         $artists_array = $wpdb->get_results( "SELECT * FROM $table_name" );
 
                 
@@ -510,7 +510,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         $script .= "};";
             
         $script .= "var songs = {";
-        $table_name = 'pmgonijet_cct_songs';
+        $table_name = $wpdb->prefix . 'jet_cct_songs';
         $songs_array = $wpdb->get_results( "SELECT * FROM $table_name" );
 /*
                     foreach ($songs_array as $item){ 
@@ -522,7 +522,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         $script .= "};";
                 
         $script .= "var movies = {";
-        $table_name = 'pmgonijet_cct_movies';
+        $table_name = $wpdb->prefix . 'jet_cct_movies';
         $movies_array = $wpdb->get_results( "SELECT * FROM $table_name" );
                     /*
                     foreach ($movies_array as $item){ 
