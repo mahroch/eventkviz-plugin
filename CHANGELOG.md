@@ -4,6 +4,20 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-04-28
+
+### Added
+- Glass-morphism dizajn aplikovaný na **filmový (`/merdfghh/`), vedomostný (`/kwersdfzx/`) a sudoku (`/sweertydfd/`)** kvíz — rovnaký vzhľad ako hudobný kvíz: gradient pozadie, glass karta, otázky v `.ek-question` boxoch s gradient číselným badgeom, štýlované inputy/selecty.
+- Body class filter `eventkviz-page` (`public/class-eventkviz-public.php`) — automaticky pridaná na akúkoľvek stránku obsahujúcu eventkviz shortcode (`show_team_links`, `*_form_dynamic`, `eval_*_quiz_dynamic`, `statistika`, `show_seed_page`, `show_final_page`). Slúži na scoping CSS pravidiel.
+- Nové CSS triedy `.ek-question-text` (text otázky), `.ek-question-hint` (nápoveda).
+
+### Changed
+- **Vyšší kontrast inputov** — pozadie inputov zmenené z `rgba(255,255,255,0.2)` (svetlé) na `rgba(0,0,0,0.18)` (tmavé), border lepší (`0.35` opacity), placeholder text z `0.7` na `0.88` opacity. Biele písmo je teraz čitateľné aj na svetlejších oblastiach gradient pozadia.
+- **Refactor: spoločný CSS súbor** — všetky `.ek-*` glass-morphism štýly presunuté z inline `<style>` blokov v `class-eventkviz-links.php` a `class-eventkviz-musicquiz.php` do globálneho `public/css/eventkviz.css`. Súbor obsahuje CSS premenné v `:root` (`--ek-bg-grad`, `--ek-btn-grad`, `--ek-card-bg`, atď.) pre jednoduchú zmenu farieb.
+- Title-hide CSS scoped na `body.eventkviz-page` selector (predtým neselektívne `body header.entry-header`) — neovplyvňuje stránky bez eventkviz shortcodu.
+- `class-eventkviz-moviesquiz.php::show_media_file` — odstránená pevná šírka `width='500'` na `<video>`, teraz `width:100%`.
+- `class-eventkviz-knowledgequiz.php::show_media_file` — odstránená inline šírka `80%`, teraz `width:100%` + `border-radius`.
+
 ## [1.2.3] - 2026-04-28
 
 ### Changed

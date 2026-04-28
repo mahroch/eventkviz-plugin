@@ -63,8 +63,12 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 $url = 'https://eventkviz.sk/sudoku-quiz-evaluation-dynamic/';
             }
 
-            echo '<form action="'. esc_url($url) . '" method="post">';
-        
+            echo '<div class="ek-quiz">';
+            echo '<div class="ek-quiz-content">';
+            echo '<h1 class="ek-quiz-title">Sudoku kvíz</h1>';
+            echo '<p class="ek-quiz-subtitle">Vyriešte sudoku a zapíšte čísla z označených políčok</p>';
+            echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form">';
+
             for($i=0;$i<$number_of_questions; $i++) {
                 $human_number = $i+1;
 
@@ -74,38 +78,36 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
                     $current_question_id = $available_questions[$this->questions_set[$i]]->ID;
                 }
 
-                // Get the featured image URL
                 $featured_image_url = get_the_post_thumbnail_url( $current_question_id );
-
-                // Get the post title
                 $post_title = get_the_title( $current_question_id );
 
-                echo '<div>';
-                    echo '<br><h3>Sudoku #' . $human_number . '</h3>';
-
-                    echo '<br>Solve this sudoku and find out the numbers in marked cells.<br><br>';
-
-                        echo '<img src="' . $featured_image_url . '" alt="' . $post_title . '" style="width:400px;height: auto;">';
-
-
-                    echo "<div>";
-                        echo "Your answer:";
-                        echo '<input name="sudoku' . $human_number . '">';
-                        echo '<br>Hint: Write the correct numbers in their order into input field. Separate numbers by comma. Use only numbers and commas, using any other characters will be considered as wrong answer.<br><br>';
-
-                    echo '</div>';
+                echo '<div class="ek-question">';
+                echo '<div class="ek-question-header">';
+                echo '<span class="ek-question-num">' . $human_number . '</span>';
+                echo '<span class="ek-question-label">Sudoku ' . $human_number . '</span>';
                 echo '</div>';
 
+                echo '<div class="ek-question-audio">';
+                echo '<img src="' . esc_url($featured_image_url) . '" alt="' . esc_attr($post_title) . '" style="width:100%;border-radius:8px;display:block;">';
+                echo '</div>';
+
+                echo '<div class="ek-question-fields">';
+                echo '<div class="ek-input-group">';
+                echo '<input name="sudoku' . $human_number . '" placeholder="Čísla z označených políčok (oddelené čiarkou)" autocomplete="off">';
+                echo '</div>';
+                echo '<div class="ek-question-hint">Tip: zapíšte čísla v správnom poradí, oddeľte ich čiarkou. Použite iba číslice a čiarky.</div>';
+                echo '</div>'; // .ek-question-fields
+                echo '</div>'; // .ek-question
 
                 $questions[] = $current_question_id;
             }
 
-            echo '<input type="hidden" name="team" value = "' . esc_attr($team_code) . '">';
-            echo '<input type="hidden" name="user" value = "' . esc_attr($user_code) . '">';
-            echo '<input type="hidden" name="akcia" value = "' . esc_attr($akcia_code) . '">';
+            echo '<input type="hidden" name="team" value="' . esc_attr($team_code) . '">';
+            echo '<input type="hidden" name="user" value="' . esc_attr($user_code) . '">';
+            echo '<input type="hidden" name="akcia" value="' . esc_attr($akcia_code) . '">';
             $serialized_question_set = json_encode($questions);
 
-            echo '<input type="hidden" name="set" value = "' . esc_attr($serialized_question_set) . '">';
+            echo '<input type="hidden" name="set" value="' . esc_attr($serialized_question_set) . '">';
 
             $gc_id = isset($_GET['id']) ? sanitize_text_field($_GET['id']) : '';
             $gc_cp = isset($_GET['cp']) ? sanitize_text_field($_GET['cp']) : '';
@@ -116,8 +118,10 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 echo '<input type="hidden" name="gc_return" value="' . esc_attr($gc_return) . '">';
             }
 
-            echo ' <input type="submit">';
+            echo '<button type="submit" class="ek-quiz-submit">Odoslať odpovede</button>';
             echo '</form>';
+            echo '</div>'; // .ek-quiz-content
+            echo '</div>'; // .ek-quiz
 
             if( !$question_set_exists) {
                 $this->write_question_set_to_db( $serialized_question_set, $akcia_code,'sudoku',$user_code,$team_code );

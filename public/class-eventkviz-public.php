@@ -200,3 +200,28 @@ add_action( 'wp_enqueue_scripts', 'my_plugin_styles' );
 function my_plugin_styles() {
 		wp_enqueue_style( 'eventkviz-css', plugins_url( 'css/eventkviz.css', __FILE__ ) );
 	}
+
+// Pridá body class "eventkviz-page" ak stránka obsahuje nejaký eventkviz shortcode.
+// Používa sa pre scoping CSS pravidiel (najmä skrývanie duplicitného WP page title).
+add_filter( 'body_class', 'eventkviz_add_body_class' );
+function eventkviz_add_body_class( $classes ) {
+	global $post;
+	if ( ! is_singular() || ! $post instanceof WP_Post ) {
+		return $classes;
+	}
+	$shortcodes = array(
+		'show_team_links', 'show_link_to_quiz',
+		'music_form_dynamic', 'eval_music_quiz_dynamic',
+		'movies_form_dynamic', 'eval_movies_quiz_dynamic',
+		'knowledge_form_dynamic', 'eval_knowledge_quiz_dynamic',
+		'sudoku_form_dynamic', 'eval_sudoku_quiz_dynamic',
+		'show_final_page', 'show_seed_page', 'statistika',
+	);
+	foreach ( $shortcodes as $sc ) {
+		if ( has_shortcode( $post->post_content, $sc ) ) {
+			$classes[] = 'eventkviz-page';
+			break;
+		}
+	}
+	return $classes;
+}

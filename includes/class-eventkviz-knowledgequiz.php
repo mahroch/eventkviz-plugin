@@ -49,7 +49,11 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                     }
                         
 
-                    echo '<form action="'. esc_url($url) . '" method="post">';
+                    echo '<div class="ek-quiz">';
+                    echo '<div class="ek-quiz-content">';
+                    echo '<h1 class="ek-quiz-title">Vedomostný kvíz</h1>';
+                    echo '<p class="ek-quiz-subtitle">Odpovedzte na otázky a získajte body</p>';
+                    echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form">';
 
                     $question_set_exists = $this->check_if_questions_set_exists( $akcia_code,'knowledge',$user_code,$team_code);
 
@@ -118,23 +122,24 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                         echo '<input type="hidden" name="gc_return" value="' . esc_attr($gc_return) . '">';
                     }
 
-                    echo '</br></br>';
-                    echo '<input type="submit" value="Odoslať">';
+                    echo '<button type="submit" class="ek-quiz-submit">Odoslať odpovede</button>';
                     echo '</form>';
+                    echo '</div>'; // .ek-quiz-content
+                    echo '</div>'; // .ek-quiz
 
                     if( !$question_set_exists) {
                         $this->write_question_set_to_db( $serialized_question_set,$akcia_code,'knowledge',$user_code,$team_code,  'insert');
                     }
-                
+
                 }
-           
+
     }
 
      public function show_media_file($current_question_id, $show_hint = true){
         $featured_image_url = get_the_post_thumbnail_url( $current_question_id );
-        
+
         $post_content = get_the_content( '', false, $current_question_id );
-        
+
         if(empty($this->post_title)) {
             $this->post_title = get_the_title( $current_question_id );
         }
@@ -142,14 +147,16 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
         $this->meta_fields = get_post_meta( $current_question_id );
 
         if(!empty($featured_image_url)) {
-                echo '<img src="' . $featured_image_url . '" alt="' . $this->post_title . '" style="width:80%;max: height 20%;">';
-            } 
+            echo '<img src="' . esc_url($featured_image_url) . '" alt="' . esc_attr($this->post_title) . '" style="width:100%;border-radius:8px;display:block;margin-bottom:12px;">';
+        }
 
-            echo '<div>' . $post_content . '</div>';
+        if (!empty($post_content)) {
+            echo '<div class="ek-question-text">' . $post_content . '</div>';
+        }
 
-            if(!empty($this->meta_fields['hint'][0]) && $show_hint) {
-                echo '<div style="font-style: italic; margin-top:20px;margin-bottom:20px;">Nápoveda k správnemu zadaniu odpovede: ' . $this->meta_fields['hint'][0] . '</div>';
-            }
+        if(!empty($this->meta_fields['hint'][0]) && $show_hint) {
+            echo '<div class="ek-question-hint">Nápoveda: ' . esc_html($this->meta_fields['hint'][0]) . '</div>';
+        }
      }
 
 
@@ -157,36 +164,37 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
 
         $this->post_title = get_the_title( $current_question_id );
 
-        echo '<div>';
-        echo '<br><h3>Otázka #' . $human_number . ': ' . $this->post_title . '</h3>';
-
-        $this->show_media_file($current_question_id, true);    
-
-
-            echo "<div>";
-                echo "Tvoja odpoveď:";
-
-                if(!empty($this->meta_fields['choices-for-correct-answer'][0])) {
-                    echo '<select name="knowledge' . $human_number . '">';
-
-                    $options = explode(";", $this->meta_fields['choices-for-correct-answer'][0]); // Split the values into an array
-                    
-                    if(count($options) == 1) {
-                       $options = explode(",", $this->meta_fields['choices-for-correct-answer'][0]); // Split the values into an array 
-                    }
-                        echo "<option value=''>Vyber ...</option>\n"; 
-                    foreach ($options as $option) {
-                        echo "<option value='" . trim($option) . "'>" . trim($option) . "</option>\n"; 
-                    }
-                    echo '</select>';
-
-
-                } else {
-                    echo '<input name="knowledge' . $human_number . '">';
-                }
-
-            echo '</div>';
+        echo '<div class="ek-question">';
+        echo '<div class="ek-question-header">';
+        echo '<span class="ek-question-num">' . $human_number . '</span>';
+        echo '<span class="ek-question-label">' . esc_html($this->post_title) . '</span>';
         echo '</div>';
+
+        echo '<div class="ek-question-audio">';
+        $this->show_media_file($current_question_id, true);
+        echo '</div>';
+
+        echo '<div class="ek-question-fields">';
+        echo '<div class="ek-input-group">';
+
+        if(!empty($this->meta_fields['choices-for-correct-answer'][0])) {
+            echo '<select name="knowledge' . $human_number . '">';
+            $options = explode(";", $this->meta_fields['choices-for-correct-answer'][0]);
+            if(count($options) == 1) {
+                $options = explode(",", $this->meta_fields['choices-for-correct-answer'][0]);
+            }
+            echo "<option value=''>Vyberte odpoveď</option>\n";
+            foreach ($options as $option) {
+                echo "<option value='" . esc_attr(trim($option)) . "'>" . esc_html(trim($option)) . "</option>\n";
+            }
+            echo '</select>';
+        } else {
+            echo '<input name="knowledge' . $human_number . '" placeholder="Vaša odpoveď" autocomplete="off">';
+        }
+
+        echo '</div>';
+        echo '</div>'; // .ek-question-fields
+        echo '</div>'; // .ek-question
     }
 }
 

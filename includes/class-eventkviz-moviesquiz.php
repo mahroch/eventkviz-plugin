@@ -104,49 +104,53 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 $url = 'https://eventkviz.sk/movies-quiz-dynamic-evaluation/';
             }
 
-            echo '<form action="'. esc_url($url) . '" method="post">';
-
+            echo '<div class="ek-quiz">';
+            echo '<div class="ek-quiz-content">';
+            echo '<h1 class="ek-quiz-title">Filmový kvíz</h1>';
+            echo '<p class="ek-quiz-subtitle">Pozrite si ukážku a uhádnite názov filmu</p>';
+            echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form">';
 
             for($i=0;$i<$number_of_questions; $i++) {
                 $human_number = $i+1;
 
                 if( $question_set_exists || $available_questions === null) {
-                    // question_set obsahuje priamo post ID
                     $current_question_id = $this->questions_set[$i];
                 } else {
-                    // question_set obsahuje indexy do available_questions
                     $current_question_id = $available_questions[$this->questions_set[$i]]->ID;
                 }
 
                 $media_id = get_post_meta( $current_question_id, 'media', true );
-                $movie_file_url = wp_get_attachment_url( $media_id ); 
+                $movie_file_url = wp_get_attachment_url( $media_id );
 
-                echo "<h3>Film #" . $human_number . "</h3>";
-                //echo "<h3>Movie ID" . $current_question_id . "</h3>";
-                
-                
+                echo '<div class="ek-question">';
+                echo '<div class="ek-question-header">';
+                echo '<span class="ek-question-num">' . $human_number . '</span>';
+                echo '<span class="ek-question-label">Film ' . $human_number . '</span>';
+                echo '</div>';
+                echo '<div class="ek-question-audio">';
                 $this->show_media_file($movie_file_url);
-
-                
-
-                echo "<br><br>Názov filmu: <br><br>";
-                //echo $current_question_id;
+                echo '</div>';
+                echo '<div class="ek-question-fields">';
+                echo '<div class="ek-input-group">';
                 if ($this->cAkcia->movies_settings['movies_quiz_type'] == "full") {
-                     echo '<input id="myMovie' . $human_number . '" class="autocomplete3" name="movie' . $human_number . '">';
+                     echo '<input id="myMovie' . $human_number . '" class="autocomplete3" name="movie' . $human_number . '" placeholder="Názov filmu" autocomplete="off">';
                 } else {
                     $this->print_form_question($current_question_id, $human_number);
                 }
                 echo '<input type="hidden" name="movie' . $human_number . '_key">';
+                echo '</div>';
+                echo '</div>'; // .ek-question-fields
+                echo '</div>'; // .ek-question
 
                 $questions[] = $current_question_id;
             }
 
-            echo '<input type="hidden" name="team" value = "' . esc_attr($team_code) . '">';
-            echo '<input type="hidden" name="user" value = "' . esc_attr($user_code) . '">';
-            echo '<input type="hidden" name="akcia" value = "' . esc_attr($akcia_code) . '">';
+            echo '<input type="hidden" name="team" value="' . esc_attr($team_code) . '">';
+            echo '<input type="hidden" name="user" value="' . esc_attr($user_code) . '">';
+            echo '<input type="hidden" name="akcia" value="' . esc_attr($akcia_code) . '">';
             $serialized_question_set = json_encode($questions);
 
-            echo '<input type="hidden" name="set" value = "' . esc_attr($serialized_question_set) . '">';
+            echo '<input type="hidden" name="set" value="' . esc_attr($serialized_question_set) . '">';
 
             $gc_id = isset($_GET['id']) ? sanitize_text_field($_GET['id']) : '';
             $gc_cp = isset($_GET['cp']) ? sanitize_text_field($_GET['cp']) : '';
@@ -157,9 +161,10 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 echo '<input type="hidden" name="gc_return" value="' . esc_attr($gc_return) . '">';
             }
 
-            echo '</br></br>';
-            echo '<input type="submit" value="Odoslať odpovede na vyhodnotenie">';
+            echo '<button type="submit" class="ek-quiz-submit">Odoslať odpovede</button>';
             echo '</form>';
+            echo '</div>'; // .ek-quiz-content
+            echo '</div>'; // .ek-quiz
 
             if( !$question_set_exists) {
                 $this->write_question_set_to_db( $serialized_question_set, $akcia_code,'movies',$user_code,$team_code );
@@ -167,11 +172,10 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
         }
     }
     public function show_media_file($movie_file_url){
-        echo "<div>";
-        echo "<video width='500' controls>";
-        echo '<source src="'. $movie_file_url . '" type="video/mp4">';
+        echo '<video controls style="width:100%;border-radius:8px;display:block;">';
+        echo '<source src="' . esc_url($movie_file_url) . '" type="video/mp4">';
         echo 'Your browser does not support the video element.';
-        echo "</video></div>";
+        echo '</video>';
     }
 
     public function print_form_question($current_question_id, $human_number){

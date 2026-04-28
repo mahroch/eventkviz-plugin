@@ -2,7 +2,7 @@
    text-align: center;
   }
   .seed_block {
-     
+
   }
 
  .seed_for_place{
@@ -13,7 +13,7 @@
 
  .eventkviz_warning_correct_answers{
    color: red;
-   
+
  }
 
  .eventkviz_standard_answer {
@@ -50,3 +50,431 @@
    color: red;
   text-transform: uppercase;
  }
+
+/* =================================================================
+   Glass-morphism UI — společný theme pro všetky eventkviz shortcodes
+   (.ek-startup, .ek-quiz, .ek-question, .ek-dropdown, .ek-quiz-card)
+   Štýly sa aktivujú prítomnosťou príslušných class v markupe.
+   ================================================================= */
+
+:root {
+    --ek-bg-grad: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --ek-btn-grad: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --ek-text: #fff;
+    --ek-text-muted: rgba(255,255,255,0.88);
+    --ek-card-bg: rgba(255,255,255,0.15);
+    --ek-card-border: rgba(255,255,255,0.25);
+    --ek-input-bg: rgba(0,0,0,0.18);
+    --ek-input-bg-focus: rgba(0,0,0,0.28);
+    --ek-input-border: rgba(255,255,255,0.35);
+    --ek-blur: 20px;
+    --ek-radius: 24px;
+    --ek-radius-sm: 12px;
+    --ek-shadow-card: 0 8px 32px rgba(0,0,0,0.18);
+    --ek-shadow-btn: 0 4px 16px rgba(245,87,108,0.4);
+    --ek-shadow-btn-hover: 0 8px 24px rgba(245,87,108,0.5);
+    --ek-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+
+/* ---------- Page wrappers ---------- */
+.ek-startup,
+.ek-quiz {
+    padding: 40px 20px;
+    background: var(--ek-bg-grad);
+    border-radius: var(--ek-radius);
+    font-family: var(--ek-font);
+    position: relative;
+    overflow: hidden;
+}
+.ek-startup {
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ek-startup::before,
+.ek-quiz::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(255,255,255,0.15) 0%, transparent 40%),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 40%);
+    pointer-events: none;
+}
+
+/* ---------- Cards ---------- */
+.ek-startup-card,
+.ek-quiz-content {
+    position: relative;
+    width: 100%;
+    background: var(--ek-card-bg);
+    backdrop-filter: blur(var(--ek-blur));
+    -webkit-backdrop-filter: blur(var(--ek-blur));
+    border: 1px solid var(--ek-card-border);
+    border-radius: var(--ek-radius);
+    box-shadow: var(--ek-shadow-card);
+    color: var(--ek-text);
+    box-sizing: border-box;
+}
+.ek-startup-card {
+    max-width: 480px;
+    padding: 48px 40px;
+    text-align: center;
+}
+.ek-quiz-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px;
+}
+
+/* ---------- Headings ---------- */
+.ek-startup-title,
+.ek-quiz-title {
+    font-size: 30px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: var(--ek-text);
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+}
+.ek-quiz-title {
+    text-align: center;
+}
+.ek-startup-subtitle,
+.ek-quiz-subtitle {
+    font-size: 15px;
+    margin: 0 0 28px;
+    opacity: 0.85;
+    line-height: 1.5;
+    color: var(--ek-text);
+}
+.ek-quiz-subtitle {
+    text-align: center;
+}
+
+/* ---------- Forms / inputs ---------- */
+.ek-startup-form,
+.ek-quiz-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 0;
+}
+.ek-quiz-form {
+    gap: 16px;
+}
+.ek-input-group input,
+.ek-input-group select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    font-size: 16px;
+    font-family: inherit;
+    background: var(--ek-input-bg);
+    border: 1px solid var(--ek-input-border);
+    border-radius: var(--ek-radius-sm);
+    color: var(--ek-text);
+    transition: all 0.2s ease;
+}
+.ek-input-group input::placeholder {
+    color: var(--ek-text-muted);
+}
+.ek-input-group select option {
+    color: #333;
+}
+.ek-input-group input:focus,
+.ek-input-group select:focus {
+    outline: none;
+    background: var(--ek-input-bg-focus);
+    border-color: rgba(255,255,255,0.6);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.15);
+}
+
+/* ---------- Submit buttons ---------- */
+#submitBtn,
+.ek-quiz-submit {
+    width: 100%;
+    padding: 16px 24px;
+    margin-top: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+    background: var(--ek-btn-grad);
+    color: var(--ek-text);
+    border: none;
+    border-radius: var(--ek-radius-sm);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: var(--ek-shadow-btn);
+}
+#submitBtn:hover:not(:disabled),
+.ek-quiz-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--ek-shadow-btn-hover);
+}
+#submitBtn:disabled,
+.ek-quiz-submit:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ---------- Output (team-links list) ---------- */
+.ek-output {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.ek-output:empty {
+    margin-top: 0;
+}
+.ek-quiz-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid var(--ek-card-border);
+    border-radius: 14px;
+    text-decoration: none !important;
+    color: var(--ek-text) !important;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.25s ease;
+}
+.ek-quiz-card:hover {
+    transform: translateX(4px);
+    background: rgba(255,255,255,0.28);
+    border-color: rgba(255,255,255,0.4);
+    color: var(--ek-text) !important;
+    text-decoration: none !important;
+}
+.ek-quiz-icon {
+    font-size: 26px;
+    line-height: 1;
+}
+.ek-quiz-label {
+    flex: 1;
+    text-align: left;
+}
+.ek-quiz-arrow {
+    font-size: 20px;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+.ek-quiz-card:hover .ek-quiz-arrow {
+    opacity: 1;
+    transform: translateX(4px);
+}
+
+/* ---------- Custom dropdown (team select) ---------- */
+.ek-input-group--select {
+    position: relative;
+}
+.ek-dropdown {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    font-size: 16px;
+    background: var(--ek-input-bg);
+    border: 1px solid var(--ek-input-border);
+    border-radius: var(--ek-radius-sm);
+    color: var(--ek-text);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.ek-dropdown:focus,
+.ek-dropdown.is-open {
+    outline: none;
+    background: var(--ek-input-bg-focus);
+    border-color: rgba(255,255,255,0.6);
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.15);
+}
+.ek-dropdown-value {
+    flex: 1;
+    color: var(--ek-text);
+    text-align: left;
+}
+.ek-dropdown-value.is-placeholder {
+    color: var(--ek-text-muted);
+}
+.ek-dropdown-chevron {
+    font-size: 14px;
+    opacity: 0.85;
+    transition: transform 0.2s ease;
+}
+.ek-dropdown.is-open .ek-dropdown-chevron {
+    transform: rotate(180deg);
+}
+.ek-dropdown-menu {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 6px);
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    background: rgba(70,60,120,0.85);
+    backdrop-filter: blur(var(--ek-blur));
+    -webkit-backdrop-filter: blur(var(--ek-blur));
+    border: 1px solid var(--ek-input-border);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 100;
+}
+.ek-dropdown-menu.is-open {
+    display: block;
+    animation: ekFadeIn 0.18s ease-out;
+}
+@keyframes ekFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.ek-dropdown-option {
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: var(--ek-text);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    font-size: 15px;
+    text-align: left;
+}
+.ek-dropdown-option:hover,
+.ek-dropdown-option.is-active {
+    background: rgba(255,255,255,0.2);
+}
+.ek-dropdown-option.is-selected {
+    background: rgba(255,255,255,0.28);
+    font-weight: 600;
+}
+
+/* ---------- Quiz question blocks ---------- */
+.ek-question {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 16px;
+    padding: 20px;
+}
+.ek-question-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.ek-question-num {
+    width: 32px;
+    height: 32px;
+    background: var(--ek-btn-grad);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ek-text);
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(245,87,108,0.4);
+}
+.ek-question-label {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--ek-text);
+}
+.ek-question-audio {
+    margin-bottom: 16px;
+}
+.ek-question-audio audio {
+    width: 100%;
+    border-radius: 8px;
+    display: block;
+}
+.ek-question-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.ek-question-text {
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ek-text);
+    margin-bottom: 14px;
+    opacity: 0.95;
+}
+.ek-question-hint {
+    font-size: 13px;
+    font-style: italic;
+    color: rgba(255,255,255,0.85);
+    margin-top: 8px;
+    line-height: 1.4;
+}
+
+/* ---------- jQuery UI autocomplete override ---------- */
+.ui-autocomplete {
+    background: rgba(70,60,120,0.95) !important;
+    backdrop-filter: blur(var(--ek-blur));
+    -webkit-backdrop-filter: blur(var(--ek-blur));
+    border: 1px solid var(--ek-input-border) !important;
+    border-radius: var(--ek-radius-sm) !important;
+    padding: 6px !important;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.3) !important;
+    list-style: none !important;
+    z-index: 9999 !important;
+}
+.ui-autocomplete .ui-menu-item-wrapper {
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
+    color: var(--ek-text) !important;
+    font-size: 15px !important;
+    border: none !important;
+    background: transparent !important;
+    transition: background 0.15s ease;
+}
+.ui-autocomplete .ui-menu-item-wrapper.ui-state-active,
+.ui-autocomplete .ui-state-active {
+    background: rgba(255,255,255,0.25) !important;
+    color: var(--ek-text) !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+/* ---------- Hide duplicate WP page title only on eventkviz pages ---------- */
+body.eventkviz-page header.entry-header,
+body.eventkviz-page .entry-title,
+body.eventkviz-page .page-title {
+    display: none !important;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 480px) {
+    .ek-startup,
+    .ek-quiz {
+        padding: 24px 12px;
+        border-radius: 16px;
+    }
+    .ek-startup {
+        min-height: 60vh;
+    }
+    .ek-startup-card {
+        padding: 36px 24px;
+    }
+    .ek-quiz-content {
+        padding: 24px 20px;
+    }
+    .ek-startup-title,
+    .ek-quiz-title {
+        font-size: 24px;
+    }
+    .ek-question {
+        padding: 16px;
+    }
+}
