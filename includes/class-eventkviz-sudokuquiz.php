@@ -107,6 +107,14 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
 
             echo '<input type="hidden" name="set" value = "' . esc_attr($serialized_question_set) . '">';
 
+            $gc_id = isset($_GET['id']) ? sanitize_text_field($_GET['id']) : '';
+            $gc_cp = isset($_GET['cp']) ? sanitize_text_field($_GET['cp']) : '';
+            $gc_return = isset($_GET['return_url']) ? esc_url_raw($_GET['return_url']) : '';
+            if (!empty($gc_id) && !empty($gc_cp)) {
+                echo '<input type="hidden" name="gc_id" value="' . esc_attr($gc_id) . '">';
+                echo '<input type="hidden" name="gc_cp" value="' . esc_attr($gc_cp) . '">';
+                echo '<input type="hidden" name="gc_return" value="' . esc_attr($gc_return) . '">';
+            }
 
             echo ' <input type="submit">';
             echo '</form>';
@@ -170,6 +178,10 @@ class Eventkviz_SudokuEval_Quiz_Class extends Eventkviz_Quiz_Class{
             $this->send_results_by_email($user, $team, $akcia, $gained_credits, 'sudoku');
 
             $this->show_seed($user, $akcia, 'sudoku',$team);
+
+            if ($gained_credits > 0) {
+                $this->show_geochallenge_return($gained_credits);
+            }
         }
     }
 

@@ -388,7 +388,8 @@ public function save_event_meta( $post_id ) {
             'identifikacia_userov_timu',
             'select_from_teams_array',
             'use_seed',
-            'show_link_back_to_all_quizes'
+            'show_link_back_to_all_quizes',
+            'geochallenge_integration'
         ];
 
         foreach ( $bool_keys as $key ) {
@@ -662,6 +663,18 @@ private function render_general_tab( $post, $meta ) {
                             <p class="description">Maximálny počet pokusov na otvorenie truhlice na finálnom mieste.</p>
                         </div>
                     </div>
+                </td>
+            </tr>
+
+            <!-- geochallenge_integration -->
+            <tr>
+                <th><label>GeoChallenge integrácia</label></th>
+                <td>
+                    <input type="checkbox" name="event_general[geochallenge_integration]" value="1" <?php checked( $meta['event_general_geochallenge_integration'][0] ?? '0', '1' ); ?> />
+                    <p class="description">
+                        Zapnite ak je tento event prepojený s GeoChallenge appkou.<br>
+                        Pri splnení kvízu sa hráčovi vygeneruje 5-znakový kód a návratový link späť do GeoChallenge.
+                    </p>
                 </td>
             </tr>
 

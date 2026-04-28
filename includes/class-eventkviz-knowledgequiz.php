@@ -108,6 +108,16 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                     $serialized_question_set = json_encode($questions);
 
                     echo '<input type="hidden" name="set" value = "' . esc_attr($serialized_question_set) . '">';
+
+                    $gc_id = isset($_GET['id']) ? sanitize_text_field($_GET['id']) : '';
+                    $gc_cp = isset($_GET['cp']) ? sanitize_text_field($_GET['cp']) : '';
+                    $gc_return = isset($_GET['return_url']) ? esc_url_raw($_GET['return_url']) : '';
+                    if (!empty($gc_id) && !empty($gc_cp)) {
+                        echo '<input type="hidden" name="gc_id" value="' . esc_attr($gc_id) . '">';
+                        echo '<input type="hidden" name="gc_cp" value="' . esc_attr($gc_cp) . '">';
+                        echo '<input type="hidden" name="gc_return" value="' . esc_attr($gc_return) . '">';
+                    }
+
                     echo '</br></br>';
                     echo '<input type="submit" value="Odoslať">';
                     echo '</form>';
@@ -254,7 +264,9 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
                     echo "Vaša ďalšia indícia je:<br><br>";
                     $url = wp_get_attachment_image_src( $this->cAkcia->knowledge_settings['obrazok_pri_splneni_kvizu'],'large' );
                     echo "<img src='" . esc_url($url[0]) . "' width='100%'>";
-                
+
+                    $this->show_geochallenge_return($gained_credits);
+
             } else {
                 $akcia_tag = $this->akcia_tag;
 

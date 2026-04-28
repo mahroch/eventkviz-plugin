@@ -40,7 +40,8 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
             'identifikacia_userov_timu',
             'select_from_teams_array',
             'use_seed',
-            'show_link_back_to_all_quizes'
+            'show_link_back_to_all_quizes',
+            'geochallenge_integration'
         ];
 
         foreach ( $bool_keys as $key ) {
@@ -361,6 +362,48 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 			echo '</h1></div>';
 		}
 	}
+	public function generate_geochallenge_code($score) {
+		$secret = 'geochallenge-score-key-2026';
+		$score = max(0, min(1295, intval($score)));
+		$scorePart = str_pad(strtoupper(base_convert($score, 10, 36)), 2, '0', STR_PAD_LEFT);
+		$verify = strtoupper(substr(hash_hmac('sha256', $scorePart, $secret), 0, 3));
+		return $scorePart . $verify;
+	}
+
+	public function show_geochallenge_return($gained_credits) {
+		if (empty($this->cAkcia->all_quizes_settings['geochallenge_integration']) || $this->cAkcia->all_quizes_settings['geochallenge_integration'] !== true) {
+			return;
+		}
+
+		$gc_id = isset($_POST['gc_id']) ? sanitize_text_field($_POST['gc_id']) : '';
+		$gc_cp = isset($_POST['gc_cp']) ? sanitize_text_field($_POST['gc_cp']) : '';
+		$gc_return = isset($_POST['gc_return']) ? esc_url_raw($_POST['gc_return']) : '';
+
+		if (empty($gc_id) || empty($gc_cp)) {
+			return;
+		}
+
+		$code = $this->generate_geochallenge_code($gained_credits);
+
+		if (!empty($gc_return)) {
+			$return_url = $gc_return . (strpos($gc_return, '?') !== false ? '&' : '?') . 'code=' . $code;
+		} else {
+			$return_url = '';
+		}
+
+		echo '<div class="geochallenge-return" style="margin-top:30px;padding:20px;background:#e8f5e9;border:2px solid #4caf50;border-radius:10px;text-align:center;">';
+		echo '<h2 style="margin-top:0;">GeoChallenge kód</h2>';
+		echo '<p>Váš kód pre návrat do GeoChallenge appky:</p>';
+		echo '<div style="font-family:monospace;font-size:36px;letter-spacing:8px;font-weight:bold;margin:15px 0;">' . esc_html($code) . '</div>';
+		if (!empty($return_url)) {
+			echo '<p style="margin-bottom:15px;">Kliknite na tlačidlo nižšie pre automatický návrat do appky, alebo zadajte kód manuálne.</p>';
+			echo '<a href="' . esc_url($return_url) . '" style="display:inline-block;padding:14px 30px;background:#4caf50;color:#fff;text-decoration:none;border-radius:8px;font-size:18px;font-weight:bold;">Návrat do GeoChallenge</a>';
+		} else {
+			echo '<p>Zadajte tento kód v GeoChallenge appke.</p>';
+		}
+		echo '</div>';
+	}
+
 	public function standardize($string){
 		return strtolower($string);
 	}
@@ -827,6 +870,7 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
             'knowledge' => 'Knowledge quiz'
         ),
         'show_link_back_to_all_quizes'  => false,
+        'geochallenge_integration'      => false,
         'minimal_number_of_correct_seeds' => 3,
         'final_place_pocet_pokusov'    => 3
     );
