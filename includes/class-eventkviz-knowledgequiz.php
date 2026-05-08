@@ -42,11 +42,7 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 
                 if($check_result === true) {	
 
-                    if($_SERVER['HTTP_HOST'] == 'localhost:8888') {
-                        $url = 'http://localhost:8888/eventkviz/knowledge-quiz-evaluation-dynamic/';
-                    } else {
-                        $url = 'https://eventkviz.sk/knowledge-quiz-evaluation-dynamic/';
-                    }
+                    $url = home_url('/knowledge-quiz-evaluation-dynamic/');
                         
 
                     echo '<div class="ek-quiz">';
@@ -181,7 +177,8 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                     echo '<input type="hidden" name="akcia" value = "' . esc_attr($akcia_code) . '">';
                     $serialized_question_set = json_encode($questions);
 
-                    echo '<input type="hidden" name="set" value = "' . esc_attr($serialized_question_set) . '">';
+                    echo '<input type="hidden" name="set" value="' . esc_attr($serialized_question_set) . '">';
+                    echo '<input type="hidden" name="set_sig" value="' . esc_attr($this->sign_question_set($serialized_question_set, $akcia_code)) . '">';
 
                     $gc_id = isset($_GET['id']) ? sanitize_text_field($_GET['id']) : '';
                     $gc_cp = isset($_GET['cp']) ? sanitize_text_field($_GET['cp']) : '';
@@ -217,7 +214,7 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
         $this->meta_fields = get_post_meta( $current_question_id );
 
         if(!empty($featured_image_url)) {
-            echo '<img src="' . esc_url($featured_image_url) . '" alt="' . esc_attr($this->post_title) . '" style="width:100%;border-radius:8px;display:block;margin-bottom:12px;">';
+            echo '<img src="' . esc_url($featured_image_url) . '" alt="' . esc_attr($this->post_title) . '" loading="lazy" style="width:100%;border-radius:8px;display:block;margin-bottom:12px;">';
         }
 
         if (!empty($post_content)) {
@@ -313,8 +310,18 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
         
         $akcia = $_POST['akcia'];
         $this->load_basic_event_settings( $akcia);
-        $questions = json_decode(wp_unslash($_POST['set']), true);
-        //print_r($questions);
+
+        $raw_set = isset($_POST['set']) ? wp_unslash($_POST['set']) : '';
+        $raw_sig = isset($_POST['set_sig']) ? wp_unslash($_POST['set_sig']) : '';
+        if (!$this->verify_question_set_signature($raw_set, $akcia, $raw_sig)) {
+            wp_die(
+                esc_html__('Neplatný podpis kvíz formulára. Otvorte si kvíz znova.', 'eventkviz'),
+                esc_html__('Neplatný formulár', 'eventkviz'),
+                array('response' => 400, 'back_link' => true)
+            );
+        }
+
+        $questions = json_decode($raw_set, true);
         $user = $_POST['user'];
         $team = $_POST['team'];
         
@@ -350,11 +357,10 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
             } else {
                 $akcia_tag = $this->akcia_tag;
 
-                if($_SERVER['HTTP_HOST'] == 'localhost:8888') {
-                    $link_to_quiz_url = 'http://localhost:8888/eventkviz/' . $akcia_tag . '/kwersdfzx/?team=' . $team . '&user=' . $user . '&akcia=' . $akcia_tag;
-                } else {
-                    $link_to_quiz_url = 'https://eventkviz.sk/kwersdfzx/?team=' . $team . '&user=' . $user . '&akcia=' . $akcia_tag;
-                }
+                $link_to_quiz_url = add_query_arg(
+                    array('team' => $team, 'user' => $user, 'akcia' => $akcia_tag),
+                    home_url('/kwersdfzx/')
+                );
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->knowledge_settings['min_body_na_postup']) . '</strong> bodov.</p>';
                 echo '<a href="' . esc_url($link_to_quiz_url) . '" class="ek-quiz-submit ek-quiz-link-btn">Opakovať kvíz</a>';
@@ -372,26 +378,59 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
     }
 
     public function get_correct_knowledge_answers($current_question_id){
-        
         $correct_answer1 = get_post_meta( $current_question_id, 'correct-answer-1', true );
         $correct_answer2 = get_post_meta( $current_question_id, 'correct-answer-2', true );
-        
-        $return_array = array('correct_answer1' => $correct_answer1, 'correct_answer2' => $correct_answer2);
-        return $return_array;
-        
+
+        // Each meta field may contain pipe-separated synonyms (Bratislava|BA|hlavné mesto)
+        $variants = array_merge(
+            $this->split_answer_variants($correct_answer1),
+            $this->split_answer_variants($correct_answer2)
+        );
+
+        return array(
+            'correct_answer1' => $correct_answer1,
+            'correct_answer2' => $correct_answer2,
+            'variants'        => $variants,
+        );
     }
-        
+
+    private function split_answer_variants($s){
+        $s = (string) $s;
+        if ($s === '') return array();
+        $parts = array_map('trim', explode('|', $s));
+        return array_values(array_filter($parts, 'strlen'));
+    }
+
+    private function normalize_for_compare($s){
+        if (class_exists('Eventkviz_Rest_Search')) {
+            return Eventkviz_Rest_Search::normalize($s);
+        }
+        return strtolower(trim((string) $s));
+    }
+
     public function check_correct_knowledge_answer($answer, $iteration_no){
         global $correct_answers;
-        
-        $array_of_correct_answers = $correct_answers[$iteration_no];
-        
-        
-        if (!empty($answer) && in_array($answer, $array_of_correct_answers)) {
-            return true;
-        } else {
-            return false;
+
+        if (empty($answer)) return false;
+
+        $entry = isset($correct_answers[$iteration_no]) ? $correct_answers[$iteration_no] : array();
+
+        $variants = isset($entry['variants']) ? $entry['variants'] : array();
+        if (empty($variants)) {
+            // Legacy fallback for entries without the variants key
+            $variants = array_filter(array(
+                isset($entry['correct_answer1']) ? $entry['correct_answer1'] : '',
+                isset($entry['correct_answer2']) ? $entry['correct_answer2'] : '',
+            ), 'strlen');
         }
+
+        $needle = $this->normalize_for_compare($answer);
+        foreach ($variants as $v) {
+            if ($this->normalize_for_compare($v) === $needle) {
+                return true;
+            }
+        }
+        return false;
     }
     public function show_knowledge_answer($correct_knowledge, $current_question_id){
 

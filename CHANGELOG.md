@@ -4,6 +4,17 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-05-08
+
+### Security (vedomostný kvíz)
+- HMAC podpis question setu (parity s movies/music)
+
+### Changed (vedomostný kvíz)
+- Porovnanie odpovedí ignoruje veľkosť písmen a diakritiku — „bratislava" matchne „Bratislava", „hugo" matchne „Hugo"
+- Admin môže napísať viac akceptovateľných odpovedí oddelených `|` (napr. `Bratislava|BA|hlavné mesto`) priamo do `correct-answer-1` / `correct-answer-2`
+- Hardcoded URL nahradené `home_url()`
+- Obrázky otázok majú `loading="lazy"` (rýchlejší prvý paint pri väčšom počte otázok)
+
 ## [1.3.1] - 2026-05-08
 
 ### Security (hudobný kvíz)
