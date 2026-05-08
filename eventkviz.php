@@ -76,7 +76,9 @@ require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-finalpage.
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-rest.php' );
 if ( is_admin() ) {
 	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-leaderboard.php' );
+	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-questions-admin.php' );
 	Eventkviz_Leaderboard::init();
+	Eventkviz_Questions_Admin::init();
 }
 
 Eventkviz_Rest_Search::init();

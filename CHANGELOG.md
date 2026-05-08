@@ -15,6 +15,9 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Hardcoded URL nahradené `home_url()`
 - Obrázky otázok majú `loading="lazy"` (rýchlejší prvý paint pri väčšom počte otázok)
 
+### Added (admin)
+- Pomôcka „Synonymá pre odpoveď" — sidebar metabox + inline hint pri editácii knowledge otázky vysvetľuje ako oddeliť synonymá znakom `|`
+
 ## [1.3.1] - 2026-05-08
 
 ### Security (hudobný kvíz)
