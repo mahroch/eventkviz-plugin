@@ -68,8 +68,8 @@ class Eventkviz {
 	 * @since    1.0.0
 	 */
 	public function __construct() {
-		if ( defined( 'EVENTKVIZ_VERSION' ) ) {
-			$this->version = EVENTKVIZ_VERSION;
+		if ( defined( 'EVENKVIZ_VERSION' ) ) {
+			$this->version = EVENKVIZ_VERSION;
 		} else {
 			$this->version = '1.1.0';
 		}

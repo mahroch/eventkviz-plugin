@@ -136,7 +136,7 @@ class Eventkviz_Public {
 				$this->eventkviz . '-autocomplete',
 				plugin_dir_url( __FILE__ ) . 'js/eventkviz-autocomplete.js',
 				array( 'jquery', 'jquery-ui-autocomplete' ),
-				'1.1.1',
+				$this->version,
 				true
 			);
 		}
