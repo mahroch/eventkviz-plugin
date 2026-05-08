@@ -49,20 +49,85 @@ class Eventkviz_Rest_Search {
             return array();
         }
 
-        $index   = self::get_dataset( $type );
+        $index = self::get_dataset( $type );
+        return self::rank_matches( $q, $index, $limit );
+    }
+
+    private static function rank_matches( $q, $index, $limit ) {
+        $q_len     = strlen( $q );
+        $has_space = strpos( $q, ' ' ) !== false;
+        // Levenshtein scales O(m*n); skip for very short or very long queries
+        $do_fuzzy  = $q_len >= 3 && $q_len <= 60;
+        // Allow up to ~33% character distance — catches single-letter typos in 3+ char words
+        $threshold = 0.34;
+
         $matches = array();
         foreach ( $index as $row ) {
-            if ( strpos( $row['n'], $q ) !== false ) {
-                $matches[] = array(
-                    'id'    => (int) $row['id'],
-                    'label' => $row['l'],
-                );
-                if ( count( $matches ) >= $limit ) {
-                    break;
+            $n = $row['n'];
+            if ( $n === $q ) {
+                $rank = 0.0;
+            } elseif ( strncmp( $n, $q, $q_len ) === 0 ) {
+                $rank = 1.0;
+            } elseif ( strpos( $n, $q ) !== false ) {
+                $rank = 2.0;
+            } elseif ( $do_fuzzy ) {
+                $rel = self::fuzzy_distance( $q, $n, $has_space );
+                if ( $rel === null || $rel >= $threshold ) {
+                    continue;
+                }
+                $rank = 10.0 + $rel;
+            } else {
+                continue;
+            }
+            $matches[] = array(
+                'rank'  => $rank,
+                'id'    => (int) $row['id'],
+                'label' => $row['l'],
+            );
+        }
+
+        usort( $matches, function ( $a, $b ) {
+            if ( $a['rank'] === $b['rank'] ) {
+                return strcmp( $a['label'], $b['label'] );
+            }
+            return $a['rank'] < $b['rank'] ? -1 : 1;
+        } );
+
+        $matches = array_slice( $matches, 0, $limit );
+        return array_map( function ( $m ) {
+            return array( 'id' => $m['id'], 'label' => $m['label'] );
+        }, $matches );
+    }
+
+    private static function fuzzy_distance( $q, $n, $q_has_space ) {
+        $q_len = strlen( $q );
+        $best  = null;
+
+        // Whole-string distance (best for multi-word labels with multi-word query, or short labels)
+        $n_len = strlen( $n );
+        if ( $n_len <= 80 ) {
+            $d   = levenshtein( $q, $n );
+            $rel = $d / max( $q_len, $n_len );
+            if ( $best === null || $rel < $best ) {
+                $best = $rel;
+            }
+        }
+
+        // Per-token distance (catches single-word typo in long labels)
+        if ( ! $q_has_space ) {
+            foreach ( preg_split( '/\s+/', $n ) as $tok ) {
+                if ( strlen( $tok ) < 2 ) {
+                    continue;
+                }
+                $d   = levenshtein( $q, $tok );
+                $rel = $d / max( $q_len, strlen( $tok ) );
+                if ( $best === null || $rel < $best ) {
+                    $best = $rel;
                 }
             }
         }
-        return $matches;
+
+        return $best;
     }
 
     public static function get_dataset( $type ) {

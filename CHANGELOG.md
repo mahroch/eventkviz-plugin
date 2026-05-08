@@ -9,6 +9,7 @@ Všetky podstatné zmeny v plugine EventKviz.
 ### Changed
 - Vyhľadávanie cez AJAX namiesto bulk dumpu celej DB do HTML (rýchlejšie načítanie kvíz stránky)
 - Konzistentná diakritika + case-insensitive logika medzi klientom aj serverom
+- Tolerantné voči preklepom — „plup fitcion" nájde „Pulp Fiction", „dolar" nájde „Dollar"
 - Zvýraznenie písmen v dropdowne ktoré matchujú napísaný text
 - Zelený rámček + ✓ indikátor keď je film/pieseň/interpret rozpoznaný
 - Server-side cache pre vyhľadávací index (1 hodina)
