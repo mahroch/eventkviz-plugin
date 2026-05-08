@@ -409,9 +409,15 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 	}
 
 	public function resolve_cct_id_by_name($text, $table_suffix, $name_column){
-		global $wpdb;
 		$text = trim((string) $text);
 		if ($text === '') return '';
+		// Diacritic + case-insensitive lookup via the same normalized index used by REST search.
+		// Falls back to plain SQL only if the REST class is unavailable (defensive).
+		if (class_exists('Eventkviz_Rest_Search')) {
+			$id = Eventkviz_Rest_Search::find_id_by_exact_name($table_suffix, $text);
+			return $id ? (string) $id : '';
+		}
+		global $wpdb;
 		$table = $wpdb->prefix . 'jet_cct_' . $table_suffix;
 		$col   = sanitize_key($name_column);
 		$id = $wpdb->get_var($wpdb->prepare(

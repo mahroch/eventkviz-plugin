@@ -143,44 +143,23 @@ class Eventkviz_Public {
 	}
 
 	public function localize_autocomplete_data() {
-		global $wpdb;
-
 		$quiz_type = $this->detect_quiz_type();
 		if ($quiz_type === false) {
 			return;
 		}
 
-		$payload = array();
-
-		if ($quiz_type === 'music') {
-			$artists = array();
-			$rows = $wpdb->get_results( "SELECT _ID, artist FROM {$wpdb->prefix}jet_cct_artists" );
-			foreach ($rows as $item) {
-				$artists[ $item->artist ] = $item->_ID;
-			}
-			$payload['artists'] = $artists;
-
-			$songs = array();
-			$rows = $wpdb->get_results( "SELECT _ID, song FROM {$wpdb->prefix}jet_cct_songs" );
-			foreach ($rows as $item) {
-				$songs[ $item->song ] = $item->_ID;
-			}
-			$payload['songs'] = $songs;
-		}
-
-		if ($quiz_type === 'movies') {
-			$movies = array();
-			$rows = $wpdb->get_results( "SELECT _ID, original_title FROM {$wpdb->prefix}jet_cct_movies" );
-			foreach ($rows as $item) {
-				$movies[ $item->original_title ] = $item->_ID;
-			}
-			$payload['movies'] = $movies;
-		}
+		$type_to_datasets = array(
+			'music'  => array( 'artists', 'songs' ),
+			'movies' => array( 'movies' ),
+		);
 
 		wp_localize_script(
 			$this->eventkviz . '-autocomplete',
-			'eventkvizAutocomplete',
-			$payload
+			'eventkvizCfg',
+			array(
+				'apiUrl'   => esc_url_raw( rest_url( 'eventkviz/v1/search' ) ),
+				'datasets' => isset( $type_to_datasets[ $quiz_type ] ) ? $type_to_datasets[ $quiz_type ] : array(),
+			)
 		);
 	}
 

@@ -1,16 +1,15 @@
 (function ($) {
     'use strict';
 
-    if (typeof eventkvizAutocomplete === 'undefined') {
+    if (typeof eventkvizCfg === 'undefined' || !eventkvizCfg.apiUrl) {
         return;
     }
 
-    // Mapping: input class → dataset key in localized data
-    var DATASETS = [
-        { selector: '.autocomplete1', dataKey: 'artists' },
-        { selector: '.autocomplete2', dataKey: 'songs' },
-        { selector: '.autocomplete3', dataKey: 'movies' }
-    ];
+    var SELECTOR_TO_TYPE = {
+        '.autocomplete1': 'artists',
+        '.autocomplete2': 'songs',
+        '.autocomplete3': 'movies'
+    };
 
     function normalize(s) {
         if (s == null) return '';
@@ -21,84 +20,90 @@
             .trim();
     }
 
-    function buildIndex(dataMap) {
-        // dataMap: { "Pulp Fiction": 42, ... }
-        // Returns: { keys: ["Pulp Fiction", ...], normMap: { "pulp fiction": "Pulp Fiction" } }
-        var keys = Object.keys(dataMap || {});
-        var normMap = {};
-        for (var i = 0; i < keys.length; i++) {
-            normMap[normalize(keys[i])] = keys[i];
-        }
-        return { keys: keys, normMap: normMap };
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
-    function makeSource(index) {
-        // Substring + diacritic-insensitive matcher (replaces jQuery UI default prefix-only)
-        return function (request, response) {
-            var q = normalize(request.term);
-            if (!q) {
-                response([]);
-                return;
-            }
-            var matches = [];
-            for (var i = 0; i < index.keys.length; i++) {
-                var key = index.keys[i];
-                if (normalize(key).indexOf(q) !== -1) {
-                    matches.push(key);
-                    if (matches.length >= 50) break;
+    function highlightMatch(label, query) {
+        var nLabel = normalize(label);
+        var nQuery = normalize(query);
+        if (!nQuery) return escapeHtml(label);
+        var idx = nLabel.indexOf(nQuery);
+        if (idx === -1) return escapeHtml(label);
+        var before = label.substr(0, idx);
+        var match  = label.substr(idx, nQuery.length);
+        var after  = label.substr(idx + nQuery.length);
+        return escapeHtml(before) + '<strong>' + escapeHtml(match) + '</strong>' + escapeHtml(after);
+    }
+
+    function setHiddenKey($input, id) {
+        $input.next("input[type='hidden']").val(id || '');
+    }
+
+    function setMatchedFlag($input, matched) {
+        $input.toggleClass('ek-matched', !!matched);
+    }
+
+    function attachAutocomplete($input, type) {
+        var pending = null;
+
+        $input.autocomplete({
+            minLength: 1,
+            delay: 200,
+            source: function (request, response) {
+                if (pending) pending.abort();
+                pending = $.ajax({
+                    url: eventkvizCfg.apiUrl,
+                    method: 'GET',
+                    dataType: 'json',
+                    data: { type: type, q: request.term, limit: 15 },
+                    success: function (items) {
+                        var q = request.term;
+                        response((items || []).map(function (it) {
+                            return { label: it.label, value: it.label, id: it.id, _q: q };
+                        }));
+                    },
+                    error: function (xhr, status) {
+                        if (status !== 'abort') response([]);
+                    }
+                });
+            },
+            select: function (event, ui) {
+                setHiddenKey($input, ui.item.id);
+                setMatchedFlag($input, true);
+            },
+            change: function (event, ui) {
+                if (!ui.item) {
+                    setHiddenKey($input, '');
+                    setMatchedFlag($input, false);
                 }
             }
-            response(matches);
+        });
+
+        // Match highlighting in dropdown
+        $input.autocomplete('instance')._renderItem = function (ul, item) {
+            return $('<li>')
+                .append($('<div>').html(highlightMatch(item.label, item._q || '')))
+                .appendTo(ul);
         };
-    }
 
-    function setHiddenKey($input, dataMap, label) {
-        // Stores the ID into the adjacent hidden input
-        var id = (label != null && Object.prototype.hasOwnProperty.call(dataMap, label))
-            ? dataMap[label]
-            : '';
-        $input.next("input[type='hidden']").val(id);
-    }
-
-    function attachAutoResolve($input, dataMap, index) {
-        // On blur/change: if user typed a name that matches a known key
-        // (case + diacritic insensitive), auto-fill the hidden _key input.
-        // Fixes the bug where users typing the exact name without clicking
-        // the dropdown got 0 points.
-        function resolve() {
-            var typed = $input.val();
-            var canonical = index.normMap[normalize(typed)];
-            if (canonical) {
-                // Snap visible value to canonical form so evaluation matches
-                if (typed !== canonical) $input.val(canonical);
-                setHiddenKey($input, dataMap, canonical);
-            } else {
-                setHiddenKey($input, dataMap, null);
-            }
-        }
-        $input.on('change blur', resolve);
+        $input.on('input', function () {
+            setMatchedFlag($input, false);
+            setHiddenKey($input, '');
+        });
     }
 
     $(function () {
-        DATASETS.forEach(function (cfg) {
-            var dataMap = eventkvizAutocomplete[cfg.dataKey];
-            if (!dataMap) return; // dataset not provided for this quiz type
-
-            var index = buildIndex(dataMap);
-            var $inputs = $(cfg.selector);
-            if (!$inputs.length) return;
-
-            $inputs.each(function () {
-                var $input = $(this);
-                $input.autocomplete({
-                    source: makeSource(index),
-                    minLength: 1,
-                    select: function (event, ui) {
-                        setHiddenKey($input, dataMap, ui.item.value);
-                    }
-                });
-                attachAutoResolve($input, dataMap, index);
-            });
+        var datasets = eventkvizCfg.datasets || [];
+        Object.keys(SELECTOR_TO_TYPE).forEach(function (sel) {
+            var type = SELECTOR_TO_TYPE[sel];
+            if (datasets.indexOf(type) === -1) return;
+            $(sel).each(function () { attachAutocomplete($(this), type); });
         });
     });
 

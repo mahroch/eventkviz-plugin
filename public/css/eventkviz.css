@@ -618,6 +618,17 @@ body .ek-quiz-link-btn {
     border: none !important;
     margin: 0 !important;
 }
+.ui-autocomplete strong {
+    color: #ffd54f !important;
+    font-weight: 700 !important;
+}
+.ek-input-group input.ek-matched {
+    border-color: #6dd58c !important;
+    background-image: linear-gradient(45deg, transparent 70%, rgba(109,213,140,0.18) 70%);
+}
+.ek-input-group input.ek-matched::after {
+    content: '✓';
+}
 
 /* ---------- Hide WP site header & page title on eventkviz pages ---------- */
 body.eventkviz-page header.site-header,
