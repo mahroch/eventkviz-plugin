@@ -12,17 +12,28 @@
         var $answers = collectAnswerInputs($form);
         if (!$answers.length) return;
 
+        var $saveable = collectSaveableInputs($form);
+
         addProgressIndicator($form, $answers);
         attachSubmitConfirmation($form, $answers);
-        attachAutosave($form, $answers);
+        attachAutosave($form, $answers, $saveable);
     }
 
     function collectAnswerInputs($form) {
-        // Visible answer inputs/selects, excluding hidden meta inputs (set, set_sig, team, user, akcia, gc_*, *_key)
+        // Visible answer inputs/selects (used for progress + submit-confirm + per-edit save trigger)
         return $form.find('input:not([type=hidden]):not([type=submit]):not([type=button]), select').filter(function () {
             var name = $(this).attr('name');
             if (!name) return false;
             return !/^(set|set_sig|team|user|akcia|gc_)/.test(name) && !/_key$/.test(name);
+        });
+    }
+
+    function collectSaveableInputs($form) {
+        // Same as answers, plus the paired hidden *_key inputs that store the resolved CCT id
+        return $form.find('input, select').filter(function () {
+            var name = $(this).attr('name');
+            if (!name) return false;
+            return !/^(set|set_sig|team|user|akcia|gc_)/.test(name);
         });
     }
 
@@ -80,7 +91,7 @@
         return 'ek_autosave:' + type + ':' + akcia + ':' + team + ':' + user;
     }
 
-    function attachAutosave($form, $answers) {
+    function attachAutosave($form, $answers, $saveable) {
         var key = autosaveKey($form);
 
         // Restore on load
@@ -88,29 +99,36 @@
             var raw = localStorage.getItem(key);
             if (raw) {
                 var data = JSON.parse(raw);
-                $answers.each(function () {
+                $saveable.each(function () {
                     var name = $(this).attr('name');
                     if (name && Object.prototype.hasOwnProperty.call(data, name)) {
                         $(this).val(data[name]);
                     }
                 });
-                $answers.trigger('change');
+                // Re-apply matched flag to autocomplete inputs whose _key was restored
+                $form.find("input.autocomplete1, input.autocomplete2, input.autocomplete3").each(function () {
+                    var $i = $(this);
+                    var $hidden = $i.next("input[type='hidden']");
+                    if ($i.val() && $hidden.val()) {
+                        $i.addClass('ek-matched');
+                    }
+                });
                 showRestoredHint($form);
             }
         } catch (err) {}
 
-        // Save on edit (debounced)
+        // Save on edit (debounced) — listen on visible answers but persist the full saveable set
         var saveTimer;
         $answers.on('input change', function () {
             clearTimeout(saveTimer);
-            saveTimer = setTimeout(function () { saveNow(key, $answers); }, 400);
+            saveTimer = setTimeout(function () { saveNow(key, $saveable); }, 400);
         });
     }
 
-    function saveNow(key, $answers) {
+    function saveNow(key, $saveable) {
         try {
             var data = {};
-            $answers.each(function () {
+            $saveable.each(function () {
                 var name = $(this).attr('name');
                 if (name) data[name] = $(this).val();
             });

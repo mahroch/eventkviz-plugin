@@ -53,7 +53,7 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                     echo '<div class="ek-quiz-content">';
                     echo '<h1 class="ek-quiz-title">Vedomostný kvíz</h1>';
                     echo '<p class="ek-quiz-subtitle">Odpovedzte na otázky a získajte body</p>';
-                    echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form">';
+                    echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form" data-quiz-type="knowledge">';
 
                     $question_set_exists = $this->check_if_questions_set_exists( $akcia_code,'knowledge',$user_code,$team_code);
 

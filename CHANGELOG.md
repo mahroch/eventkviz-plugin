@@ -9,8 +9,8 @@ Všetky podstatné zmeny v plugine EventKviz.
 ### Changed (vedomostný kvíz)
 - Pri všetkých topic counts = 0 sa otázky rozdelia rovnomerne medzi témy (round-robin) namiesto pure-random — predtým témy s viac otázkami v DB (Movies = 77) dominovali
 
-### Added (filmový kvíz)
-- Autosave odpovedí do localStorage — po výpadku siete sa rozohraný kvíz obnoví
+### Added (všetky kvízy: filmový, hudobný, vedomostný, sudoku)
+- Autosave odpovedí do localStorage — po výpadku siete sa rozohraný kvíz obnoví; pri obnove sa znova zobrazí ✓ indikátor pri rozpoznaných filmoch/interpretoch/piesňach
 - Progress bar „Odpovedané N/10" hore v kvíze
 - Potvrdenie pred odoslaním ak nie sú vyplnené všetky polia
 - Admin stránka „EventKviz výsledky" s leaderboardom (celkové + podľa typu kvízu)

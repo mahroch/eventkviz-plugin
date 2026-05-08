@@ -67,7 +67,7 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
             echo '<div class="ek-quiz-content">';
             echo '<h1 class="ek-quiz-title">Sudoku kvíz</h1>';
             echo '<p class="ek-quiz-subtitle">Vyriešte sudoku a zapíšte čísla z označených políčok</p>';
-            echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form">';
+            echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form" data-quiz-type="sudoku">';
 
             for($i=0;$i<$number_of_questions; $i++) {
                 $human_number = $i+1;

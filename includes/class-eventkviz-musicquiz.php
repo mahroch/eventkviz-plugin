@@ -100,7 +100,7 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
             echo '<div class="ek-quiz-content">';
             echo '<h1 class="ek-quiz-title">Hudobný kvíz</h1>';
             echo '<p class="ek-quiz-subtitle">Vypočujte si pieseň a uhádnite interpreta a názov skladby</p>';
-            echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form">';
+            echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form" data-quiz-type="music">';
 
             for($i=0;$i<$number_of_questions; $i++) {
                 $human_number = $i+1;
