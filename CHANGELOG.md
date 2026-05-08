@@ -4,6 +4,16 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-05-08
+
+### Security (hudobný kvíz)
+- HMAC podpis question setu (rovnaká ochrana akú mal filmový od 1.3.0)
+- Audio player blokuje download a kontextové menu (`controlsList=nodownload`)
+
+### Changed (hudobný kvíz)
+- Hardcoded `localhost:8888` / `eventkviz.sk` URL nahradené `home_url()`
+- Polia interpret + pieseň vedľa seba na desktope (50/50), na mobile stackované
+
 ## [1.3.0] - 2026-05-08
 
 ### Changed (vedomostný kvíz)

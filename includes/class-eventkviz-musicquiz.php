@@ -90,11 +90,7 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
                
             }
 
-            if($_SERVER['HTTP_HOST'] == 'localhost:8888') {
-                $url = 'http://localhost:8888/eventkviz/audio-quiz-dynamic-evaluation/';
-            } else {
-                $url = 'https://eventkviz.sk/audio-quiz-dynamic-evaluation/';
-            }
+            $url = home_url('/audio-quiz-dynamic-evaluation/');
 
             echo '<div class="ek-quiz">';
             echo '<div class="ek-quiz-content">';
@@ -143,6 +139,7 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
             $serialized_question_set = json_encode($questions);
 
             echo '<input type="hidden" name="set" value="' . esc_attr($serialized_question_set) . '">';
+            echo '<input type="hidden" name="set_sig" value="' . esc_attr($this->sign_question_set($serialized_question_set, $akcia_code)) . '">';
 
             $gc_id = isset($_GET['id']) ? sanitize_text_field($_GET['id']) : '';
             $gc_cp = isset($_GET['cp']) ? sanitize_text_field($_GET['cp']) : '';
@@ -167,9 +164,8 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
     
     public function show_media_controls($audio_file_url ){
         echo "<div>";
-        echo "<audio controls>";
-
-        echo '<source src="'. $audio_file_url . '" type="audio/mp3">';
+        echo '<audio controls controlsList="nodownload noplaybackrate" oncontextmenu="return false;">';
+        echo '<source src="' . esc_url($audio_file_url) . '" type="audio/mp3">';
         echo 'Your browser does not support the audio element.';
         echo "</audio></div>";
     }
@@ -228,8 +224,18 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         
         $akcia = $_POST['akcia'];
         $this->load_basic_event_settings( $akcia);
-        $questions = json_decode(wp_unslash($_POST['set']), true);
-        //print_r($questions);
+
+        $raw_set = isset($_POST['set']) ? wp_unslash($_POST['set']) : '';
+        $raw_sig = isset($_POST['set_sig']) ? wp_unslash($_POST['set_sig']) : '';
+        if (!$this->verify_question_set_signature($raw_set, $akcia, $raw_sig)) {
+            wp_die(
+                esc_html__('Neplatný podpis kvíz formulára. Otvorte si kvíz znova.', 'eventkviz'),
+                esc_html__('Neplatný formulár', 'eventkviz'),
+                array('response' => 400, 'back_link' => true)
+            );
+        }
+
+        $questions = json_decode($raw_set, true);
         $user = $_POST['user'];
         $team = $_POST['team'];
 
@@ -267,11 +273,10 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             } else {
                 $akcia_tag = $this->akcia_tag;
 
-                if($_SERVER['HTTP_HOST'] == 'localhost:8888') {
-                    $link_to_music_quiz_url = 'http://localhost:8888/eventkviz/' . $akcia_tag . '/aqljk/?team=' . $team . '&user=' . $user . '&akcia=' . $akcia_tag;
-                } else {
-                    $link_to_music_quiz_url = 'https://eventkviz.sk/aqljk/?team=' . $team . '&user=' . $user . '&akcia=' . $akcia_tag;
-                }
+                $link_to_music_quiz_url = add_query_arg(
+                    array('team' => $team, 'user' => $user, 'akcia' => $akcia_tag),
+                    home_url('/aqljk/')
+                );
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->music_settings['min_body_na_postup']) . '</strong> bodov.</p>';
                 echo '<a href="' . esc_url($link_to_music_quiz_url) . '" class="ek-quiz-submit ek-quiz-link-btn">Opakovať kvíz</a>';

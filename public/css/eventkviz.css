@@ -164,6 +164,17 @@
 .ek-quiz-form {
     gap: 16px;
 }
+/* Music quiz: artist + song side-by-side on desktop, stacked on mobile */
+form.ek-quiz-form[data-quiz-type="music"] .ek-question-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+@media (max-width: 640px) {
+    form.ek-quiz-form[data-quiz-type="music"] .ek-question-fields {
+        grid-template-columns: 1fr;
+    }
+}
 .ek-input-group input,
 .ek-input-group select {
     width: 100%;

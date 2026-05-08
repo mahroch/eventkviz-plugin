@@ -37,17 +37,33 @@
         });
     }
 
-    function countFilled($answers) {
-        var n = 0;
+    function questionKey($input) {
+        // Group inputs that belong to the same question (e.g. artist1 + song1 → "1")
+        var name = $input.attr('name') || '';
+        var m = name.match(/(\d+)(_key)?$/);
+        return m ? m[1] : name;
+    }
+
+    function countFilledQuestions($answers) {
+        // A question counts as "answered" if at least one of its fields is non-empty
+        var byQ = {};
         $answers.each(function () {
             var v = $(this).val();
-            if (v != null && String(v).trim() !== '') n++;
+            if (v != null && String(v).trim() !== '') {
+                byQ[questionKey($(this))] = true;
+            }
         });
-        return n;
+        return Object.keys(byQ).length;
+    }
+
+    function totalQuestions($answers) {
+        var byQ = {};
+        $answers.each(function () { byQ[questionKey($(this))] = true; });
+        return Object.keys(byQ).length;
     }
 
     function addProgressIndicator($form, $answers) {
-        var total = $answers.length;
+        var total = totalQuestions($answers);
         var $bar = $(
             '<div class="ek-progress" role="status" aria-live="polite">' +
                 '<div class="ek-progress-track"><div class="ek-progress-fill" style="width:0%"></div></div>' +
@@ -58,7 +74,7 @@
         if (!$bar.parent().length) $form.prepend($bar);
 
         function update() {
-            var filled = countFilled($answers);
+            var filled = countFilledQuestions($answers);
             $bar.find('.ek-progress-current').text(filled);
             var pct = total > 0 ? Math.round((filled / total) * 100) : 0;
             $bar.find('.ek-progress-fill').css('width', pct + '%');
@@ -69,8 +85,8 @@
 
     function attachSubmitConfirmation($form, $answers) {
         $form.on('submit', function (e) {
-            var filled = countFilled($answers);
-            var total = $answers.length;
+            var filled = countFilledQuestions($answers);
+            var total = totalQuestions($answers);
             if (filled < total) {
                 var msg = 'Vyplnené: ' + filled + ' z ' + total + ' odpovedí.\n\nNaozaj odoslať? Po odoslaní sa už nedá meniť.';
                 if (!window.confirm(msg)) {
