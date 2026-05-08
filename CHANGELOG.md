@@ -4,6 +4,11 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.2.4] - 2026-05-08
+
+### Fixed
+- Vedomostný kvíz vykreslí otázky aj keď sú všetky topic counts = 0 (vyberie `Počet otázok v sete` náhodne zo všetkých knowledge otázok — zhoduje sa s pomocným textom v admine)
+
 ## [1.2.3] - 2026-05-08
 
 ### Changed

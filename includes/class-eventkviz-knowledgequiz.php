@@ -57,52 +57,82 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
 
                     $question_set_exists = $this->check_if_questions_set_exists( $akcia_code,'knowledge',$user_code,$team_code);
 
+                    $questions = array();
                     if( $question_set_exists) {
                         $quantity = count($this->questions_set);
                         for($i=0;$i<$quantity; $i++) {
                             $human_number = $i+1;
                             $current_question_id = $this->questions_set[$i];
-                            
+
                             $this->print_form_question($current_question_id, $human_number);
                         }
                         $questions = $this->questions_set;
                     } else {
-                        $k = 0;
-                        foreach ($this->cAkcia->knowledge_settings['number_question_in_topic'] as $topic => $quantity){
-                            if($quantity > 0) {
-                                $args = array(
-                                    'post_type'   => 'questions-knowledge',
-                                    'numberposts' => -1,
-                                    'tax_query' => array(
-                                        array(
-                                            'taxonomy' => 'topic', 
-                                            'field' => 'slug',
-                                            'terms' => $topic 
+                        $topic_counts = isset($this->cAkcia->knowledge_settings['number_question_in_topic'])
+                            ? $this->cAkcia->knowledge_settings['number_question_in_topic']
+                            : array();
+
+                        $use_per_topic = false;
+                        foreach ($topic_counts as $count) {
+                            if ((int) $count > 0) { $use_per_topic = true; break; }
+                        }
+
+                        if ($use_per_topic) {
+                            $k = 0;
+                            foreach ($topic_counts as $topic => $quantity){
+                                if($quantity > 0) {
+                                    $args = array(
+                                        'post_type'   => 'questions-knowledge',
+                                        'numberposts' => -1,
+                                        'tax_query' => array(
+                                            array(
+                                                'taxonomy' => 'topic',
+                                                'field' => 'slug',
+                                                'terms' => $topic
+                                            )
                                         )
-                                    )
-                                );
+                                    );
 
-                                $available_topic_questions = get_posts( $args );
+                                    $available_topic_questions = get_posts( $args );
+                                    $number_of_available_questions = count($available_topic_questions)-1;
+                                    $this->questions_set = $this->UniqueRandomNumbersWithinRange($number_of_available_questions, $quantity);
 
-                            
-                                $number_of_available_questions = count($available_topic_questions)-1;
-                                //$questions_set = $this->UniqueRandomNumbersWithinRange($number_of_available_questions, $quantity);
+                                    for($i=0;$i<$quantity; $i++) {
+                                        $human_number = $k+1;
+                                        $current_question_id = $available_topic_questions[$this->questions_set[$i]]->ID;
 
-                                $this->questions_set = $this->UniqueRandomNumbersWithinRange($number_of_available_questions, $quantity);
-                        
+                                        $this->print_form_question($current_question_id, $human_number);
 
-
-                                for($i=0;$i<$quantity; $i++) {
-                                    $human_number = $k+1;
-                                    $current_question_id = $available_topic_questions[$this->questions_set[$i]]->ID;
-                                    
-                                    $this->print_form_question($current_question_id, $human_number);
-
-                                    $questions[] = $current_question_id;
-                                    $k++;
+                                        $questions[] = $current_question_id;
+                                        $k++;
+                                    }
                                 }
                             }
-                            //$k++;
+                        } else {
+                            // Všetky topic counts su 0 → vyber pocet_otazok_v_sete nahodne zo vsetkych knowledge otazok
+                            $number_of_questions = isset($this->cAkcia->knowledge_settings['pocet_otazok_v_sete'])
+                                ? (int) $this->cAkcia->knowledge_settings['pocet_otazok_v_sete']
+                                : 0;
+
+                            if ($number_of_questions > 0) {
+                                $available_questions = get_posts(array(
+                                    'post_type'   => 'questions-knowledge',
+                                    'numberposts' => -1,
+                                ));
+                                $number_of_available = count($available_questions) - 1;
+                                if ($number_of_available >= 0) {
+                                    $this->questions_set = $this->UniqueRandomNumbersWithinRange($number_of_available, $number_of_questions);
+
+                                    for ($i = 0; $i < $number_of_questions && isset($this->questions_set[$i]); $i++) {
+                                        $human_number = $i + 1;
+                                        $current_question_id = $available_questions[$this->questions_set[$i]]->ID;
+
+                                        $this->print_form_question($current_question_id, $human_number);
+
+                                        $questions[] = $current_question_id;
+                                    }
+                                }
+                            }
                         }
                     }
 
