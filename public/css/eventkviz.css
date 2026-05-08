@@ -630,6 +630,56 @@ body .ek-quiz-link-btn {
     content: '✓';
 }
 
+/* ---------- Quiz progress + autosave hint ---------- */
+.ek-progress {
+    margin: 0 0 16px 0;
+    padding: 10px 14px;
+    border-radius: var(--ek-radius-sm);
+    background: rgba(0,0,0,0.18);
+    color: var(--ek-text);
+}
+.ek-progress-track {
+    height: 6px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+.ek-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #b45cff, #ff4f9d);
+    transition: width 0.25s ease;
+}
+.ek-progress-text {
+    font-size: 13px;
+    opacity: 0.9;
+    text-align: right;
+}
+.ek-restored-hint {
+    margin: 0 0 16px 0;
+    padding: 10px 14px;
+    border-radius: var(--ek-radius-sm);
+    background: rgba(255, 213, 79, 0.15);
+    border: 1px solid rgba(255, 213, 79, 0.45);
+    color: var(--ek-text);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+.ek-restored-clear {
+    background: rgba(255,255,255,0.18);
+    color: inherit;
+    border: 0;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.ek-restored-clear:hover {
+    background: rgba(255,255,255,0.3);
+}
+
 /* ---------- Hide WP site header & page title on eventkviz pages ---------- */
 body.eventkviz-page header.site-header,
 body.eventkviz-page #masthead,

@@ -4,6 +4,24 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-05-08
+
+### Changed (vedomostný kvíz)
+- Pri všetkých topic counts = 0 sa otázky rozdelia rovnomerne medzi témy (round-robin) namiesto pure-random — predtým témy s viac otázkami v DB (Movies = 77) dominovali
+
+### Added (filmový kvíz)
+- Autosave odpovedí do localStorage — po výpadku siete sa rozohraný kvíz obnoví
+- Progress bar „Odpovedané N/10" hore v kvíze
+- Potvrdenie pred odoslaním ak nie sú vyplnené všetky polia
+- Admin stránka „EventKviz výsledky" s leaderboardom (celkové + podľa typu kvízu)
+
+### Security (filmový kvíz)
+- HMAC podpis question setu — hráč nemôže v DOM zameniť ID otázok pred submitom
+- Video player blokuje download a kontextové menu (`controlsList=nodownload`)
+
+### Changed
+- Hardcoded `localhost:8888` / `eventkviz.sk` URL nahradené `home_url()` (funguje na staging / inom doméne bez patchovania kódu)
+
 ## [1.2.4] - 2026-05-08
 
 ### Fixed

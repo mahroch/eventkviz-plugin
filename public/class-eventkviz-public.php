@@ -141,7 +141,17 @@ class Eventkviz_Public {
 		 */
 
 		wp_enqueue_script( $this->eventkviz, plugin_dir_url( __FILE__ ) . 'js/eventkviz-public.js', array( 'jquery' ), $this->version, false );
-		
+
+		if ($this->detect_quiz_type() !== false) {
+			wp_enqueue_script(
+				$this->eventkviz . '-quiz-form',
+				plugin_dir_url( __FILE__ ) . 'js/eventkviz-quiz-form.js',
+				array( 'jquery' ),
+				$this->version,
+				true
+			);
+		}
+
 		if ($this->should_load_autocomplete()) {
 			wp_enqueue_script( 'jquery-ui-autocomplete' );
 			

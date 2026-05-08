@@ -109,28 +109,68 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                                 }
                             }
                         } else {
-                            // Všetky topic counts su 0 → vyber pocet_otazok_v_sete nahodne zo vsetkych knowledge otazok
+                            // Vsetky topic counts su 0 → rovnomerne (round-robin) rozdelime
+                            // pocet_otazok_v_sete medzi vsetky temy ktore maju otazky.
+                            // Princip: prv kazda tema dostane 1, potom druha, kym sa nedoplni N.
+                            // Pri 6 temach + N=10 → 4 temy maju 2 otazky, 2 temy maju 1.
                             $number_of_questions = isset($this->cAkcia->knowledge_settings['pocet_otazok_v_sete'])
                                 ? (int) $this->cAkcia->knowledge_settings['pocet_otazok_v_sete']
                                 : 0;
 
                             if ($number_of_questions > 0) {
-                                $available_questions = get_posts(array(
-                                    'post_type'   => 'questions-knowledge',
-                                    'numberposts' => -1,
+                                $topic_terms = get_terms(array(
+                                    'taxonomy'   => 'topic',
+                                    'hide_empty' => true,
                                 ));
-                                $number_of_available = count($available_questions) - 1;
-                                if ($number_of_available >= 0) {
-                                    $this->questions_set = $this->UniqueRandomNumbersWithinRange($number_of_available, $number_of_questions);
 
-                                    for ($i = 0; $i < $number_of_questions && isset($this->questions_set[$i]); $i++) {
-                                        $human_number = $i + 1;
-                                        $current_question_id = $available_questions[$this->questions_set[$i]]->ID;
-
-                                        $this->print_form_question($current_question_id, $human_number);
-
-                                        $questions[] = $current_question_id;
+                                $pools = array();
+                                if (is_array($topic_terms)) {
+                                    foreach ($topic_terms as $term) {
+                                        $posts = get_posts(array(
+                                            'post_type'   => 'questions-knowledge',
+                                            'numberposts' => -1,
+                                            'tax_query'   => array(
+                                                array(
+                                                    'taxonomy' => 'topic',
+                                                    'field'    => 'slug',
+                                                    'terms'    => $term->slug,
+                                                ),
+                                            ),
+                                        ));
+                                        if (!empty($posts)) {
+                                            shuffle($posts);
+                                            $pools[$term->slug] = $posts;
+                                        }
                                     }
+                                }
+
+                                // Randomize topic order tak, aby "extra" otazky (pri nedelitelnom N)
+                                // padali zakazdym na ine temy.
+                                $pool_keys = array_keys($pools);
+                                shuffle($pool_keys);
+
+                                $picked = array();
+                                while (count($picked) < $number_of_questions) {
+                                    $any = false;
+                                    foreach ($pool_keys as $slug) {
+                                        if (count($picked) >= $number_of_questions) break;
+                                        if (!empty($pools[$slug])) {
+                                            $picked[] = array_pop($pools[$slug]);
+                                            $any = true;
+                                        }
+                                    }
+                                    if (!$any) break;
+                                }
+
+                                shuffle($picked);
+
+                                for ($i = 0; $i < count($picked); $i++) {
+                                    $human_number = $i + 1;
+                                    $current_question_id = $picked[$i]->ID;
+
+                                    $this->print_form_question($current_question_id, $human_number);
+
+                                    $questions[] = $current_question_id;
                                 }
                             }
                         }

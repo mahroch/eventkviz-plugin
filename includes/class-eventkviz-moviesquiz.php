@@ -98,17 +98,13 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 }
             }
 
-            if($_SERVER['HTTP_HOST'] == 'localhost:8888') {
-                $url = 'http://localhost:8888/eventkviz/movies-quiz-dynamic-evaluation/';
-            } else {
-                $url = 'https://eventkviz.sk/movies-quiz-dynamic-evaluation/';
-            }
+            $url = home_url('/movies-quiz-dynamic-evaluation/');
 
             echo '<div class="ek-quiz">';
             echo '<div class="ek-quiz-content">';
             echo '<h1 class="ek-quiz-title">Filmový kvíz</h1>';
             echo '<p class="ek-quiz-subtitle">Pozrite si ukážku a uhádnite názov filmu</p>';
-            echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form">';
+            echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form" data-quiz-type="movies">';
 
             for($i=0;$i<$number_of_questions; $i++) {
                 $human_number = $i+1;
@@ -151,6 +147,7 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
             $serialized_question_set = json_encode($questions);
 
             echo '<input type="hidden" name="set" value="' . esc_attr($serialized_question_set) . '">';
+            echo '<input type="hidden" name="set_sig" value="' . esc_attr($this->sign_question_set($serialized_question_set, $akcia_code)) . '">';
 
             $gc_id = isset($_GET['id']) ? sanitize_text_field($_GET['id']) : '';
             $gc_cp = isset($_GET['cp']) ? sanitize_text_field($_GET['cp']) : '';
@@ -172,7 +169,7 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
         }
     }
     public function show_media_file($movie_file_url){
-        echo '<video controls style="width:100%;border-radius:8px;display:block;">';
+        echo '<video controls controlsList="nodownload noplaybackrate" disablePictureInPicture oncontextmenu="return false;" style="width:100%;border-radius:8px;display:block;">';
         echo '<source src="' . esc_url($movie_file_url) . '" type="video/mp4">';
         echo 'Your browser does not support the video element.';
         echo '</video>';
@@ -251,7 +248,17 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
         $akcia = $_POST['akcia'];
         $this->load_basic_event_settings($akcia);
 
-        $questions = json_decode(wp_unslash($_POST['set']), true);
+        $raw_set = isset($_POST['set']) ? wp_unslash($_POST['set']) : '';
+        $raw_sig = isset($_POST['set_sig']) ? wp_unslash($_POST['set_sig']) : '';
+        if (!$this->verify_question_set_signature($raw_set, $akcia, $raw_sig)) {
+            wp_die(
+                esc_html__('Neplatný podpis kvíz formulára. Otvorte si kvíz znova.', 'eventkviz'),
+                esc_html__('Neplatný formulár', 'eventkviz'),
+                array('response' => 400, 'back_link' => true)
+            );
+        }
+
+        $questions = json_decode($raw_set, true);
         //print_r($questions);
         $user = $_POST['user'];
         $team = $_POST['team'];
@@ -299,11 +306,10 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
             } else {
                 $akcia_tag = $this->akcia_tag;
 
-                if($_SERVER['HTTP_HOST'] == 'localhost:8888') {
-                    $link_to_music_quiz_url = 'http://localhost:8888/eventkviz/' . $akcia_tag . '/merdfghh/?team=' . $team . '&user=' . $user . '&akcia=' . $akcia_tag;
-                } else {
-                    $link_to_music_quiz_url = 'https://eventkviz.sk/merdfghh/?team=' . $team . '&user=' . $user . '&akcia=' . $akcia_tag;
-                }
+                $link_to_music_quiz_url = add_query_arg(
+                    array('team' => $team, 'user' => $user, 'akcia' => $akcia_tag),
+                    home_url('/merdfghh/')
+                );
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->movies_settings['min_body_na_postup']) . '</strong> bodov.</p>';
                 echo '<a href="' . esc_url($link_to_music_quiz_url) . '" class="ek-quiz-submit ek-quiz-link-btn">Opakovať kvíz</a>';

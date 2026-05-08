@@ -408,6 +408,17 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 		return strtolower($string);
 	}
 
+	public function sign_question_set($serialized_set, $akcia_code){
+		$payload = $serialized_set . '|' . $akcia_code;
+		return hash_hmac('sha256', $payload, wp_salt('auth'));
+	}
+
+	public function verify_question_set_signature($serialized_set, $akcia_code, $signature){
+		if (empty($signature)) return false;
+		$expected = $this->sign_question_set($serialized_set, $akcia_code);
+		return hash_equals($expected, (string) $signature);
+	}
+
 	public function resolve_cct_id_by_name($text, $table_suffix, $name_column){
 		$text = trim((string) $text);
 		if ($text === '') return '';
