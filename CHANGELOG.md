@@ -13,6 +13,7 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Zvýraznenie písmen v dropdowne ktoré matchujú napísaný text
 - Zelený rámček + ✓ indikátor keď je film/pieseň/interpret rozpoznaný
 - Server-side cache pre vyhľadávací index (1 hodina)
+- Detekcia kvíz stránok cez shortcode v obsahu (slug-fallback ostal cez `eventkviz_quiz_slug_map` filter)
 
 ## [1.2.2] - 2026-05-08
 

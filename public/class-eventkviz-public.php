@@ -54,13 +54,26 @@ class Eventkviz_Public {
 	}
 
 	private function detect_quiz_type() {
-		$current_path = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+		// Preferred: detect by shortcode in current post content
+		if (function_exists('is_singular') && is_singular()) {
+			$post = get_queried_object();
+			if ($post instanceof WP_Post) {
+				if (has_shortcode($post->post_content, 'movies_form_dynamic')) {
+					return 'movies';
+				}
+				if (has_shortcode($post->post_content, 'music_form_dynamic')) {
+					return 'music';
+				}
+			}
+		}
 
-		$page_to_type = array(
+		// Fallback: legacy slug-based detection (kept for pages where shortcode lives
+		// inside Elementor widgets and isn't part of post_content)
+		$current_path = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+		$page_to_type = apply_filters('eventkviz_quiz_slug_map', array(
 			'merdfghh' => 'movies',
 			'aqljk'    => 'music',
-		);
-
+		));
 		foreach ($page_to_type as $page => $type) {
 			if (strpos($current_path, $page) !== false) {
 				return $type;
