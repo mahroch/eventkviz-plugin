@@ -4,17 +4,14 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
-## [1.3.0] - 2026-05-08
-
-### Added
-- REST API endpoint `/wp-json/eventkviz/v1/search` (typeahead pre interpretov, piesne, filmy)
-- Zvýraznenie písmen v dropdowne ktoré matchujú napísaný text
-- Zelený rámček + ✓ indikátor keď je film/pieseň/interpret rozpoznaný
-- 1-hodinový server-side cache pre vyhľadávací index
+## [1.2.3] - 2026-05-08
 
 ### Changed
 - Vyhľadávanie cez AJAX namiesto bulk dumpu celej DB do HTML (rýchlejšie načítanie kvíz stránky)
 - Konzistentná diakritika + case-insensitive logika medzi klientom aj serverom
+- Zvýraznenie písmen v dropdowne ktoré matchujú napísaný text
+- Zelený rámček + ✓ indikátor keď je film/pieseň/interpret rozpoznaný
+- Server-side cache pre vyhľadávací index (1 hodina)
 
 ## [1.2.2] - 2026-05-08
 
