@@ -408,6 +408,19 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 		return strtolower($string);
 	}
 
+	public function resolve_cct_id_by_name($text, $table_suffix, $name_column){
+		global $wpdb;
+		$text = trim((string) $text);
+		if ($text === '') return '';
+		$table = $wpdb->prefix . 'jet_cct_' . $table_suffix;
+		$col   = sanitize_key($name_column);
+		$id = $wpdb->get_var($wpdb->prepare(
+			"SELECT _ID FROM {$table} WHERE LOWER({$col}) = LOWER(%s) LIMIT 1",
+			$text
+		));
+		return $id ? $id : '';
+	}
+
 	public function get_all_seeds($user_code, $akcia, $team_code=''){
 		global $wpdb;
 		if($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true && !empty($user_code)){

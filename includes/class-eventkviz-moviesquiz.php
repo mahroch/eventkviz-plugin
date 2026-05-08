@@ -401,6 +401,10 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
         if($this->cAkcia->movies_settings['movies_quiz_type'] == "full") {
             $movie_string = 'movie'.$iteration_no_real . '_key';
             $form_movie = $_POST[$movie_string];
+            if (empty($form_movie)) {
+                $typed = isset($_POST['movie'.$iteration_no_real]) ? wp_unslash($_POST['movie'.$iteration_no_real]) : '';
+                $form_movie = $this->resolve_cct_id_by_name($typed, 'movies', 'original_title');
+            }
         } else {
             $movie_string = 'movies'.$iteration_no_real;
             $form_movie = $_POST[$movie_string];

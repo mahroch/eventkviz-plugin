@@ -424,6 +424,15 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
 
         $form_artist = $_POST[$artist_string];
         $form_song = $_POST[$song_string ];
+
+        if (empty($form_artist)) {
+            $typed_artist = isset($_POST['artist'.$iteration_no_real]) ? wp_unslash($_POST['artist'.$iteration_no_real]) : '';
+            $form_artist = $this->resolve_cct_id_by_name($typed_artist, 'artists', 'artist');
+        }
+        if (empty($form_song)) {
+            $typed_song = isset($_POST['song'.$iteration_no_real]) ? wp_unslash($_POST['song'.$iteration_no_real]) : '';
+            $form_song = $this->resolve_cct_id_by_name($typed_song, 'songs', 'song');
+        }
         
         echo '<div class="ek-question">';
         echo '<div class="ek-question-header">';

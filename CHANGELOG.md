@@ -4,6 +4,16 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-05-08
+
+### Fixed
+- Body sa už pripočítajú aj keď hráč napíše presný názov bez kliknutia na položku v dropdowne (filmový aj hudobný kvíz)
+
+### Changed
+- Vyhľadávanie vo formulároch ignoruje diakritiku a veľkosť písmen (napr. „tridsat" nájde „Tridsať")
+- Vyhľadávanie hľadá kdekoľvek v názve, nie iba na začiatku (napr. „fic" nájde „Pulp Fiction")
+- Filmový kvíz už nenahráva zoznam piesní a interpretov a naopak (rýchlejšie načítanie)
+
 ## [1.2.1] - 2026-04-28
 
 ### Changed

@@ -53,24 +53,25 @@ class Eventkviz_Public {
 
 	}
 
-	private function should_load_autocomplete() {
-		// Získaj aktuálnu URL cestu
+	private function detect_quiz_type() {
 		$current_path = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
-		
-		// Povolené stránky
-		$allowed_pages = array(
-			'merdfghh',  // movies kviz
-			'aqljk'      // music kviz
+
+		$page_to_type = array(
+			'merdfghh' => 'movies',
+			'aqljk'    => 'music',
 		);
-		
-		// Skontroluj či sme na povolenej stránke
-		foreach ($allowed_pages as $page) {
+
+		foreach ($page_to_type as $page => $type) {
 			if (strpos($current_path, $page) !== false) {
-				return true;
+				return $type;
 			}
 		}
-		
+
 		return false;
+	}
+
+	private function should_load_autocomplete() {
+		return $this->detect_quiz_type() !== false;
 	}
 
 	/**
@@ -143,44 +144,43 @@ class Eventkviz_Public {
 
 	public function localize_autocomplete_data() {
 		global $wpdb;
-		
-		if (!$this->should_load_autocomplete()) {
+
+		$quiz_type = $this->detect_quiz_type();
+		if ($quiz_type === false) {
 			return;
 		}
 
-		// Artists - PRESNE ako si to mal ty
-		$artists = array();
-		$table_name = $wpdb->prefix . 'jet_cct_artists';
-		$artists_array = $wpdb->get_results( "SELECT * FROM $table_name" );
-		foreach ($artists_array as $item) {
-			$artists[ addslashes($item->artist) ] = $item->_ID;
+		$payload = array();
+
+		if ($quiz_type === 'music') {
+			$artists = array();
+			$rows = $wpdb->get_results( "SELECT _ID, artist FROM {$wpdb->prefix}jet_cct_artists" );
+			foreach ($rows as $item) {
+				$artists[ $item->artist ] = $item->_ID;
+			}
+			$payload['artists'] = $artists;
+
+			$songs = array();
+			$rows = $wpdb->get_results( "SELECT _ID, song FROM {$wpdb->prefix}jet_cct_songs" );
+			foreach ($rows as $item) {
+				$songs[ $item->song ] = $item->_ID;
+			}
+			$payload['songs'] = $songs;
 		}
 
-		// Songs - PRESNE ako si to mal ty
-		$songs = array();
-		$table_name = $wpdb->prefix . 'jet_cct_songs';
-		$songs_array = $wpdb->get_results( "SELECT * FROM $table_name" );
-		foreach ($songs_array as $item) {
-			$songs[ addslashes($item->song) ] = $item->_ID;
+		if ($quiz_type === 'movies') {
+			$movies = array();
+			$rows = $wpdb->get_results( "SELECT _ID, original_title FROM {$wpdb->prefix}jet_cct_movies" );
+			foreach ($rows as $item) {
+				$movies[ $item->original_title ] = $item->_ID;
+			}
+			$payload['movies'] = $movies;
 		}
 
-		// Movies - PRESNE ako si to mal ty
-		$movies = array();
-		$table_name = $wpdb->prefix . 'jet_cct_movies';
-		$movies_array = $wpdb->get_results( "SELECT * FROM $table_name" );
-		foreach ($movies_array as $item) {
-			$movies[ addslashes($item->original_title) ] = $item->_ID;
-		}
-		
-		// Pošli do JS
 		wp_localize_script(
 			$this->eventkviz . '-autocomplete',
 			'eventkvizAutocomplete',
-			array(
-				'artists' => $artists,
-				'songs' => $songs,
-				'movies' => $movies
-			)
+			$payload
 		);
 	}
 
