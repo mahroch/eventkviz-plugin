@@ -395,15 +395,15 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 			$return_url = '';
 		}
 
-		echo '<div class="geochallenge-return" style="margin-top:30px;padding:20px;background:#e8f5e9;border:2px solid #4caf50;border-radius:10px;text-align:center;">';
-		echo '<h2 style="margin-top:0;">GeoChallenge kód</h2>';
-		echo '<p>Váš kód pre návrat do GeoChallenge appky:</p>';
-		echo '<div style="font-family:monospace;font-size:36px;letter-spacing:8px;font-weight:bold;margin:15px 0;">' . esc_html($code) . '</div>';
+		echo '<div class="ek-gc-return">';
+		echo '<h2 class="ek-gc-return__title">GeoChallenge kód</h2>';
+		echo '<p class="ek-gc-return__sub">Váš kód pre návrat do GeoChallenge appky:</p>';
+		echo '<div class="ek-gc-return__code">' . esc_html($code) . '</div>';
 		if (!empty($return_url)) {
-			echo '<p style="margin-bottom:15px;">Kliknite na tlačidlo nižšie pre automatický návrat do appky, alebo zadajte kód manuálne.</p>';
-			echo '<a href="' . esc_url($return_url) . '" style="display:inline-block;padding:14px 30px;background:#4caf50;color:#fff;text-decoration:none;border-radius:8px;font-size:18px;font-weight:bold;">Návrat do GeoChallenge</a>';
+			echo '<p class="ek-gc-return__hint">Kliknite na tlačidlo nižšie pre automatický návrat do appky, alebo zadajte kód manuálne.</p>';
+			echo '<a href="' . esc_url($return_url) . '" class="ek-gc-return__btn">Návrat do GeoChallenge</a>';
 		} else {
-			echo '<p>Zadajte tento kód v GeoChallenge appke.</p>';
+			echo '<p class="ek-gc-return__hint">Zadajte tento kód v GeoChallenge appke.</p>';
 		}
 		echo '</div>';
 	}

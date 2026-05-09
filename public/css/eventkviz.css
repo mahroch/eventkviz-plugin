@@ -678,6 +678,61 @@ body .ek-quiz-link-btn {
     font-weight: 600;
 }
 
+/* ---------- GeoChallenge return panel (po splnení kvízu) ---------- */
+.ek-gc-return {
+    margin-top: 28px;
+    padding: 28px 20px;
+    background: rgba(76, 175, 80, 0.18);
+    border: 2px solid rgba(76, 175, 80, 0.55);
+    border-radius: 12px;
+    text-align: center;
+    color: var(--ek-text);
+    backdrop-filter: blur(var(--ek-blur));
+    -webkit-backdrop-filter: blur(var(--ek-blur));
+}
+.ek-gc-return__title {
+    margin: 0 0 10px;
+    color: #ffe082;
+    font-size: 22px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.35);
+}
+.ek-gc-return__sub {
+    margin: 0 0 12px;
+    opacity: 0.9;
+    font-size: 14px;
+}
+.ek-gc-return__code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 44px;
+    letter-spacing: 10px;
+    font-weight: 700;
+    margin: 18px 0;
+    color: #fff5b8;
+    text-shadow: 0 2px 12px rgba(0,0,0,0.45);
+    user-select: all;
+}
+.ek-gc-return__hint {
+    margin: 14px 0 18px;
+    font-size: 14px;
+    opacity: 0.92;
+}
+.ek-gc-return__btn {
+    display: inline-block;
+    padding: 14px 30px;
+    background: #4caf50;
+    color: #fff !important;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+.ek-gc-return__btn:hover {
+    background: #43a047;
+    transform: translateY(-1px);
+}
+
 /* ---------- Quiz progress + autosave hint ---------- */
 .ek-progress {
     margin: 0 0 16px 0;
