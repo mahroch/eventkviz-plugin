@@ -368,11 +368,15 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 			echo '</h1></div>';
 		}
 	}
-	public function generate_geochallenge_code($score) {
+	public function generate_geochallenge_code($score, $checkpoint_id = '') {
 		$secret = 'geochallenge-score-key-2026';
 		$score = max(0, min(1295, intval($score)));
 		$scorePart = str_pad(strtoupper(base_convert($score, 10, 36)), 2, '0', STR_PAD_LEFT);
-		$verify = strtoupper(substr(hash_hmac('sha256', $scorePart, $secret), 0, 3));
+		// HMAC payload includes checkpoint id to bind code to specific checkpoint.
+		// Without it, a code earned at music checkpoint would also unlock video checkpoint
+		// (anti cross-checkpoint reuse). GC /api/verify-score uses the same payload format.
+		$payload = $scorePart . ':' . (string) $checkpoint_id;
+		$verify = strtoupper(substr(hash_hmac('sha256', $payload, $secret), 0, 3));
 		return $scorePart . $verify;
 	}
 
@@ -383,11 +387,12 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 
 		// gc_return is the URL back to the GeoChallenge app (deep link). Only present
 		// when the GC app generated the eventkviz link with return_url query param.
-		// gc_id/gc_cp may be missing in the static-QR / cookie scenario — but we
-		// still want to show the code so the player can manually type it back.
+		// gc_cp = GC checkpoint id (from URL ?cp=...). Required for HMAC checkpoint
+		// binding so the code only verifies at the originating checkpoint.
 		$gc_return = isset($_POST['gc_return']) ? esc_url_raw($_POST['gc_return']) : '';
+		$gc_cp     = isset($_POST['gc_cp']) ? sanitize_text_field(wp_unslash($_POST['gc_cp'])) : '';
 
-		$code = $this->generate_geochallenge_code($gained_credits);
+		$code = $this->generate_geochallenge_code($gained_credits, $gc_cp);
 
 		if (!empty($gc_return)) {
 			$return_url = $gc_return . (strpos($gc_return, '?') !== false ? '&' : '?') . 'code=' . $code;
