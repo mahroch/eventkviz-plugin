@@ -30,8 +30,13 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
         //global $music_settings;
             
         $user_code = get_query_var( 'user' );
-        $akcia_code = get_query_var( 'akcia' ); 
-        $this->load_basic_event_settings( $akcia_code);    
+        $akcia_code = get_query_var( 'akcia' );
+        $this->load_basic_event_settings( $akcia_code);
+
+        // GeoChallenge: per-participant scoping via cp query arg
+        $gc_user = $this->geo_user_code('form');
+        if ($gc_user !== '') $user_code = $gc_user;
+
         $team_code = $this->set_team_code($user_code, $akcia_code);
 
        $this->music_quiz_settings($akcia_code,$user_code,$team_code);
@@ -263,8 +268,10 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         $user = $_POST['user'];
         $team = $_POST['team'];
 
-        
-        
+        // GeoChallenge: per-participant scoping via gc_cp POST field
+        $gc_user = $this->geo_user_code('eval');
+        if ($gc_user !== '') $user = $gc_user;
+
         $this->music_quiz_settings($akcia,$user,$team);
         $check_result = $this->check_number_of_tries($user, $akcia,'music',$team);
         
@@ -298,10 +305,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             } else {
                 $akcia_tag = $this->akcia_tag;
 
-                $link_to_music_quiz_url = add_query_arg(
-                    array('team' => $team, 'user' => $user, 'akcia' => $akcia_tag),
-                    home_url('/aqljk/')
-                );
+                $link_to_music_quiz_url = $this->build_retry_url($team, $user, $akcia_tag, '/aqljk/');
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->music_settings['min_body_na_postup']) . '</strong> bodov.</p>';
 

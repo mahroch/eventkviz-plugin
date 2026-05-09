@@ -6,6 +6,9 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [1.4.1] - 2026-05-09
 
+### Fixed (GeoChallenge integrácia)
+- Predtým všetci hráči prichádzajúci z GeoChallenge appky (cez statický link/QR) zdieľali jeden tries counter aj jeden question set — všetci dostali rovnaké otázky, prvý hráč mohol vyčerpať pokusy ostatným. Teraz sa `cp` parameter (challenge participant ID, ktoré GeoChallenge dynamicky generuje per hráča) používa ako effective user_code (`gc_<cp>`). Každý hráč má vlastný tries counter aj vlastný náhodný question set, výsledky v leaderboardu sú per-player. Aplikuje sa automaticky keď je v event nastavení zapnutá `geochallenge_integration` AND v URL je `cp=`. Funguje vo všetkých 4 kvízoch.
+
 ### Added (filmový, hudobný, vedomostný kvíz)
 - Admin toggle „Pri opakovaní označ správnosť" — po neúspešnom kvíze sa formulár predvyplní predošlými odpoveďami a každé pole zafarbí: zelené ak bolo správne, červené ak nesprávne. Hudobný kvíz označuje samostatne meno interpreta aj názov piesne. Funguje pre voľne písané odpovede aj výberové dropdowny.
 
