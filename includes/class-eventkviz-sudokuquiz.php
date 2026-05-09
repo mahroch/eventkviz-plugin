@@ -51,10 +51,11 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
 
             $number_of_available_questions = count($available_questions)-1;
             $question_set_exists = $this->check_if_questions_set_exists( $akcia_code,'sudoku',$user_code,$team_code);
+            $regenerate_on_retry = !empty($this->cAkcia->sudoku_settings['new_questions_on_retry']);
+            $treat_as_new = !$question_set_exists || $regenerate_on_retry;
 
-             if( !$question_set_exists) {
-                $this->questions_set = $this->UniqueRandomNumbersWithinRange($number_of_available_questions, $number_of_questions); 
-               
+            if( $treat_as_new ) {
+                $this->questions_set = $this->UniqueRandomNumbersWithinRange($number_of_available_questions, $number_of_questions);
             }
 
             $url = home_url('/sudoku-quiz-evaluation-dynamic/');
@@ -68,7 +69,7 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
             for($i=0;$i<$number_of_questions; $i++) {
                 $human_number = $i+1;
 
-                if( $question_set_exists) {
+                if( $question_set_exists && !$treat_as_new) {
                     $current_question_id = $this->questions_set[$i];
                 } else {
                     $current_question_id = $available_questions[$this->questions_set[$i]]->ID;

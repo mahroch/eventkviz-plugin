@@ -462,10 +462,10 @@ public function save_event_meta( $post_id ) {
 
 
     $quiz_checkbox_keys = [
-        'music'     => ['music_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'mark_correctness_on_retry'],
-        'movies'    => ['movies_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'mark_correctness_on_retry'],
-        'knowledge' => ['knowledge_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'mark_correctness_on_retry'],
-        'sudoku'    => ['sudoku_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede']
+        'music'     => ['music_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'mark_correctness_on_retry', 'new_questions_on_retry'],
+        'movies'    => ['movies_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'mark_correctness_on_retry', 'new_questions_on_retry'],
+        'knowledge' => ['knowledge_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'mark_correctness_on_retry', 'new_questions_on_retry'],
+        'sudoku'    => ['sudoku_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'new_questions_on_retry']
     ];
 
     foreach ( $quiz_checkbox_keys as $type => $keys ) {
@@ -758,7 +758,19 @@ private function render_music_tab( $post, $meta ) {
                         <input type="checkbox" name="event_music[mark_correctness_on_retry]" value="1" <?php checked( $meta['event_music_mark_correctness_on_retry'][0] ?? '0', '1' ); ?> />
                         <p class="description">
                             <strong>Zapnuté:</strong> Po neúspešnom kvíze („Opakovať kvíz") sa formulár predvyplní predošlými odpoveďami a každé pole bude farebne označené — <strong style="color:#26913f">zelené</strong> ak bolo správne, <strong style="color:#a33">červené</strong> ak nesprávne. Hráč rýchlo vidí čo opraviť. Platí pre meno interpreta aj názov piesne.<br>
-                            <strong>Vypnuté:</strong> Formulár sa predvyplní predošlými odpoveďami (cez autosave) ale bez farebného označenia.
+                            <strong>Vypnuté:</strong> Formulár sa predvyplní predošlými odpoveďami (cez autosave) ale bez farebného označenia.<br>
+                            <em>Funkcia sa nepoužije ak je súčasne zapnutá voľba „Pri opakovaní vygeneruj nový set otázok" (otázky by boli iné ako predtým).</em>
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th><label>Pri opakovaní vygeneruj nový set otázok</label></th>
+                    <td>
+                        <input type="checkbox" name="event_music[new_questions_on_retry]" value="1" <?php checked( $meta['event_music_new_questions_on_retry'][0] ?? '0', '1' ); ?> />
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Pri každom opakovaní kvízu sa hráčovi vygeneruje <em>nový</em> náhodný set piesní (ak ešte zostávajú pokusy).<br>
+                            <strong>Vypnuté (odporúčané):</strong> Pri opakovaní dostane hráč <em>rovnaký</em> set piesní ako prvýkrát — má šancu opraviť konkrétne odpovede.
                         </p>
                     </td>
                 </tr>
@@ -956,7 +968,19 @@ private function render_movies_tab( $post, $meta ) {
                         <input type="checkbox" name="event_movies[mark_correctness_on_retry]" value="1" <?php checked( $meta['event_movies_mark_correctness_on_retry'][0] ?? '0', '1' ); ?> />
                         <p class="description">
                             <strong>Zapnuté:</strong> Po neúspešnom kvíze sa formulár predvyplní predošlými odpoveďami a každé pole bude farebne označené — <strong style="color:#26913f">zelené</strong> ak bolo správne, <strong style="color:#a33">červené</strong> ak nesprávne.<br>
-                            <strong>Vypnuté:</strong> Formulár sa predvyplní (cez autosave) ale bez farebného označenia.
+                            <strong>Vypnuté:</strong> Formulár sa predvyplní (cez autosave) ale bez farebného označenia.<br>
+                            <em>Funkcia sa nepoužije ak je súčasne zapnutá voľba „Pri opakovaní vygeneruj nový set otázok".</em>
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th><label>Pri opakovaní vygeneruj nový set otázok</label></th>
+                    <td>
+                        <input type="checkbox" name="event_movies[new_questions_on_retry]" value="1" <?php checked( $meta['event_movies_new_questions_on_retry'][0] ?? '0', '1' ); ?> />
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Pri každom opakovaní kvízu sa hráčovi vygeneruje <em>nový</em> náhodný set filmov (ak ešte zostávajú pokusy).<br>
+                            <strong>Vypnuté (odporúčané):</strong> Pri opakovaní dostane hráč <em>rovnaký</em> set filmov ako prvýkrát.
                         </p>
                     </td>
                 </tr>
@@ -1189,7 +1213,19 @@ private function render_knowledge_tab( $post, $meta ) {
                         <input type="checkbox" name="event_knowledge[mark_correctness_on_retry]" value="1" <?php checked( $meta['event_knowledge_mark_correctness_on_retry'][0] ?? '0', '1' ); ?> />
                         <p class="description">
                             <strong>Zapnuté:</strong> Po neúspešnom kvíze sa formulár predvyplní predošlými odpoveďami a každé pole bude farebne označené — <strong style="color:#26913f">zelené</strong> ak bolo správne, <strong style="color:#a33">červené</strong> ak nesprávne. Funguje pre voľne písané odpovede aj výberové dropdowny.<br>
-                            <strong>Vypnuté:</strong> Formulár sa predvyplní (cez autosave) ale bez farebného označenia.
+                            <strong>Vypnuté:</strong> Formulár sa predvyplní (cez autosave) ale bez farebného označenia.<br>
+                            <em>Funkcia sa nepoužije ak je súčasne zapnutá voľba „Pri opakovaní vygeneruj nový set otázok".</em>
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th><label>Pri opakovaní vygeneruj nový set otázok</label></th>
+                    <td>
+                        <input type="checkbox" name="event_knowledge[new_questions_on_retry]" value="1" <?php checked( $meta['event_knowledge_new_questions_on_retry'][0] ?? '0', '1' ); ?> />
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Pri každom opakovaní kvízu sa hráčovi vygeneruje <em>nový</em> náhodný set otázok (ak ešte zostávajú pokusy).<br>
+                            <strong>Vypnuté (odporúčané):</strong> Pri opakovaní dostane hráč <em>rovnaký</em> set otázok ako prvýkrát.
                         </p>
                     </td>
                 </tr>
@@ -1387,6 +1423,17 @@ private function render_sudoku_tab( $post, $meta ) {
                         <p class="description">
                             true/false, používa sa keď potrebujem jednu URL na tento kvíz ukázať viacerým tímom, ktorí si pred kvízom musia vybrať svoj tím.<br>
                             Nie cez all links, ale len pre tento konkrétny kvíz.
+                        </p>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th><label>Pri opakovaní vygeneruj nový set otázok</label></th>
+                    <td>
+                        <input type="checkbox" name="event_sudoku[new_questions_on_retry]" value="1" <?php checked( $meta['event_sudoku_new_questions_on_retry'][0] ?? '0', '1' ); ?> />
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Pri každom opakovaní kvízu sa hráčovi vygeneruje <em>nové</em> sudoku (ak ešte zostávajú pokusy).<br>
+                            <strong>Vypnuté (odporúčané):</strong> Pri opakovaní dostane hráč <em>rovnaké</em> sudoku ako prvýkrát.
                         </p>
                     </td>
                 </tr>

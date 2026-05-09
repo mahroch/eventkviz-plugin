@@ -54,8 +54,10 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
             }
 
             $question_set_exists = $this->check_if_questions_set_exists( $akcia_code,'movies',$user_code,$team_code);
+            $regenerate_on_retry = !empty($this->cAkcia->movies_settings['new_questions_on_retry']);
+            $treat_as_new = !$question_set_exists || $regenerate_on_retry;
 
-            if( !$question_set_exists) {
+            if( $treat_as_new ) {
                 if ($use_per_production) {
                     // Vyber otazky per produkcia
                     $selected_ids = array();
@@ -114,7 +116,7 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
             for($i=0;$i<$number_of_questions; $i++) {
                 $human_number = $i+1;
 
-                if( $question_set_exists || $available_questions === null) {
+                if( ($question_set_exists && !$treat_as_new) || $available_questions === null) {
                     $current_question_id = $this->questions_set[$i];
                 } else {
                     $current_question_id = $available_questions[$this->questions_set[$i]]->ID;
@@ -328,8 +330,10 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
 
                 $tries_left_after_this = isset($this->zostava_pocet_pokusov) ? ((int) $this->zostava_pocet_pokusov - 1) : 1;
                 if ($tries_left_after_this > 0) {
-                    $review_state = (!empty($this->cAkcia->movies_settings['mark_correctness_on_retry']) && !empty($this->retry_state))
-                        ? $this->retry_state : array();
+                    $highlight_ok = !empty($this->cAkcia->movies_settings['mark_correctness_on_retry'])
+                        && empty($this->cAkcia->movies_settings['new_questions_on_retry'])
+                        && !empty($this->retry_state);
+                    $review_state = $highlight_ok ? $this->retry_state : array();
                     $this->render_retry_button($link_to_movies_quiz_url, 'Opakovať kvíz', $review_state);
                 } else {
                     echo '<p><em>Toto bol váš posledný povolený pokus pre tento kvíz.</em></p>';

@@ -57,9 +57,11 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                     echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form" data-quiz-type="knowledge">';
 
                     $question_set_exists = $this->check_if_questions_set_exists( $akcia_code,'knowledge',$user_code,$team_code);
+                    $regenerate_on_retry = !empty($this->cAkcia->knowledge_settings['new_questions_on_retry']);
+                    $treat_as_new = !$question_set_exists || $regenerate_on_retry;
 
                     $questions = array();
-                    if( $question_set_exists) {
+                    if( $question_set_exists && !$treat_as_new) {
                         $quantity = count($this->questions_set);
                         for($i=0;$i<$quantity; $i++) {
                             $human_number = $i+1;
@@ -381,8 +383,10 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
 
                 $tries_left_after_this = isset($this->zostava_pocet_pokusov) ? ((int) $this->zostava_pocet_pokusov - 1) : 1;
                 if ($tries_left_after_this > 0) {
-                    $review_state = (!empty($this->cAkcia->knowledge_settings['mark_correctness_on_retry']) && !empty($this->retry_state))
-                        ? $this->retry_state : array();
+                    $highlight_ok = !empty($this->cAkcia->knowledge_settings['mark_correctness_on_retry'])
+                        && empty($this->cAkcia->knowledge_settings['new_questions_on_retry'])
+                        && !empty($this->retry_state);
+                    $review_state = $highlight_ok ? $this->retry_state : array();
                     $this->render_retry_button($link_to_quiz_url, 'Opakovať kvíz', $review_state);
                 } else {
                     echo '<p><em>Toto bol váš posledný povolený pokus pre tento kvíz.</em></p>';
