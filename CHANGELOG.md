@@ -4,6 +4,9 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Changed (admin)
+- Popisky a vysvetlivky v Settings → General prepísané user-friendly štýlom „Zapnuté / Vypnuté + konkrétny use case" namiesto „true/false - blabla"
+
 ## [1.3.2] - 2026-05-08
 
 ### Security (vedomostný kvíz)

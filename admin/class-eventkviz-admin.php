@@ -498,53 +498,61 @@ private function render_general_tab( $post, $meta ) {
 
             <!-- startup_form -->
             <tr>
-                <th><label>Zobraz startup formulár (user + tím)</label></th>
+                <th><label>Vstupný formulár (user + tím)</label></th>
                 <td>
                     <input type="checkbox" name="event_general[startup_form]" value="1" <?php checked( $meta['event_general_startup_form'][0] ?? '0', '1' ); ?> />
                     <p class="description">
-                        Možnosť vstúpiť do kvízu na základe konkrétnej URL (bez zadávania dodatočných kódov), alebo pomocou formulára na zadanie kódu používateľa a tímu.<br>
-                        <strong>true</strong> = zobraz formulár na zadanie usera a tímu<br>
-                        <strong>false</strong> = údaje usera a tímu sa načítajú z URL
+                        <strong>Zapnuté:</strong> Pred kvízom hráč uvidí formulár, kde zadá svoj kód (a tím). Použi keď organizátor rozosiela všetkým rovnaký link a každý sa identifikuje sám.<br>
+                        <strong>Vypnuté:</strong> Hráč vstúpi rovno do kvízu cez URL s parametrami <code>?user=XYZ&amp;team=team1</code>. Použi keď generuješ unikátne linky (QR kódy, e-mail kampaň, GeoChallenge prepojenie).
                     </p>
                 </td>
             </tr>
 
             <!-- identifikacia_kodom_usera -->
             <tr>
-                <th><label>Identifikácia kódom usera</label></th>
+                <th><label>Identifikácia hráča kódom</label></th>
                 <td>
                     <input type="checkbox" name="event_general[identifikacia_kodom_usera]" value="1" <?php checked( $meta['event_general_identifikacia_kodom_usera'][0] ?? '0', '1' ); ?> />
-                    <p class="description">true/false - možnosť identifikovať používateľa kódom</p>
+                    <p class="description">
+                        <strong>Zapnuté:</strong> Každý hráč má vlastný kód (napr. <code>marek42</code>) a výsledky sa ukladajú per hráč. Použi pri individuálnych súťažiach.<br>
+                        <strong>Vypnuté:</strong> Hráči sa identifikujú len kódom tímu, výsledky sa zlučujú za tím. Použi pri tímových teambuildingoch kde nie je dôležité kto z tímu hral.
+                    </p>
                 </td>
             </tr>
 
             <!-- verify_users_in_db -->
             <tr>
-                <th><label>Verifikovať userov v DB</label></th>
+                <th><label>Overiť hráča v zozname</label></th>
                 <td>
                     <input type="checkbox" name="event_general[verify_users_in_db]" value="1" <?php checked( $meta['event_general_verify_users_in_db'][0] ?? '0', '1' ); ?> />
-                    <p class="description">true/false - možnosť verifikovať používateľa v predvyplnenej databáze</p>
+                    <p class="description">
+                        <strong>Zapnuté:</strong> Plugin pri vstupe overí, či zadaný kód existuje v tabuľke <em>Participants</em>. Cudzie/preklepnuté kódy sa odmietnu. Použi keď chceš obmedziť účasť len na predregistrovaných.<br>
+                        <strong>Vypnuté:</strong> Akýkoľvek kód je akceptovaný — záznam sa vytvorí automaticky. Použi pri otvorenom (verejnom) evente.
+                    </p>
                 </td>
             </tr>
 
             <!-- identifikacia_userov_timu -->
             <tr>
-                <th><label>Identifikácia viacerých userov v tíme</label></th>
+                <th><label>Hráč zadáva svoj kód aj kód tímu</label></th>
                 <td>
                     <input type="checkbox" name="event_general[identifikacia_userov_timu]" value="1" <?php checked( $meta['event_general_identifikacia_userov_timu'][0] ?? '1', '1' ); ?> />
                     <p class="description">
-                        true/false - možnosť identifikovania viacerých používateľov v rámci jedného tímu.<br>
-                        FALSE = ak je zoznam userov s priradenými tímami, tím sa vyberie automaticky.
+                        <strong>Zapnuté:</strong> Tím má viacerých hráčov a každý si pri vstupe zadá <em>svoj kód</em> aj <em>kód tímu</em>. Výsledky idú per hráč ale zlučujú sa za tím.<br>
+                        <strong>Vypnuté:</strong> Hráč zadáva iba svoj kód — tím sa mu doplní automaticky podľa zoznamu Participants (musí byť v ňom predzapísaný spolu s tímom).
                     </p>
                 </td>
             </tr>
 
             <!-- select_from_teams_array + conditional -->
             <tr>
-                <th><label>Výber tímu zo zoznamu</label></th>
+                <th><label>Výber tímu z preddefinovaného zoznamu</label></th>
                 <td>
                     <input type="checkbox" id="select_from_teams_array_cb_general" name="event_general[select_from_teams_array]" value="1" <?php checked( $meta['event_general_select_from_teams_array'][0] ?? '1', '1' ); ?> />
-                    <p class="description">true/false - má sa tím vybrať z vopred zadaného zoznamu, zoznam nižšie.</p>
+                    <p class="description">
+                        <strong>Zapnuté:</strong> Hráč vyberá tím z dropdownu (zoznam definuješ nižšie). Žiadne preklepy v kóde tímu, žiadne falošné tímy.<br>
+                        <strong>Vypnuté:</strong> Hráč napíše kód tímu ručne do textového poľa — flexibilnejšie ale rizikovejšie (preklepy = nový tím v DB).
+                    </p>
 
                     <div id="select_teams_container_general" style="margin-top: 10px; <?php echo ( $meta['event_general_select_from_teams_array'][0] ?? '1' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
                         <label><strong>Zoznam tímov:</strong></label><br>
@@ -606,10 +614,14 @@ private function render_general_tab( $post, $meta ) {
 
             <!-- use_seed + conditional -->
             <tr>
-                <th><label>Použiť seed (kódy pre stanovištia)</label></th>
+                <th><label>Stanovištia s kódmi (seed)</label></th>
                 <td>
                     <input type="checkbox" id="use_seed_cb_general" name="event_general[use_seed]" value="1" <?php checked( $meta['event_general_use_seed'][0] ?? '0', '1' ); ?> />
-                    <p class="description">true/false - pri získaní stanovišťa sa používateľovi ukáže kód za dané stanovište</p>
+                    <p class="description">
+                        <strong>Zapnuté:</strong> Po splnení každého kvízu dostane hráč/tím „kód stanovišťa" (seed). Po vyzbieraní minimálneho počtu kódov sa otvorí finálna úloha (truhlica). Použi pri viacstanovišťových GeoChallenge eventoch.<br>
+                        <strong>Vypnuté:</strong> Žiadne kódy sa nezobrazujú, kvízy sú samostatné bez finálnej zhrnujúcej úlohy.<br>
+                        <em>Konfigurácia stanovíšť, názvov a kreditov sa zjaví nižšie po zapnutí.</em>
+                    </p>
 
                     <div id="places_container_general" style="margin-top: 10px; <?php echo ( $meta['event_general_use_seed'][0] ?? '0' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
                         <label><strong>Poradie stanovísk (places – JSON indexed array):</strong></label><br>
@@ -680,10 +692,13 @@ private function render_general_tab( $post, $meta ) {
 
             <!-- show_link_back_to_all_quizes -->
             <tr>
-                <th><label>Zobraziť link späť na všetky kvízy</label></th>
+                <th><label>Tlačidlo „späť na všetky kvízy"</label></th>
                 <td>
                     <input type="checkbox" name="event_general[show_link_back_to_all_quizes]" value="1" <?php checked( $meta['event_general_show_link_back_to_all_quizes'][0] ?? '0', '1' ); ?> />
-                    <p class="description">true/false - zobraz linku na preklik späť na všetky kvízy</p>
+                    <p class="description">
+                        <strong>Zapnuté:</strong> Po dokončení kvízu vidí hráč tlačidlo s odkazom späť na zoznam všetkých kvízov v tejto akcii. Užitočné pri viacstanovišťových eventoch s viacerými kvízmi.<br>
+                        <strong>Vypnuté:</strong> Žiadne tlačidlo — hráč musí ísť späť cez prehliadač.
+                    </p>
                 </td>
             </tr>
 
