@@ -94,8 +94,9 @@
                     return false;
                 }
             }
-            // user confirmed (or all filled) — clear autosave on the way out
-            try { localStorage.removeItem(autosaveKey($form)); } catch (err) {}
+            // Note: localStorage NOT cleared on submit so that "Opakovať kvíz" retries
+            // can restore previous answers. Stale data is naturally invalidated by the
+            // set-hash component of the autosave key (different question set → new key).
         });
     }
 
