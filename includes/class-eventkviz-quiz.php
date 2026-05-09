@@ -690,8 +690,8 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 			$show_jeho = true;
 		}
 
-		// correct_answer = "Správna odpoveď: X" → riadené cez zobraz_spravne_odpovede
-		// user_result = "Film určený správne, +100 bodov" → riadené cez zobraz_spravne_uhadnute_odpovede
+		// Toggle A (zobraz_spravne_odpovede): show what the correct answer was — independent of B.
+		// Toggle B (zobraz_spravne_uhadnute_odpovede): show whether USER's answer was correct + points.
 		if($answer_type === 'correct_answer') {
 			if($show === true) {
 				echo '<div class="' . $class . '">' . $text . '</div><br>';

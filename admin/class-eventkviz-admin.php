@@ -851,18 +851,26 @@ private function render_music_tab( $post, $meta ) {
                 </tr>
 
                 <tr>
-                    <th><label>Zobraziť správne odpovede</label></th>
+                    <th><label>Odhaliť správne odpovede</label></th>
                     <td>
                         <input type="checkbox" name="event_music[zobraz_spravne_odpovede]" value="1" <?php checked( $meta['event_music_zobraz_spravne_odpovede'][0] ?? '0', '1' ); ?> />
-                        <p class="description">true/false - možnosť vybrať či sa používateľovi zobrazia správne odpovede po odoslaní kvízu, alebo nie</p>
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Po odoslaní hráč pri každej otázke vidí <em>aký bol správny interpret a pieseň</em> (aj pri tých, ktoré nevyplnil alebo nesprávne uhádol).<br>
+                            <strong>Vypnuté:</strong> Správne riešenie sa neukáže — namiesto neho sa zobrazí informačná hláška že správne odpovede sú zámerne skryté. Hodí sa keď chceš dať hráčovi šancu opakovať kvíz a riešenia musí prísť na to sám.<br>
+                            <em>Nezávislé od toggle nižšie</em> — kontroluje len zobrazenie správneho riešenia.
+                        </p>
                     </td>
                 </tr>
 
                 <tr>
-                    <th><label>Zobraziť správne uhádnuté odpovede používateľa</label></th>
+                    <th><label>Hodnotenie hráčových odpovedí (správne/nesprávne + body)</label></th>
                     <td>
                         <input type="checkbox" name="event_music[zobraz_spravne_uhadnute_odpovede]" value="1" <?php checked( $meta['event_music_zobraz_spravne_uhadnute_odpovede'][0] ?? '1', '1' ); ?> />
-                        <p class="description">true/false - možnosť vybrať či sa používateľovi zobrazia JEHO VLASTNÉ správne odpovede po odoslaní kvízu, alebo nie</p>
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Po odoslaní hráč pri každej <em>svojej</em> odpovedi vidí či bola správna/nesprávna a koľko bodov za ňu dostal (napr. „Spevák/skupina boli určené správne, +100 bodov").<br>
+                            <strong>Vypnuté:</strong> Hráč vidí len celkové bodové hodnotenie kvízu, bez per-otázku feedback-u.<br>
+                            <em>Nezávislé od toggle vyššie</em> — kontroluje len feedback k hráčovým odpovediam.
+                        </p>
                     </td>
                 </tr>
 
@@ -1087,19 +1095,27 @@ private function render_movies_tab( $post, $meta ) {
 
                 <!-- zobraz_spravne_odpovede -->
                 <tr>
-                    <th><label>Zobraziť správne odpovede</label></th>
+                    <th><label>Odhaliť správne odpovede</label></th>
                     <td>
                         <input type="checkbox" name="event_movies[zobraz_spravne_odpovede]" value="1" <?php checked( $meta['event_movies_zobraz_spravne_odpovede'][0] ?? '0', '1' ); ?> />
-                        <p class="description">true/false - možnosť vybrať či sa používateľovi zobrazia správne odpovede po odoslaní kvízu, alebo nie</p>
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Po odoslaní hráč pri každej otázke vidí <em>ktorý film bol správny</em> (aj pri tých, ktoré nevyplnil alebo zle uhádol).<br>
+                            <strong>Vypnuté:</strong> Správne riešenie sa neukáže — namiesto neho sa zobrazí informačná hláška že správne odpovede sú zámerne skryté. Hodí sa keď chceš dať hráčovi šancu opakovať kvíz a riešenia musí prísť na to sám.<br>
+                            <em>Nezávislé od toggle nižšie</em> — kontroluje len zobrazenie správneho riešenia.
+                        </p>
                     </td>
                 </tr>
 
                 <!-- zobraz_spravne_uhadnute_odpovede -->
                 <tr>
-                    <th><label>Zobraziť správne uhádnuté odpovede používateľa</label></th>
+                    <th><label>Hodnotenie hráčových odpovedí (správne/nesprávne + body)</label></th>
                     <td>
                         <input type="checkbox" name="event_movies[zobraz_spravne_uhadnute_odpovede]" value="1" <?php checked( $meta['event_movies_zobraz_spravne_uhadnute_odpovede'][0] ?? '1', '1' ); ?> />
-                        <p class="description">true/false - možnosť vybrať či sa používateľovi zobrazia JEHO VLASTNÉ správne odpovede po odoslaní kvízu, alebo nie</p>
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Po odoslaní hráč pri každej <em>svojej</em> odpovedi vidí či bola správna/nesprávna a koľko bodov za ňu dostal (napr. „Film určený správne, +100 bodov").<br>
+                            <strong>Vypnuté:</strong> Hráč vidí len celkové bodové hodnotenie kvízu, bez per-otázku feedback-u.<br>
+                            <em>Nezávislé od toggle vyššie</em> — kontroluje len feedback k hráčovým odpovediam.
+                        </p>
                     </td>
                 </tr>
 
@@ -1313,18 +1329,26 @@ private function render_knowledge_tab( $post, $meta ) {
                 </tr>
 
                 <tr>
-                    <th><label>Zobraziť správne odpovede</label></th>
+                    <th><label>Odhaliť správne odpovede</label></th>
                     <td>
                         <input type="checkbox" name="event_knowledge[zobraz_spravne_odpovede]" value="1" <?php checked( $meta['event_knowledge_zobraz_spravne_odpovede'][0] ?? '0', '1' ); ?> />
-                        <p class="description">true/false - možnosť vybrať či sa používateľovi zobrazia správne odpovede po odoslaní kvízu, alebo nie</p>
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Po odoslaní hráč pri každej otázke vidí <em>správnu odpoveď</em> (aj pri tých, ktoré nevyplnil alebo zle).<br>
+                            <strong>Vypnuté:</strong> Správne riešenie sa neukáže — namiesto neho sa zobrazí informačná hláška že správne odpovede sú zámerne skryté. Hodí sa keď chceš dať hráčovi šancu opakovať kvíz a riešenia musí prísť na to sám.<br>
+                            <em>Nezávislé od toggle nižšie</em> — kontroluje len zobrazenie správneho riešenia.
+                        </p>
                     </td>
                 </tr>
 
                 <tr>
-                    <th><label>Zobraziť správne uhádnuté odpovede používateľa</label></th>
+                    <th><label>Hodnotenie hráčových odpovedí (správne/nesprávne + body)</label></th>
                     <td>
                         <input type="checkbox" name="event_knowledge[zobraz_spravne_uhadnute_odpovede]" value="1" <?php checked( $meta['event_knowledge_zobraz_spravne_uhadnute_odpovede'][0] ?? '1', '1' ); ?> />
-                        <p class="description">true/false - možnosť vybrať či sa používateľovi zobrazia JEHO VLASTNÉ správne odpovede po odoslaní kvízu, alebo nie</p>
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Po odoslaní hráč pri každej <em>svojej</em> odpovedi vidí či bola správna/nesprávna a koľko bodov za ňu dostal.<br>
+                            <strong>Vypnuté:</strong> Hráč vidí len celkové bodové hodnotenie kvízu, bez per-otázku feedback-u.<br>
+                            <em>Nezávislé od toggle vyššie</em> — kontroluje len feedback k hráčovým odpovediam.
+                        </p>
                     </td>
                 </tr>
 
@@ -1519,18 +1543,26 @@ private function render_sudoku_tab( $post, $meta ) {
                 </tr>
 
                 <tr>
-                    <th><label>Zobraziť správne odpovede</label></th>
+                    <th><label>Odhaliť správne odpovede</label></th>
                     <td>
                         <input type="checkbox" name="event_sudoku[zobraz_spravne_odpovede]" value="1" <?php checked( $meta['event_sudoku_zobraz_spravne_odpovede'][0] ?? '1', '1' ); ?> />
-                        <p class="description">true/false - možnosť vybrať či sa používateľovi zobrazia správne odpovede po odoslaní kvízu, alebo nie</p>
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Po odoslaní hráč vidí <em>správne riešenie sudoku</em> (vrátane obrázku ak je nahraný).<br>
+                            <strong>Vypnuté:</strong> Riešenie sa neukáže — namiesto neho sa zobrazí informačná hláška že správne odpovede sú zámerne skryté.<br>
+                            <em>Nezávislé od toggle nižšie</em>.
+                        </p>
                     </td>
                 </tr>
 
                 <tr>
-                    <th><label>Zobraziť správne uhádnuté odpovede používateľa</label></th>
+                    <th><label>Hodnotenie hráčových odpovedí (správne/nesprávne + body)</label></th>
                     <td>
                         <input type="checkbox" name="event_sudoku[zobraz_spravne_uhadnute_odpovede]" value="1" <?php checked( $meta['event_sudoku_zobraz_spravne_uhadnute_odpovede'][0] ?? '1', '1' ); ?> />
-                        <p class="description">true/false - možnosť vybrať či sa používateľovi zobrazia JEHO VLASTNÉ správne odpovede po odoslaní kvízu, alebo nie</p>
+                        <p class="description">
+                            <strong>Zapnuté:</strong> Po odoslaní hráč vidí pri každej svojej odpovedi či bola správna a koľko bodov dostal.<br>
+                            <strong>Vypnuté:</strong> Hráč vidí len celkové bodové hodnotenie kvízu, bez per-otázku feedback-u.<br>
+                            <em>Nezávislé od toggle vyššie</em>.
+                        </p>
                     </td>
                 </tr>
 

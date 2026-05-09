@@ -264,24 +264,18 @@ class Eventkviz_SudokuEval_Quiz_Class extends Eventkviz_Quiz_Class{
 		if($show === true) {
             $this->meta_fields = get_post_meta( $current_question_id );
             if(!empty($this->meta_fields['explanation-of-correct-answer'][0])) {
-                //echo '<br><div class = "explanation-of-correct-answer">' . $this->meta_fields['explanation-of-correct-answer'][0] . '</div>';
                 $image = wp_get_attachment_image_src($this->meta_fields['explanation-of-correct-answer'][0], 'full');
-                echo '<br><br>Solved sudoku<br><br>'; 
+                echo '<br><br>Solved sudoku<br><br>';
                 echo '<img src="' . $image[0] . '" alt="Image">';
             }
 
 			echo '<div class="eventkviz_standard_answer">Correct answer is ' . $correct_sudoku ;
             echo '.</div><br>';
-            
-
-            
-
 		} else {
 			if(!$remember_answer) {
 				echo "<div  class='eventkviz_warning_correct_answers'>Correct answers are not to be displayed. Please refer to the event organizator.</div><br>";
 				$remember_answer = 'already_showed';
-			} 
-			
+			}
 		}
     }
 

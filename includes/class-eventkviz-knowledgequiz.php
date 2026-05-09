@@ -484,16 +484,11 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
             echo ' a jej druhá alternatíva ' . $correct_knowledge['correct_answer2'];
             }
             echo '.</div><br>';
-            
-
-            
-
 		} else {
 			if(!$remember_answer) {
 				echo "<div  class='eventkviz_warning_correct_answers'>Správne odpovede sa zámerne nezobrazia. Ak sa vám to nepozdáva, prosím, informujte sa u organizátora podujatia.</div><br>";
 				$remember_answer = 'already_showed';
-			} 
-			
+			}
 		}
     }
 
