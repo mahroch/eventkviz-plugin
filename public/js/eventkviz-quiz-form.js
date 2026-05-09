@@ -99,12 +99,27 @@
         });
     }
 
+    function shortHash(s) {
+        // Tiny non-cryptographic hash so autosave key changes when question set changes
+        var h = 0, i;
+        s = String(s || '');
+        for (i = 0; i < s.length; i++) {
+            h = ((h << 5) - h) + s.charCodeAt(i);
+            h |= 0;
+        }
+        return Math.abs(h).toString(36);
+    }
+
     function autosaveKey($form) {
         var akcia = $form.find('input[name=akcia]').val() || '';
         var team  = $form.find('input[name=team]').val() || '';
         var user  = $form.find('input[name=user]').val() || '';
         var type  = $form.attr('data-quiz-type') || 'unknown';
-        return 'ek_autosave:' + type + ':' + akcia + ':' + team + ':' + user;
+        // Include hash of the current question set so a different/regenerated set
+        // gets a different key — prevents restoring stale answers from a prior set.
+        var setVal = $form.find('input[name=set]').val() || '';
+        var setHash = shortHash(setVal);
+        return 'ek_autosave:' + type + ':' + akcia + ':' + team + ':' + user + ':' + setHash;
     }
 
     function attachAutosave($form, $answers, $saveable) {
