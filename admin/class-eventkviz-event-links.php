@@ -39,7 +39,10 @@ class Eventkviz_Event_Links_Admin {
             .ek-links-section h3 { margin: 0 0 6px; font-size: 14px; }
             .ek-links-section .description { margin: 0 0 10px; color: #666; }
             .ek-link-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
-            .ek-link-row code { flex: 1; padding: 6px 10px; background: #f6f7f7; border: 1px solid #dcdcde; border-radius: 4px; font-size: 12px; word-break: break-all; }
+            .ek-link-row .ek-link-url { flex: 1; text-decoration: none; }
+            .ek-link-row .ek-link-url code { display: block; padding: 6px 10px; background: #f6f7f7; border: 1px solid #dcdcde; border-radius: 4px; font-size: 12px; word-break: break-all; color: #2271b1; }
+            .ek-link-row .ek-link-url:hover code { background: #eef4fa; border-color: #2271b1; }
+            .ek-link-row .ek-open-btn { padding: 0 10px; line-height: 28px; font-size: 14px; text-decoration: none; }
             .ek-link-row .ek-copy-btn { white-space: nowrap; }
             .ek-link-row .ek-link-label { min-width: 110px; color: #50575e; font-size: 13px; }
             .ek-link-row.ek-link-row--inline { background: rgba(0,124,186,0.05); padding: 4px 6px; border-radius: 4px; }
@@ -126,7 +129,8 @@ class Eventkviz_Event_Links_Admin {
         if ( $label !== '' ) {
             echo '<span class="ek-link-label">' . esc_html( $label ) . '</span>';
         }
-        echo '<code>' . esc_html( $url ) . '</code>';
+        echo '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener" class="ek-link-url" title="Otvoriť v novom tabe"><code>' . esc_html( $url ) . '</code></a>';
+        echo '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener" class="button ek-open-btn" title="Otvoriť v novom tabe">↗</a>';
         echo '<button type="button" class="button ek-copy-btn" data-copy="' . esc_attr( $url ) . '">Kopírovať</button>';
         echo '<span class="ek-copy-feedback">✓ Skopírované</span>';
         echo '</div>';
