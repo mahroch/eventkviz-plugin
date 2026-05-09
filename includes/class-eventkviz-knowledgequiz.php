@@ -264,11 +264,11 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
         elseif ($prev_correct === '0' && $prev_value !== '') $review_class = ' ek-prev-wrong';
 
         if(!empty($this->meta_fields['choices-for-correct-answer'][0])) {
-            echo '<select name="knowledge' . $human_number . '" class="' . esc_attr(trim($review_class)) . '">';
             $options = explode(";", $this->meta_fields['choices-for-correct-answer'][0]);
             if(count($options) == 1) {
                 $options = explode(",", $this->meta_fields['choices-for-correct-answer'][0]);
             }
+            echo '<select name="knowledge' . $human_number . '" class="' . esc_attr(trim($review_class)) . '">';
             echo "<option value=''>Vyberte odpoveď</option>\n";
             foreach ($options as $option) {
                 $opt_val = trim($option);
@@ -276,6 +276,10 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 echo "<option value='" . esc_attr($opt_val) . "'" . $sel . ">" . esc_html($opt_val) . "</option>\n";
             }
             echo '</select>';
+            // Hint pre dlhšie zoznamy — natívny select má built-in typeahead (klik + stlač písmeno)
+            if (count($options) >= 8) {
+                echo '<p class="ek-select-hint">💡 Tip: Klikni na zoznam a stlač písmeno na rýchly skok na odpoveď.</p>';
+            }
         } else {
             echo '<input name="knowledge' . $human_number . '" class="' . esc_attr(trim($review_class)) . '" value="' . esc_attr($prev_value) . '" placeholder="Vaša odpoveď" autocomplete="off">';
         }

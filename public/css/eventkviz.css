@@ -678,6 +678,14 @@ body .ek-quiz-link-btn {
     font-weight: 600;
 }
 
+.ek-select-hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    opacity: 0.75;
+    color: var(--ek-text);
+    font-style: italic;
+}
+
 
 /* ---------- Quiz progress + autosave hint ---------- */
 .ek-progress {
