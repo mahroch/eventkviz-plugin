@@ -109,41 +109,16 @@ class Eventkviz_OneLink_Quiz_Class extends Eventkviz_Quiz_Class{
                 // Create a link element to display the input values as arguments
                 // 
 
-                if($_SERVER['HTTP_HOST'] == 'localhost:8888') {
-
-                    if($this->cAkcia->music_settings['music_quiz_active'] === true && $value['type'] == 'music') {
-                        echo 'const url = "http://localhost:8888/eventkviz/aqljk/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia);';
-                    } 
-                    
-                    if($this->cAkcia->movies_settings['movies_quiz_active'] === true && $value['type'] == 'movies') {
-                        echo 'const url = "http://localhost:8888/eventkviz/merdfghh/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia);';
-                    }
-                    
-                    if($this->cAkcia->knowledge_settings['knowledge_quiz_active'] === true && $value['type'] == 'knowledge') {
-                        echo 'const url = "http://localhost:8888/eventkviz/kwersdfzx/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia);';
-                    }
-                
-                    if($this->cAkcia->sudoku_settings['sudoku_quiz_active'] === true && $value['type'] == 'sudoku') {
-                        echo 'const url = "http://localhost:8888/eventkviz/sweertydfd/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia);';
-                    }
-                } else {
-                  
-                    if($this->cAkcia->music_settings['music_quiz_active'] === true && $value['type'] == 'music') {
-                        echo 'const url = "https://eventkviz.sk/aqljk/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia);';
-                    } 
-                    
-                    if($this->cAkcia->movies_settings['movies_quiz_active'] === true && $value['type'] == 'movies') {
-                        echo 'const url = "https://eventkviz.sk/merdfghh/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia);';
-                    }
-                    
-                    if($this->cAkcia->knowledge_settings['knowledge_quiz_active'] === true && $value['type'] == 'knowledge') {
-                        echo 'const url = "https://eventkviz.sk/kwersdfzx/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia);';
-                    }
-                
-                    if($this->cAkcia->sudoku_settings['sudoku_quiz_active'] === true && $value['type'] == 'sudoku') {
-                        echo 'const url = "https://eventkviz.sk/sweertydfd/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia);';
-                    }
-
+                $host_base = untrailingslashit( home_url() );
+                $type_to_slug = array(
+                    'music'     => array( 'aqljk',      $this->cAkcia->music_settings['music_quiz_active'] ?? false ),
+                    'movies'    => array( 'merdfghh',   $this->cAkcia->movies_settings['movies_quiz_active'] ?? false ),
+                    'knowledge' => array( 'kwersdfzx',  $this->cAkcia->knowledge_settings['knowledge_quiz_active'] ?? false ),
+                    'sudoku'    => array( 'sweertydfd', $this->cAkcia->sudoku_settings['sudoku_quiz_active'] ?? false ),
+                );
+                if ( isset( $type_to_slug[ $value['type'] ] ) && $type_to_slug[ $value['type'] ][1] === true ) {
+                    $quiz_slug = $type_to_slug[ $value['type'] ][0];
+                    echo 'const url = "' . esc_js( $host_base ) . '/' . esc_js( $quiz_slug ) . '/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia);';
                 }
             
                 echo 'window.location.href = url;';

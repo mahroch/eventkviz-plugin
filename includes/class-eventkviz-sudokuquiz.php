@@ -57,11 +57,7 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
                
             }
 
-            if($_SERVER['HTTP_HOST'] == 'localhost:8888') {
-                $url = 'http://localhost:8888/eventkviz/sudoku-quiz-evaluation-dynamic/';
-            } else {
-                $url = 'https://eventkviz.sk/sudoku-quiz-evaluation-dynamic/';
-            }
+            $url = home_url('/sudoku-quiz-evaluation-dynamic/');
 
             echo '<div class="ek-quiz">';
             echo '<div class="ek-quiz-content">';

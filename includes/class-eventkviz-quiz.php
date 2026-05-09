@@ -224,12 +224,12 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 		$akcia_tag = $this->akcia_tag;
 
 		if($this->cAkcia->all_quizes_settings['show_link_back_to_all_quizes'] != false) {
-			$links_url = 'https://eventkviz.sk/' . $akcia_tag . '/all-team-links-' . $akcia_tag . '/?team=' . $team . '&user=' . $user;
-			echo '<br><br><a href="' . $links_url . '">Späť na linky s kvízmi</a><br><br>';
-
+			$links_url = add_query_arg(
+				array( 'akcia' => $akcia_tag, 'team' => $team, 'user' => $user ),
+				home_url( '/eventkviz-vstup/' )
+			);
+			echo '<br><br><a href="' . esc_url( $links_url ) . '">Späť na linky s kvízmi</a><br><br>';
 		}
-
-
 	}
 		
 	public function set_team_code($user_code, $akcia_code){
