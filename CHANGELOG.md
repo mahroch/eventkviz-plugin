@@ -4,6 +4,14 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-05-09
+
+### Added (filmový, hudobný, vedomostný kvíz)
+- Admin toggle „Pri opakovaní označ správnosť" — po neúspešnom kvíze sa formulár predvyplní predošlými odpoveďami a každé pole zafarbí: zelené ak bolo správne, červené ak nesprávne. Hudobný kvíz označuje samostatne meno interpreta aj názov piesne. Funguje pre voľne písané odpovede aj výberové dropdowny.
+
+### Changed
+- „Opakovať kvíz" tlačidlo sa nezobrazí ak hráč vyčerpal posledný povolený pokus — namiesto toho sa zobrazí informácia „Toto bol váš posledný povolený pokus pre tento kvíz." Platí pre všetky 3 kvízy
+
 ## [1.4.0] - 2026-05-09
 
 ### Fixed (objavené pri testovaní hub stránok)

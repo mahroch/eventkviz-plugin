@@ -45,10 +45,15 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                     $url = home_url('/knowledge-quiz-evaluation-dynamic/');
                         
 
+                    $is_review = !empty($_POST['prev_review']);
+
                     echo '<div class="ek-quiz">';
                     echo '<div class="ek-quiz-content">';
                     echo '<h1 class="ek-quiz-title">Vedomostný kvíz</h1>';
                     echo '<p class="ek-quiz-subtitle">Odpovedzte na otázky a získajte body</p>';
+                    if ($is_review) {
+                        echo '<div class="ek-review-banner">📝 Vaše predchádzajúce odpovede sú vyplnené — <strong style="color:#6dd58c">zelené</strong> boli správne, <strong style="color:#ff6b6b">červené</strong> nesprávne. Opravte a odošlite znova.</div>';
+                    }
                     echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form" data-quiz-type="knowledge">';
 
                     $question_set_exists = $this->check_if_questions_set_exists( $akcia_code,'knowledge',$user_code,$team_code);
@@ -244,19 +249,28 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
         echo '<div class="ek-question-fields">';
         echo '<div class="ek-input-group">';
 
+        $is_review = !empty($_POST['prev_review']);
+        $prev_value = $is_review ? wp_unslash($_POST['prev_knowledge' . $human_number] ?? '') : '';
+        $prev_correct = $is_review ? ($_POST['prev_knowledge' . $human_number . '_correct'] ?? null) : null;
+        $review_class = '';
+        if ($prev_correct === '1') $review_class = ' ek-prev-correct';
+        elseif ($prev_correct === '0' && $prev_value !== '') $review_class = ' ek-prev-wrong';
+
         if(!empty($this->meta_fields['choices-for-correct-answer'][0])) {
-            echo '<select name="knowledge' . $human_number . '">';
+            echo '<select name="knowledge' . $human_number . '" class="' . esc_attr(trim($review_class)) . '">';
             $options = explode(";", $this->meta_fields['choices-for-correct-answer'][0]);
             if(count($options) == 1) {
                 $options = explode(",", $this->meta_fields['choices-for-correct-answer'][0]);
             }
             echo "<option value=''>Vyberte odpoveď</option>\n";
             foreach ($options as $option) {
-                echo "<option value='" . esc_attr(trim($option)) . "'>" . esc_html(trim($option)) . "</option>\n";
+                $opt_val = trim($option);
+                $sel = ($prev_value !== '' && $prev_value === $opt_val) ? ' selected' : '';
+                echo "<option value='" . esc_attr($opt_val) . "'" . $sel . ">" . esc_html($opt_val) . "</option>\n";
             }
             echo '</select>';
         } else {
-            echo '<input name="knowledge' . $human_number . '" placeholder="Vaša odpoveď" autocomplete="off">';
+            echo '<input name="knowledge' . $human_number . '" class="' . esc_attr(trim($review_class)) . '" value="' . esc_attr($prev_value) . '" placeholder="Vaša odpoveď" autocomplete="off">';
         }
 
         echo '</div>';
@@ -338,6 +352,7 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
                 $correct_answers[] = $this->get_correct_knowledge_answers( $questions[$i]);
             }
 
+            $this->retry_state = array();
             for($i=0;$i<count($questions);$i++) {
                 $this->evaluate_knowledge($questions[$i], $i, 1, 'dynamic');
             }
@@ -363,7 +378,15 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
                 );
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->knowledge_settings['min_body_na_postup']) . '</strong> bodov.</p>';
-                echo '<a href="' . esc_url($link_to_quiz_url) . '" class="ek-quiz-submit ek-quiz-link-btn">Opakovať kvíz</a>';
+
+                $tries_left_after_this = isset($this->zostava_pocet_pokusov) ? ((int) $this->zostava_pocet_pokusov - 1) : 1;
+                if ($tries_left_after_this > 0) {
+                    $review_state = (!empty($this->cAkcia->knowledge_settings['mark_correctness_on_retry']) && !empty($this->retry_state))
+                        ? $this->retry_state : array();
+                    $this->render_retry_button($link_to_quiz_url, 'Opakovať kvíz', $review_state);
+                } else {
+                    echo '<p><em>Toto bol váš posledný povolený pokus pre tento kvíz.</em></p>';
+                }
                 echo '</div>';
             }
 
@@ -499,6 +522,11 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
             echo '<div class="ek-user-answer">Vaša odpoveď: ' . esc_html($form_knowledge) . '</div>';
 
             $result = $this->check_correct_knowledge_answer($form_knowledge, $iteration_no);
+
+            // Capture per-question state for retry review highlight
+            $typed_value = isset($_POST[$knowledge_string]) ? wp_unslash($_POST[$knowledge_string]) : '';
+            $this->retry_state['prev_knowledge' . $iteration_no_real] = $typed_value;
+            $this->retry_state['prev_knowledge' . $iteration_no_real . '_correct'] = ($result === true) ? '1' : '0';
 
             if($result === true && $this->cAkcia->knowledge_settings['zobraz_spravne_uhadnute_odpovede'] === true ) {
                 $gained_credits += $credits['corr_answer'];

@@ -92,10 +92,15 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
 
             $url = home_url('/audio-quiz-dynamic-evaluation/');
 
+            $is_review = !empty($_POST['prev_review']);
+
             echo '<div class="ek-quiz">';
             echo '<div class="ek-quiz-content">';
             echo '<h1 class="ek-quiz-title">Hudobný kvíz</h1>';
             echo '<p class="ek-quiz-subtitle">Vypočujte si pieseň a uhádnite interpreta a názov skladby</p>';
+            if ($is_review) {
+                echo '<div class="ek-review-banner">📝 Vaše predchádzajúce odpovede sú vyplnené — <strong style="color:#6dd58c">zelené</strong> boli správne, <strong style="color:#ff6b6b">červené</strong> nesprávne. Opravte a odošlite znova.</div>';
+            }
             echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form" data-quiz-type="music">';
 
             for($i=0;$i<$number_of_questions; $i++) {
@@ -118,14 +123,28 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 echo '<div class="ek-question-audio">';
                 $this->show_media_controls($audio_file_url);
                 echo '</div>';
+                $prev_artist  = $is_review ? wp_unslash($_POST['prev_artist' . $human_number] ?? '') : '';
+                $prev_artist_k = $is_review ? wp_unslash($_POST['prev_artist' . $human_number . '_key'] ?? '') : '';
+                $prev_artist_c = $is_review ? ($_POST['prev_artist' . $human_number . '_correct'] ?? null) : null;
+                $artist_class = '';
+                if ($prev_artist_c === '1') $artist_class = ' ek-prev-correct';
+                elseif ($prev_artist_c === '0' && $prev_artist !== '') $artist_class = ' ek-prev-wrong';
+
+                $prev_song   = $is_review ? wp_unslash($_POST['prev_song' . $human_number] ?? '') : '';
+                $prev_song_k = $is_review ? wp_unslash($_POST['prev_song' . $human_number . '_key'] ?? '') : '';
+                $prev_song_c = $is_review ? ($_POST['prev_song' . $human_number . '_correct'] ?? null) : null;
+                $song_class = '';
+                if ($prev_song_c === '1') $song_class = ' ek-prev-correct';
+                elseif ($prev_song_c === '0' && $prev_song !== '') $song_class = ' ek-prev-wrong';
+
                 echo '<div class="ek-question-fields">';
                 echo '<div class="ek-input-group">';
-                echo '<input id="myArtist' . $human_number . '" class="autocomplete1" name="artist' . $human_number . '" placeholder="Meno speváka / kapely" autocomplete="off">';
-                echo '<input type="hidden" name="artist' . $human_number . '_key">';
+                echo '<input id="myArtist' . $human_number . '" class="autocomplete1' . $artist_class . '" name="artist' . $human_number . '" value="' . esc_attr($prev_artist) . '" placeholder="Meno speváka / kapely" autocomplete="off">';
+                echo '<input type="hidden" name="artist' . $human_number . '_key" value="' . esc_attr($prev_artist_k) . '">';
                 echo '</div>';
                 echo '<div class="ek-input-group">';
-                echo '<input id="mySong' . $human_number . '" class="autocomplete2" name="song' . $human_number . '" placeholder="Názov piesne" autocomplete="off">';
-                echo '<input type="hidden" name="song' . $human_number . '_key">';
+                echo '<input id="mySong' . $human_number . '" class="autocomplete2' . $song_class . '" name="song' . $human_number . '" value="' . esc_attr($prev_song) . '" placeholder="Názov piesne" autocomplete="off">';
+                echo '<input type="hidden" name="song' . $human_number . '_key" value="' . esc_attr($prev_song_k) . '">';
                 echo '</div>';
                 echo '</div>'; // .ek-question-fields
                 echo '</div>'; // .ek-question
@@ -254,6 +273,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
                 $correct_answers[] = $this->get_correct_answer_according_id($questions[$i]);
             }
 
+            $this->retry_state = array();
             for($i=0;$i<count($questions);$i++) {
                 $this->evaluate_combination_music($i, $questions[$i], 1, 'dynamic');
             }
@@ -279,7 +299,17 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
                 );
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->music_settings['min_body_na_postup']) . '</strong> bodov.</p>';
-                echo '<a href="' . esc_url($link_to_music_quiz_url) . '" class="ek-quiz-submit ek-quiz-link-btn">Opakovať kvíz</a>';
+
+                // zostava_pocet_pokusov was set by check_number_of_tries to (allowed - already_used)
+                // BEFORE this submission was saved. So ==1 means this was the last allowed attempt.
+                $tries_left_after_this = isset($this->zostava_pocet_pokusov) ? ((int) $this->zostava_pocet_pokusov - 1) : 1;
+                if ($tries_left_after_this > 0) {
+                    $review_state = (!empty($this->cAkcia->music_settings['mark_correctness_on_retry']) && !empty($this->retry_state))
+                        ? $this->retry_state : array();
+                    $this->render_retry_button($link_to_music_quiz_url, 'Opakovať kvíz', $review_state);
+                } else {
+                    echo '<p><em>Toto bol váš posledný povolený pokus pre tento kvíz.</em></p>';
+                }
                 echo '</div>';
             }
 
@@ -438,6 +468,16 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             $typed_song = isset($_POST['song'.$iteration_no_real]) ? wp_unslash($_POST['song'.$iteration_no_real]) : '';
             $form_song = $this->resolve_cct_id_by_name($typed_song, 'songs', 'song');
         }
+
+        // Capture per-question state for retry review highlight
+        $typed_artist_value = isset($_POST['artist'.$iteration_no_real]) ? wp_unslash($_POST['artist'.$iteration_no_real]) : '';
+        $typed_song_value   = isset($_POST['song'.$iteration_no_real])   ? wp_unslash($_POST['song'.$iteration_no_real])   : '';
+        $this->retry_state['prev_artist' . $iteration_no_real] = $typed_artist_value;
+        $this->retry_state['prev_artist' . $iteration_no_real . '_key'] = (string) $form_artist;
+        $this->retry_state['prev_artist' . $iteration_no_real . '_correct'] = ($form_artist == $correct_artist && !empty($form_artist)) ? '1' : '0';
+        $this->retry_state['prev_song' . $iteration_no_real] = $typed_song_value;
+        $this->retry_state['prev_song' . $iteration_no_real . '_key'] = (string) $form_song;
+        $this->retry_state['prev_song' . $iteration_no_real . '_correct'] = ($form_song == $correct_song && !empty($form_song)) ? '1' : '0';
         
         echo '<div class="ek-question">';
         echo '<div class="ek-question-header">';

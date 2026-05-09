@@ -110,7 +110,7 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
                     $value = maybe_unserialize( $value_array[0] );
 
                     // Bool konverzia
-                    if ( in_array( $key, ['sudoku_quiz_active','knowledge_quiz_active','movies_quiz_active', 'music_quiz_active','show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'moze_si_vybrat_difficulty'] ) ) {
+                    if ( in_array( $key, ['sudoku_quiz_active','knowledge_quiz_active','movies_quiz_active', 'music_quiz_active','show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'moze_si_vybrat_difficulty', 'mark_correctness_on_retry'] ) ) {
                         $value = $value === '1' || $value === 'yes' || $value === true;
                     } elseif ( in_array( $key, ['pocet_otazok_v_sete', 'pocet_pokusov', 'min_body_na_postup', 'obrazok_pri_splneni_kvizu'] ) ) {
                         $value = (int) $value;
@@ -406,6 +406,25 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 
 	public function standardize($string){
 		return strtolower($string);
+	}
+
+	/**
+	 * Render the retry button. If $previous_state is non-empty, render as a
+	 * form POST so the form page can pre-fill + highlight previous answers.
+	 * Otherwise render a plain GET link (legacy behavior).
+	 */
+	public function render_retry_button($url, $label, $previous_state = array()){
+		if (empty($previous_state)) {
+			echo '<a href="' . esc_url($url) . '" class="ek-quiz-submit ek-quiz-link-btn">' . esc_html($label) . '</a>';
+			return;
+		}
+		echo '<form action="' . esc_url($url) . '" method="post" style="display:inline">';
+		echo '<input type="hidden" name="prev_review" value="1">';
+		foreach ($previous_state as $key => $val) {
+			echo '<input type="hidden" name="' . esc_attr($key) . '" value="' . esc_attr($val) . '">';
+		}
+		echo '<button type="submit" class="ek-quiz-submit ek-quiz-link-btn">' . esc_html($label) . '</button>';
+		echo '</form>';
 	}
 
 	public function sign_question_set($serialized_set, $akcia_code){

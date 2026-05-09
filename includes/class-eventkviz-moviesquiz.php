@@ -100,10 +100,15 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
 
             $url = home_url('/movies-quiz-dynamic-evaluation/');
 
+            $is_review = !empty($_POST['prev_review']);
+
             echo '<div class="ek-quiz">';
             echo '<div class="ek-quiz-content">';
             echo '<h1 class="ek-quiz-title">Filmový kvíz</h1>';
             echo '<p class="ek-quiz-subtitle">Pozrite si ukážku a uhádnite názov filmu</p>';
+            if ($is_review) {
+                echo '<div class="ek-review-banner">📝 Vaše predchádzajúce odpovede sú vyplnené — <strong style="color:#6dd58c">zelené</strong> boli správne, <strong style="color:#ff6b6b">červené</strong> nesprávne. Opravte a odošlite znova.</div>';
+            }
             echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form" data-quiz-type="movies">';
 
             for($i=0;$i<$number_of_questions; $i++) {
@@ -128,12 +133,19 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 echo '</div>';
                 echo '<div class="ek-question-fields">';
                 echo '<div class="ek-input-group">';
+                $prev_value = $is_review ? wp_unslash($_POST['prev_movie' . $human_number] ?? '') : '';
+                $prev_key   = $is_review ? wp_unslash($_POST['prev_movie' . $human_number . '_key'] ?? '') : '';
+                $prev_correct = $is_review ? ($_POST['prev_movie' . $human_number . '_correct'] ?? null) : null;
+                $review_class = '';
+                if ($prev_correct === '1') $review_class = ' ek-prev-correct';
+                elseif ($prev_correct === '0' && $prev_value !== '') $review_class = ' ek-prev-wrong';
+
                 if ($this->cAkcia->movies_settings['movies_quiz_type'] == "full") {
-                     echo '<input id="myMovie' . $human_number . '" class="autocomplete3" name="movie' . $human_number . '" placeholder="Názov filmu" autocomplete="off">';
+                     echo '<input id="myMovie' . $human_number . '" class="autocomplete3' . $review_class . '" name="movie' . $human_number . '" value="' . esc_attr($prev_value) . '" placeholder="Názov filmu" autocomplete="off">';
                 } else {
                     $this->print_form_question($current_question_id, $human_number);
                 }
-                echo '<input type="hidden" name="movie' . $human_number . '_key">';
+                echo '<input type="hidden" name="movie' . $human_number . '_key" value="' . esc_attr($prev_key) . '">';
                 echo '</div>';
                 echo '</div>'; // .ek-question-fields
                 echo '</div>'; // .ek-question
@@ -280,6 +292,7 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
                 }
             }
 
+            $this->retry_state = array();
             for($i=0;$i<count($questions);$i++) {
                 $this->evaluate_movie($questions[$i], $i, 1, 'dynamic');
             }
@@ -306,13 +319,21 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
             } else {
                 $akcia_tag = $this->akcia_tag;
 
-                $link_to_music_quiz_url = add_query_arg(
+                $link_to_movies_quiz_url = add_query_arg(
                     array('team' => $team, 'user' => $user, 'akcia' => $akcia_tag),
                     home_url('/merdfghh/')
                 );
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->movies_settings['min_body_na_postup']) . '</strong> bodov.</p>';
-                echo '<a href="' . esc_url($link_to_music_quiz_url) . '" class="ek-quiz-submit ek-quiz-link-btn">Opakovať kvíz</a>';
+
+                $tries_left_after_this = isset($this->zostava_pocet_pokusov) ? ((int) $this->zostava_pocet_pokusov - 1) : 1;
+                if ($tries_left_after_this > 0) {
+                    $review_state = (!empty($this->cAkcia->movies_settings['mark_correctness_on_retry']) && !empty($this->retry_state))
+                        ? $this->retry_state : array();
+                    $this->render_retry_button($link_to_movies_quiz_url, 'Opakovať kvíz', $review_state);
+                } else {
+                    echo '<p><em>Toto bol váš posledný povolený pokus pre tento kvíz.</em></p>';
+                }
                 echo '</div>';
             }
 
@@ -440,6 +461,13 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
             $odpoved_hraca = $form_movie;
         }
         echo '<div class="ek-user-answer">Vaša odpoveď: ' . esc_html($odpoved_hraca) . '</div>';
+
+        // Capture previous-state per-question for retry review highlight
+        $typed_value = isset($_POST['movie' . $iteration_no_real]) ? wp_unslash($_POST['movie' . $iteration_no_real]) : '';
+        $is_correct_for_review = ($correct_movie == $form_movie && !empty($form_movie)) ? '1' : '0';
+        $this->retry_state['prev_movie' . $iteration_no_real] = $typed_value;
+        $this->retry_state['prev_movie' . $iteration_no_real . '_key'] = (string) $form_movie;
+        $this->retry_state['prev_movie' . $iteration_no_real . '_correct'] = $is_correct_for_review;
 
         if($correct_movie == $form_movie ) {
             if(!empty($form_movie) && !in_array($form_movie, $used_movies)) {

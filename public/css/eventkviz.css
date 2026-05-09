@@ -641,6 +641,27 @@ body .ek-quiz-link-btn {
     content: '✓';
 }
 
+/* ---------- Retry review highlights (po neúspešnom kvíze) ---------- */
+.ek-input-group input.ek-prev-correct,
+.ek-input-group select.ek-prev-correct {
+    border-color: #6dd58c !important;
+    background: rgba(109,213,140,0.10) !important;
+}
+.ek-input-group input.ek-prev-wrong,
+.ek-input-group select.ek-prev-wrong {
+    border-color: #ff6b6b !important;
+    background: rgba(255,107,107,0.10) !important;
+}
+.ek-review-banner {
+    margin: 0 0 16px 0;
+    padding: 10px 14px;
+    border-radius: var(--ek-radius-sm);
+    background: rgba(255, 213, 79, 0.15);
+    border: 1px solid rgba(255, 213, 79, 0.45);
+    color: var(--ek-text);
+    font-size: 14px;
+}
+
 /* ---------- Quiz progress + autosave hint ---------- */
 .ek-progress {
     margin: 0 0 16px 0;
