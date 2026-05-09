@@ -58,7 +58,11 @@ class Eventkviz_Admin {
 		add_action( 'save_post_eventkviz_event', array( $this, 'save_event_meta' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 
-		add_action( 'save_post_eventkviz_event', array( $this, 'create_event_pages' ), 10, 3 );
+		// Per-event landing pages are no longer auto-created (since 1.4.0).
+		// New events use global hub pages (/eventkviz-vstup/?akcia=X, /eventkviz-statistika/?akcia=X)
+		// created by Eventkviz_Activator. Existing per-event pages still work as-is.
+		// To re-enable old behavior: uncomment the line below.
+		// add_action( 'save_post_eventkviz_event', array( $this, 'create_event_pages' ), 10, 3 );
 		// Pre trash (event ide do koša)
 add_action( 'trashed_post', array( $this, 'delete_event_pages' ) );
 

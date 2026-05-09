@@ -193,8 +193,9 @@ class Eventkviz_Public {
 add_filter('query_vars', 'add_my_var');
 function add_my_var($public_query_vars) {
     $public_query_vars[] = 'team';
-	  $public_query_vars[] = 'user';
-	  $public_query_vars[] = 'akcia';
+    $public_query_vars[] = 'user';
+    $public_query_vars[] = 'akcia';
+    $public_query_vars[] = 'type'; // for hub page filtering: ?type=music|movies|knowledge|sudoku
     return $public_query_vars;
 }
 

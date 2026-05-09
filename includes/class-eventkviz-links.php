@@ -14,12 +14,25 @@ class Eventkviz_OneLink_Quiz_Class extends Eventkviz_Quiz_Class{
     }
 
     public function show_link_to_quiz($atts = '') {
-        
+
         $value = shortcode_atts( array(
             'type' => '',
             'akcia' => ''
         ), $atts );
-        
+
+        // Fall back to query vars when shortcode atts are not given (hub page usage)
+        if (empty($value['akcia']) && get_query_var('akcia')) {
+            $value['akcia'] = sanitize_key(get_query_var('akcia'));
+        }
+        if (empty($value['type']) && get_query_var('type')) {
+            $value['type'] = sanitize_key(get_query_var('type'));
+        }
+
+        if (empty($value['akcia'])) {
+            echo '<p>Akcia nie je špecifikovaná. Použite <code>?akcia=&lt;slug&gt;</code> v URL.</p>';
+            return;
+        }
+
         $this->load_basic_event_settings($value['akcia']);
         
         //global $all_quizes_settings;
@@ -165,6 +178,22 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             'type'  => '',
             'akcia' => ''
         ), $atts);
+
+        if (empty($value['akcia']) && get_query_var('akcia')) {
+            $value['akcia'] = sanitize_key(get_query_var('akcia'));
+        }
+        if (empty($value['type']) && get_query_var('type')) {
+            $value['type'] = sanitize_key(get_query_var('type'));
+        }
+        if (!empty($single_quiz)) {
+            // explicit caller wins (used internally by quiz form classes)
+            $value['type'] = $single_quiz;
+        }
+
+        if (empty($value['akcia'])) {
+            echo '<p>Akcia nie je špecifikovaná. Použite <code>?akcia=&lt;slug&gt;</code> v URL.</p>';
+            return;
+        }
 
         $this->load_basic_event_settings($value['akcia']);
 

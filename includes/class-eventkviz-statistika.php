@@ -21,8 +21,17 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             'akcia' => ''
         ), $atts );
 
+        if (empty($value['akcia']) && get_query_var('akcia')) {
+            $value['akcia'] = sanitize_key(get_query_var('akcia'));
+        }
+
+        if (empty($value['akcia'])) {
+            echo '<p>Akcia nie je špecifikovaná. Použite <code>?akcia=&lt;slug&gt;</code> v URL.</p>';
+            return;
+        }
+
         global $wpdb;
-       
+
          $this->load_basic_event_settings( $value['akcia']);
 
          $this->all_quizes_settings($value['akcia']);

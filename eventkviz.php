@@ -16,7 +16,7 @@
  * Plugin Name:       Eventkviz
  * Plugin URI:        http://eventkviz.sk/
  * Description:       Quizes for events
- * Version:           1.3.2
+ * Version:           1.4.0
  * Author:            Maros Markovic
  * Author URI:        http://eventkviz.sk/
  * License:           GPL-2.0+
@@ -35,14 +35,13 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'EVENKVIZ_VERSION', '1.3.2' );
+define( 'EVENKVIZ_VERSION', '1.4.0' );
 
 /**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-eventkviz-activator.php
  */
 function activate_eventkviz() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-activator.php';
 	Eventkviz_Activator::activate();
 }
 
@@ -72,13 +71,19 @@ require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-sudokuquiz
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-links.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-statistika.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-seedpage.php' );
+require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-activator.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-finalpage.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-rest.php' );
 if ( is_admin() ) {
 	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-leaderboard.php' );
 	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-questions-admin.php' );
+	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-event-links.php' );
 	Eventkviz_Leaderboard::init();
 	Eventkviz_Questions_Admin::init();
+	Eventkviz_Event_Links_Admin::init();
+
+	// Idempotently ensure global hub pages exist (covers already-active installs).
+	add_action( 'admin_init', array( 'Eventkviz_Activator', 'ensure_hub_pages' ) );
 }
 
 Eventkviz_Rest_Search::init();
