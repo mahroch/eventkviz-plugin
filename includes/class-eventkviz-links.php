@@ -174,6 +174,9 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
 
         $preselected_user = '';
 
+        $explicit_atts = is_array($atts) ? $atts : array();
+        $explicit_akcia_in_shortcode = isset($explicit_atts['akcia']) && $explicit_atts['akcia'] !== '';
+
         $value = shortcode_atts(array(
             'type'  => '',
             'akcia' => ''
@@ -195,6 +198,11 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             return;
         }
 
+        // Hub context = akcia comes from query var, not from explicit shortcode att.
+        // In hub context the selector always renders regardless of the legacy
+        // `startup_form` flag (which originally controlled per-quiz form behavior).
+        $is_hub_context = ! $explicit_akcia_in_shortcode;
+
         $this->load_basic_event_settings($value['akcia']);
 
         /*
@@ -205,7 +213,7 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
         $this->cAkcia->sudoku_quiz_settings($value['akcia']);
 */
 
-        if ($this->cAkcia->all_quizes_settings['startup_form'] === true) {
+        if ($is_hub_context || $this->cAkcia->all_quizes_settings['startup_form'] === true) {
 
             echo '<div class="ek-startup">';
             echo '<div class="ek-startup-card">';
