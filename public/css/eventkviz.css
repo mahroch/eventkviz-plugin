@@ -662,6 +662,22 @@ body .ek-quiz-link-btn {
     font-size: 14px;
 }
 
+.ek-tries-banner {
+    margin: 0 0 14px 0;
+    padding: 8px 14px;
+    border-radius: var(--ek-radius-sm);
+    background: rgba(109, 213, 140, 0.10);
+    border: 1px solid rgba(109, 213, 140, 0.35);
+    color: var(--ek-text);
+    font-size: 13px;
+    text-align: center;
+}
+.ek-tries-banner--last {
+    background: rgba(255, 165, 80, 0.18);
+    border-color: rgba(255, 165, 80, 0.55);
+    font-weight: 600;
+}
+
 /* ---------- Quiz progress + autosave hint ---------- */
 .ek-progress {
     margin: 0 0 16px 0;

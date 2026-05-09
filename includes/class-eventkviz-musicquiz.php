@@ -30,8 +30,13 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
         //global $music_settings;
             
         $user_code = get_query_var( 'user' );
-        $akcia_code = get_query_var( 'akcia' ); 
-        $this->load_basic_event_settings( $akcia_code);    
+        $akcia_code = get_query_var( 'akcia' );
+        $this->load_basic_event_settings( $akcia_code);
+
+        // GeoChallenge: per-player scoping (URL cp / cookie fallback)
+        $gc_user = $this->geo_user_code('form');
+        if ($gc_user !== '') $user_code = $gc_user;
+
         $team_code = $this->set_team_code($user_code, $akcia_code);
 
        $this->music_quiz_settings($akcia_code,$user_code,$team_code);
@@ -103,6 +108,7 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
             echo '<div class="ek-quiz-content">';
             echo '<h1 class="ek-quiz-title">Hudobný kvíz</h1>';
             echo '<p class="ek-quiz-subtitle">Vypočujte si pieseň a uhádnite interpreta a názov skladby</p>';
+            $this->render_tries_remaining_banner('music');
             if ($is_review) {
                 echo '<div class="ek-review-banner">📝 Vaše predchádzajúce odpovede sú vyplnené — <strong style="color:#6dd58c">zelené</strong> boli správne, <strong style="color:#ff6b6b">červené</strong> nesprávne. Opravte a odošlite znova.</div>';
             }
@@ -249,6 +255,9 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         $akcia = $_POST['akcia'];
         $this->load_basic_event_settings( $akcia);
 
+        // GeoChallenge: per-player scoping (POST gc_cp / cookie fallback)
+        $_POST_user_override = $this->geo_user_code('eval');
+
         $raw_set = isset($_POST['set']) ? wp_unslash($_POST['set']) : '';
         $raw_sig = isset($_POST['set_sig']) ? wp_unslash($_POST['set_sig']) : '';
         if (!$this->verify_question_set_signature($raw_set, $akcia, $raw_sig)) {
@@ -262,9 +271,8 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         $questions = json_decode($raw_set, true);
         $user = $_POST['user'];
         $team = $_POST['team'];
+        if ($_POST_user_override !== '') $user = $_POST_user_override;
 
-        
-        
         $this->music_quiz_settings($akcia,$user,$team);
         $check_result = $this->check_number_of_tries($user, $akcia,'music',$team);
         
@@ -298,10 +306,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             } else {
                 $akcia_tag = $this->akcia_tag;
 
-                $link_to_music_quiz_url = add_query_arg(
-                    array('team' => $team, 'user' => $user, 'akcia' => $akcia_tag),
-                    home_url('/aqljk/')
-                );
+                $link_to_music_quiz_url = $this->build_retry_url($team, $user, $akcia_tag, '/aqljk/');
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->music_settings['min_body_na_postup']) . '</strong> bodov.</p>';
 
@@ -314,7 +319,9 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
                         && empty($this->cAkcia->music_settings['new_questions_on_retry'])
                         && !empty($this->retry_state);
                     $review_state = $highlight_ok ? $this->retry_state : array();
-                    $this->render_retry_button($link_to_music_quiz_url, 'Opakovať kvíz', $review_state);
+                    $label = 'Opakovať kvíz (zostáva ' . $tries_left_after_this . ' '
+                        . self::_n_pokus_label($tries_left_after_this) . ')';
+                    $this->render_retry_button($link_to_music_quiz_url, $label, $review_state);
                 } else {
                     echo '<p><em>Toto bol váš posledný povolený pokus pre tento kvíz.</em></p>';
                 }

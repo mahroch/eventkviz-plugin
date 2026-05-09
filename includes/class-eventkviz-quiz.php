@@ -413,6 +413,92 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 	 * form POST so the form page can pre-fill + highlight previous answers.
 	 * Otherwise render a plain GET link (legacy behavior).
 	 */
+	/**
+	 * Display "Ostáva ti X pokusov / posledný pokus" banner at the top of
+	 * a quiz form. Reads $this->zostava_pocet_pokusov set by
+	 * check_number_of_tries() (= remaining tries INCLUDING current).
+	 */
+	public function render_tries_remaining_banner($quiz_type){
+		if ( ! isset($this->zostava_pocet_pokusov)) return;
+		$remaining = (int) $this->zostava_pocet_pokusov;
+		if ($remaining <= 0) return;
+
+		$pocet = isset($this->cAkcia->{$quiz_type . '_settings'}['pocet_pokusov'])
+			? (int) $this->cAkcia->{$quiz_type . '_settings'}['pocet_pokusov']
+			: 0;
+
+		if ($remaining === 1) {
+			$msg = ($pocet > 1)
+				? '⚠️ Posledný pokus — máš jeden pokus na získanie bodov.'
+				: '🎯 Toto je jediný pokus, využi ho dobre.';
+			$cls = 'ek-tries-banner ek-tries-banner--last';
+		} else {
+			$msg = '🎯 Zostávajú ti ' . $remaining . ' '
+				. self::_n_pokus_label($remaining)
+				. ($pocet > 0 ? ' z ' . $pocet : '') . '.';
+			$cls = 'ek-tries-banner';
+		}
+
+		echo '<div class="' . esc_attr($cls) . '">' . esc_html($msg) . '</div>';
+	}
+
+	public static function _n_pokus_label($n){
+		// Slovak plural: 1 pokus, 2-4 pokusy, 5+ pokusov
+		if ($n === 1) return 'pokus';
+		if ($n >= 2 && $n <= 4) return 'pokusy';
+		return 'pokusov';
+	}
+
+	/**
+	 * GeoChallenge integration: returns 'gc_<cp>' as effective user_code for
+	 * per-player DB scoping (tries counter, question_set, results).
+	 *
+	 * Source priority for cp:
+	 *   1. POST gc_cp (eval / retry submit)
+	 *   2. GET cp (when GC app dynamically opens link with player id)
+	 *   3. Cookie eventkviz_gc_<akcia> (static QR scenario — UUID per browser, 6h TTL)
+	 *
+	 * Returns '' if not GC mode (geochallenge_integration off) or no source resolves.
+	 */
+	public function geo_user_code($source = 'form') {
+		if ( ! isset($this->cAkcia) || empty($this->cAkcia->all_quizes_settings['geochallenge_integration'])) {
+			return '';
+		}
+		$cp = '';
+		if ($source === 'eval' && ! empty($_POST['gc_cp'])) {
+			$cp = sanitize_text_field(wp_unslash($_POST['gc_cp']));
+		} elseif (! empty($_GET['cp'])) {
+			$cp = sanitize_text_field($_GET['cp']);
+		} elseif (! empty($this->akcia_tag)) {
+			$cookie_name = 'eventkviz_gc_' . sanitize_key($this->akcia_tag);
+			if (! empty($_COOKIE[$cookie_name])) {
+				$cp = sanitize_text_field($_COOKIE[$cookie_name]);
+			}
+		}
+		return $cp !== '' ? 'gc_' . $cp : '';
+	}
+
+	/**
+	 * Build the retry URL. Preserves GC context (id, cp, return_url) so
+	 * subsequent retries stay scoped to the same participant.
+	 */
+	public function build_retry_url($team, $user, $akcia, $quiz_path) {
+		$args = array('team' => $team, 'user' => $user, 'akcia' => $akcia);
+		if ( ! empty($_POST['gc_id']) && ! empty($_POST['gc_cp'])) {
+			$args = array(
+				'team'  => '',
+				'user'  => '',
+				'akcia' => $akcia,
+				'id'    => sanitize_text_field(wp_unslash($_POST['gc_id'])),
+				'cp'    => sanitize_text_field(wp_unslash($_POST['gc_cp'])),
+			);
+			if ( ! empty($_POST['gc_return'])) {
+				$args['return_url'] = esc_url_raw(wp_unslash($_POST['gc_return']));
+			}
+		}
+		return add_query_arg($args, home_url($quiz_path));
+	}
+
 	public function render_retry_button($url, $label, $previous_state = array()){
 		if (empty($previous_state)) {
 			echo '<a href="' . esc_url($url) . '" class="ek-quiz-submit ek-quiz-link-btn">' . esc_html($label) . '</a>';

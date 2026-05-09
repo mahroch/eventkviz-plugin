@@ -89,6 +89,43 @@ if ( is_admin() ) {
 Eventkviz_Rest_Search::init();
 
 /**
+ * GeoChallenge: ensure each browser visiting a quiz/hub page has a unique
+ * session UUID cookie. Only sets cookie when:
+ *   - akcia is in URL (= player is on a quiz/hub page)
+ *   - cp is NOT in URL (= no per-player ID from GC app)
+ *   - cookie for this akcia doesn't already exist
+ *
+ * Hooked early on `init` so setcookie() runs before any output. The cookie
+ * is read later via Eventkviz_Quiz_Class::geo_user_code() — only when the
+ * event has geochallenge_integration enabled. Setting the cookie eagerly
+ * avoids an extra DB lookup on every init; harmless for non-GC events.
+ */
+add_action( 'init', function() {
+	if ( empty( $_GET['akcia'] ) || ! empty( $_GET['cp'] ) ) {
+		return;
+	}
+	$akcia = sanitize_key( $_GET['akcia'] );
+	if ( $akcia === '' ) {
+		return;
+	}
+	$cookie_name = 'eventkviz_gc_' . $akcia;
+	if ( ! empty( $_COOKIE[ $cookie_name ] ) ) {
+		return;
+	}
+	$uuid = function_exists( 'wp_generate_uuid4' )
+		? wp_generate_uuid4()
+		: bin2hex( random_bytes( 8 ) );
+	if ( ! headers_sent() ) {
+		setcookie( $cookie_name, $uuid, array(
+			'expires'  => time() + 6 * HOUR_IN_SECONDS,
+			'path'     => '/',
+			'samesite' => 'Lax',
+		) );
+	}
+	$_COOKIE[ $cookie_name ] = $uuid;
+}, 5 );
+
+/**
  * Begins execution of the plugin.
  *
  * Since everything within the plugin is registered via hooks,
