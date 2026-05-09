@@ -742,12 +742,13 @@ private function render_music_tab( $post, $meta ) {
 
             <tbody id="music_fields_container" style="<?php echo $music_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
                 <tr>
-                    <th><label>Zobraziť entry formulár</label></th>
+                    <th><label>Vstup: zobraziť výber tímu / ísť rovno do otázok</label></th>
                     <td>
                         <input type="checkbox" name="event_music[show_entry_form]" value="1" <?php checked( $meta['event_music_show_entry_form'][0] ?? '1', '1' ); ?> />
                         <p class="description">
-                            true/false, používa sa keď potrebujem jednu URL na tento kvíz ukázať viacerým tímom, ktorí si pred kvízom musia vybrať svoj tím.<br>
-                            Nie cez all links, ale len pre tento konkrétny kvíz.
+                            <strong>Zapnuté:</strong> Ak hráč príde na URL kvízu bez vyplneného tímu (napr. cez všeobecný link <code>/aqljk/?akcia=event</code> bez <code>team=</code>), najprv sa mu zobrazí formulár na výber tímu. Po výbere pokračuje do kvízu. Použi keď chceš poslať jeden zdieľaný link všetkým hráčom a každý si vyberie tím sám.<br>
+                            <strong>Vypnuté:</strong> Hráč musí prísť s <code>team=</code> parametrom už v URL (napr. cez predistribuovaný link <code>/aqljk/?akcia=event&amp;team=team1</code>). Žiadny vstupný formulár — ide rovno do otázok. Použi keď máš pre každý tím samostatný link (QR kód, email, hub vstup s preselected tímom).<br>
+                            ⚠️ <em>Funguje len v kombinácii s „Výber tímu z preddefinovaného zoznamu" v General tabe. Bez toho sa selector neukáže ani keď je toggle ON.</em>
                         </p>
                     </td>
                 </tr>
@@ -960,12 +961,13 @@ private function render_movies_tab( $post, $meta ) {
             <tbody id="movies_fields_container" style="<?php echo $movies_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
                 <!-- show_entry_form -->
                 <tr>
-                    <th><label>Zobraziť entry formulár</label></th>
+                    <th><label>Vstup: zobraziť výber tímu / ísť rovno do otázok</label></th>
                     <td>
                         <input type="checkbox" name="event_movies[show_entry_form]" value="1" <?php checked( $meta['event_movies_show_entry_form'][0] ?? '1', '1' ); ?> />
                         <p class="description">
-                            true/false, používa sa keď potrebujem jednu URL na tento kvíz ukázať viacerým tímom, ktorí si pred kvízom musia vybrať svoj tím.<br>
-                            Nie cez all links, ale len pre tento konkrétny kvíz.
+                            <strong>Zapnuté:</strong> Ak hráč príde na URL kvízu bez vyplneného tímu (napr. cez všeobecný link <code>/merdfghh/?akcia=event</code> bez <code>team=</code>), najprv sa mu zobrazí formulár na výber tímu. Po výbere pokračuje do kvízu. Použi keď chceš poslať jeden zdieľaný link všetkým hráčom a každý si vyberie tím sám.<br>
+                            <strong>Vypnuté:</strong> Hráč musí prísť s <code>team=</code> parametrom už v URL (napr. cez predistribuovaný link <code>/merdfghh/?akcia=event&amp;team=team1</code>). Žiadny vstupný formulár — ide rovno do otázok. Použi keď máš pre každý tím samostatný link (QR kód, email, hub vstup s preselected tímom).<br>
+                            ⚠️ <em>Funguje len v kombinácii s „Výber tímu z preddefinovaného zoznamu" v General tabe. Bez toho sa selector neukáže ani keď je toggle ON.</em>
                         </p>
                     </td>
                 </tr>
@@ -1213,12 +1215,13 @@ private function render_knowledge_tab( $post, $meta ) {
 
             <tbody id="knowledge_fields_container" style="<?php echo $knowledge_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
                 <tr>
-                    <th><label>Zobraziť entry formulár</label></th>
+                    <th><label>Vstup: zobraziť výber tímu / ísť rovno do otázok</label></th>
                     <td>
                         <input type="checkbox" name="event_knowledge[show_entry_form]" value="1" <?php checked( $meta['event_knowledge_show_entry_form'][0] ?? '1', '1' ); ?> />
                         <p class="description">
-                            true/false, používa sa keď potrebujem jednu URL na tento kvíz ukázať viacerým tímom, ktorí si pred kvízom musia vybrať svoj tím.<br>
-                            Nie cez all links, ale len pre tento konkrétny kvíz.
+                            <strong>Zapnuté:</strong> Ak hráč príde na URL kvízu bez vyplneného tímu (napr. cez všeobecný link <code>/kwersdfzx/?akcia=event</code> bez <code>team=</code>), najprv sa mu zobrazí formulár na výber tímu. Po výbere pokračuje do kvízu. Použi keď chceš poslať jeden zdieľaný link všetkým hráčom a každý si vyberie tím sám.<br>
+                            <strong>Vypnuté:</strong> Hráč musí prísť s <code>team=</code> parametrom už v URL (napr. cez predistribuovaný link <code>/kwersdfzx/?akcia=event&amp;team=team1</code>). Žiadny vstupný formulár — ide rovno do otázok. Použi keď máš pre každý tím samostatný link (QR kód, email, hub vstup s preselected tímom).<br>
+                            ⚠️ <em>Funguje len v kombinácii s „Výber tímu z preddefinovaného zoznamu" v General tabe. Bez toho sa selector neukáže ani keď je toggle ON.</em>
                         </p>
                     </td>
                 </tr>
@@ -1441,12 +1444,13 @@ private function render_sudoku_tab( $post, $meta ) {
 
             <tbody id="sudoku_fields_container" style="<?php echo $sudoku_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
                 <tr>
-                    <th><label>Zobraziť entry formulár</label></th>
+                    <th><label>Vstup: zobraziť výber tímu / ísť rovno do otázok</label></th>
                     <td>
                         <input type="checkbox" name="event_sudoku[show_entry_form]" value="1" <?php checked( $meta['event_sudoku_show_entry_form'][0] ?? '0', '1' ); ?> />
                         <p class="description">
-                            true/false, používa sa keď potrebujem jednu URL na tento kvíz ukázať viacerým tímom, ktorí si pred kvízom musia vybrať svoj tím.<br>
-                            Nie cez all links, ale len pre tento konkrétny kvíz.
+                            <strong>Zapnuté:</strong> Ak hráč príde na URL kvízu bez vyplneného tímu (napr. cez všeobecný link <code>/sweertydfd/?akcia=event</code> bez <code>team=</code>), najprv sa mu zobrazí formulár na výber tímu. Po výbere pokračuje do kvízu. Použi keď chceš poslať jeden zdieľaný link všetkým hráčom a každý si vyberie tím sám.<br>
+                            <strong>Vypnuté:</strong> Hráč musí prísť s <code>team=</code> parametrom už v URL (napr. cez predistribuovaný link <code>/sweertydfd/?akcia=event&amp;team=team1</code>). Žiadny vstupný formulár — ide rovno do otázok. Použi keď máš pre každý tím samostatný link (QR kód, email, hub vstup s preselected tímom).<br>
+                            ⚠️ <em>Funguje len v kombinácii s „Výber tímu z preddefinovaného zoznamu" v General tabe. Bez toho sa selector neukáže ani keď je toggle ON.</em>
                         </p>
                     </td>
                 </tr>
