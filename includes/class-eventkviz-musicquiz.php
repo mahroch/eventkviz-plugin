@@ -414,11 +414,11 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             if(!empty($form_song) && is_int($this->is_in_array_of_correct_answers($form_song, 'song')) && !in_array($form_song, $used_songs)) {
                 // add credit for correct song on wrong position
                 $gained_credits += $credits['corr_song_in_array'];
-               $this->show_answer("Correct song on wrong position, user gets +" . $credits['corr_song_in_array'] . " points", 'music');
+               $this->show_answer("Pieseň na nesprávnej pozícii, hráč získava +" . $credits['corr_song_in_array'] . " bodov", 'music', 'eventkviz_standard_answer', 'user_result');
                 $used_songs[] = $form_song;
                 return 2;
             } elseif(in_array($form_song, $used_songs)) {
-                $this->show_answer("Duplicate, user gets +0 points", 'music');
+                $this->show_answer("Duplicita, hráč získava +0 bodov", 'music', 'eventkviz_standard_answer', 'user_result');
                 return 1;
             } else {
                 return 0;
@@ -437,11 +437,11 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             if(!empty($form_artist) && is_int($this->is_in_array_of_correct_answers($form_artist, 'artist'))  && !in_array($form_artist, $used_artists)) {
                 // add credit for correct artist on wrong position
                 $gained_credits += $credits['corr_art_in_array'];
-                $this->show_answer("Correct artist on wrong position, user gets +" . $credits['corr_art_in_array'] . " points", 'music');
+                $this->show_answer("Interpret na nesprávnej pozícii, hráč získava +" . $credits['corr_art_in_array'] . " bodov", 'music', 'eventkviz_standard_answer', 'user_result');
                 $used_artists[] = $form_artist;
                 return 2;
             } elseif(in_array($form_artist, $used_artists)) {
-                $this->show_answer("Duplicate, user gets +0 points", 'music');
+                $this->show_answer("Duplicita, hráč získava +0 bodov", 'music', 'eventkviz_standard_answer', 'user_result');
                 return 1;
             } else {
                 return 0;
@@ -518,14 +518,14 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             if(!in_array($form_artist, $used_artists) || !in_array($form_song, $used_songs)) {
                 $gained_credits += $credits['corr_art_corr_pos_corr_song_corr_pos'];
             
-                $this->show_answer("Spevák/skupina boli určené správne, získavate +" . $credits['corr_art_corr_pos_corr_song_corr_pos'] . " bodov", 'music');
+                $this->show_answer("Spevák/skupina aj pieseň boli určené správne, získavate +" . $credits['corr_art_corr_pos_corr_song_corr_pos'] . " bodov", 'music', 'eventkviz_standard_answer', 'user_result');
 
                 $used_artists[] = $form_artist;
                 $used_songs[] = $form_song;
             } elseif (empty($form_artist) ) {
-                $this->show_answer("Odpoveď nebola zadaná", 'music');
+                $this->show_answer("Odpoveď nebola zadaná", 'music', 'eventkviz_standard_answer', 'user_result');
             } else {
-                $this->show_answer("Umelec, alebo pieseň už bola započítané predtým.", 'music');
+                $this->show_answer("Umelec, alebo pieseň už bola započítané predtým.", 'music', 'eventkviz_standard_answer', 'user_result');
             }
             
             
@@ -536,7 +536,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             
             if(!in_array($form_artist, $used_artists)) {
                 $gained_credits += $credits['corr_art_corr_pos_incorr_song'];
-                $this->show_answer("Only correct artist on correct position, user gets +" . $credits['corr_art_corr_pos_incorr_song'] . " points", 'music');
+                $this->show_answer("Správny interpret na správnej pozícii, hráč získava +" . $credits['corr_art_corr_pos_incorr_song'] . " bodov", 'music', 'eventkviz_standard_answer', 'user_result');
                 $used_artists[] = $form_artist;
             }
             // check if song is elswhere in  array of correct answers
@@ -550,7 +550,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             // add credit for correct song on correct place
             if( !in_array($form_song, $used_songs)) {
                 $gained_credits += $credits['incorr_art_corr_song_corr_pos'];
-                $this->show_answer("Only correct song on correct position, user gets +" . $credits['incorr_art_corr_song_corr_pos'] . " points", 'music');
+                $this->show_answer("Správna pieseň na správnej pozícii, hráč získava +" . $credits['incorr_art_corr_song_corr_pos'] . " bodov", 'music', 'eventkviz_standard_answer', 'user_result');
                 $used_songs[] = $form_song;
             }
             
@@ -568,7 +568,7 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             //echo $artisres;
             
             if ($songres < 1 &&  $artisres < 1) {
-                $this->show_answer("Nesprávna pieseň, nesprávny umelec, získavate +0 bodov", 'music');
+                $this->show_answer("Nesprávna pieseň, nesprávny umelec, získavate +0 bodov", 'music', 'eventkviz_standard_answer', 'user_result');
             }
 
 
