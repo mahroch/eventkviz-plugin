@@ -321,15 +321,17 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 				return true;
 			} else {
 
-				if($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true && !empty($user_code)){
+				// GC mode: when user_code is gc_<uuid>, force user-based scoping
+				// regardless of identifikacia_kodom_usera flag (which is typically false
+				// for events using GeoChallenge).
+				$is_gc_user = is_string($user_code) && strpos($user_code, 'gc_') === 0;
+
+				if((($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true) || $is_gc_user) && !empty($user_code)){
 					$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}jet_cct_results WHERE user = %s AND akcia = %s AND quiz_type = %s", $this->standardize($user_code), $akcia_code, $place));
-					//echo 1;
 				} elseif($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === false && $this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true && !empty($team_code)){
 					$results = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}jet_cct_results WHERE team = %s AND akcia = %s AND quiz_type = %s", $this->standardize($team_code), $akcia_code, $place));
-					//echo 2;
 				} else {
 					$results = array();
-					//echo 3;
 				}
 
 				//print_r($results);
