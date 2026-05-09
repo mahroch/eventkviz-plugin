@@ -392,8 +392,10 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
                         && empty($this->cAkcia->knowledge_settings['new_questions_on_retry'])
                         && !empty($this->retry_state);
                     $review_state = $highlight_ok ? $this->retry_state : array();
-                    $label = 'Opakovať kvíz (zostáva ' . $tries_left_after_this . ' '
-                        . self::_n_pokus_label($tries_left_after_this) . ')';
+                    $pocet_max = (int) ($this->cAkcia->knowledge_settings['pocet_pokusov'] ?? 0);
+                    $shown = ($pocet_max > 0 && $tries_left_after_this > $pocet_max) ? $pocet_max : $tries_left_after_this;
+                    $label = 'Opakovať kvíz (zostáva ' . $shown . ' '
+                        . self::_n_pokus_label($shown) . ')';
                     $this->render_retry_button($link_to_quiz_url, $label, $review_state);
                 } else {
                     echo '<p><em>Toto bol váš posledný povolený pokus pre tento kvíz.</em></p>';

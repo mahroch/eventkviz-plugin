@@ -420,12 +420,16 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 	 */
 	public function render_tries_remaining_banner($quiz_type){
 		if ( ! isset($this->zostava_pocet_pokusov)) return;
-		$remaining = (int) $this->zostava_pocet_pokusov;
-		if ($remaining <= 0) return;
-
 		$pocet = isset($this->cAkcia->{$quiz_type . '_settings'}['pocet_pokusov'])
 			? (int) $this->cAkcia->{$quiz_type . '_settings'}['pocet_pokusov']
 			: 0;
+
+		// check_number_of_tries returns pocet+1-entries (the +1 accounts for an
+		// extra form-init row written before the first eval submit). Cap the
+		// user-visible value at pocet so banner never reads "11 z 10".
+		$remaining = (int) $this->zostava_pocet_pokusov;
+		if ($pocet > 0 && $remaining > $pocet) $remaining = $pocet;
+		if ($remaining <= 0) return;
 
 		if ($remaining === 1) {
 			$msg = ($pocet > 1)
