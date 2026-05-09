@@ -313,11 +313,9 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 const user  = document.getElementById("inputField1")?.value || "";
                 const team  = document.getElementById("inputField2")?.value || "";
                 const akcia = "' . esc_js($value['akcia']) . '";
-                const singleQuiz = "' . esc_js($single_quiz) . '";';
+                const singleQuiz = "' . esc_js($value['type']) . '";';
 
-            $host_url = ($_SERVER['HTTP_HOST'] == 'localhost:8888')
-                ? 'http://localhost:8888/eventkviz'
-                : 'https://eventkviz.sk/' . $value['akcia'];
+            $host_url = untrailingslashit( home_url() );
 
             if ($this->cAkcia->music_settings['music_quiz_active']) {
                 echo 'const link1 = "' . $host_url . '/aqljk?team="+encodeURIComponent(team)+"&user="+encodeURIComponent(user)+"&akcia="+encodeURIComponent(akcia);';

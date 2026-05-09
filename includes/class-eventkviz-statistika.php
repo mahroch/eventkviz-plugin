@@ -32,9 +32,16 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
 
         global $wpdb;
 
-         $this->load_basic_event_settings( $value['akcia']);
+        // load_basic_event_settings() handles both legacy per-event classes and meta-based events.
+        // Previously statistika also called $this->all_quizes_settings($value['akcia']) here, which
+        // tried to instantiate Eventkviz_<akcia>_Class — that worked for legacy events (henkel/esmt/...)
+        // but crashes for meta-based events created via the eventkviz_event CPT (Berlin onwards).
+        $this->load_basic_event_settings( $value['akcia']);
 
-         $this->all_quizes_settings($value['akcia']);
+        if (!isset($this->cAkcia) || empty($this->cAkcia->all_quizes_settings)) {
+            echo '<p>Akcia <code>' . esc_html($value['akcia']) . '</code> sa nenašla, alebo nemá nastavenia.</p>';
+            return;
+        }
 
         if ($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true){
 
