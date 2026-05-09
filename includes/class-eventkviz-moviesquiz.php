@@ -21,14 +21,10 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
         ), $atts );
         
         $user_code = get_query_var( 'user' );
-        $akcia_code = get_query_var( 'akcia' );
+        $akcia_code = get_query_var( 'akcia' ); 
         $this->load_basic_event_settings( $akcia_code);
-
-        // GeoChallenge: per-participant scoping via cp query arg
-        $gc_user = $this->geo_user_code('form');
-        if ($gc_user !== '') $user_code = $gc_user;
-
         $team_code = $this->set_team_code($user_code, $akcia_code);
+        //$this->movies_quiz_settings($akcia_code,$user_code,$team_code);
 
          if($this->cAkcia->movies_settings['show_entry_form'] === true){
 
@@ -277,13 +273,11 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
         }
 
         $questions = json_decode($raw_set, true);
+        //print_r($questions);
         $user = $_POST['user'];
         $team = $_POST['team'];
-
-        // GeoChallenge: per-participant scoping via gc_cp POST field
-        $gc_user = $this->geo_user_code('eval');
-        if ($gc_user !== '') $user = $gc_user;
-
+        
+        //$this->movies_quiz_settings($akcia,$user,$team);
         $check_result = $this->check_number_of_tries($user, $akcia,'movies',$team);
         
         if($check_result === true) {
@@ -327,7 +321,10 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
             } else {
                 $akcia_tag = $this->akcia_tag;
 
-                $link_to_movies_quiz_url = $this->build_retry_url($team, $user, $akcia_tag, '/merdfghh/');
+                $link_to_movies_quiz_url = add_query_arg(
+                    array('team' => $team, 'user' => $user, 'akcia' => $akcia_tag),
+                    home_url('/merdfghh/')
+                );
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->movies_settings['min_body_na_postup']) . '</strong> bodov.</p>';
 

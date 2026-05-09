@@ -409,49 +409,6 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 	}
 
 	/**
-	 * For GeoChallenge integration: each incoming participant has a unique
-	 * `cp` query arg from the GC app. We use it as the effective user_code
-	 * so DB-scoped queries (tries counter, question_set lookup, results)
-	 * isolate state per participant. Returns 'gc_<cp>' or '' if not GC mode.
-	 *
-	 * @param string $source 'form' (read from $_GET[cp]) or 'eval' (from $_POST[gc_cp])
-	 */
-	public function geo_user_code($source = 'form') {
-		if ( ! isset($this->cAkcia) || empty($this->cAkcia->all_quizes_settings['geochallenge_integration'])) {
-			return '';
-		}
-		$cp = '';
-		if ($source === 'eval' && ! empty($_POST['gc_cp'])) {
-			$cp = sanitize_text_field(wp_unslash($_POST['gc_cp']));
-		} elseif ($source === 'form' && ! empty($_GET['cp'])) {
-			$cp = sanitize_text_field($_GET['cp']);
-		}
-		return $cp !== '' ? 'gc_' . $cp : '';
-	}
-
-	/**
-	 * Build the "Opakovať kvíz" URL. Normally just team+user+akcia, but in
-	 * GeoChallenge mode preserves id, cp, return_url so the retry stays in
-	 * GC context (geo_user_code keeps resolving the same participant).
-	 */
-	public function build_retry_url($team, $user, $akcia, $quiz_path) {
-		$args = array('team' => $team, 'user' => $user, 'akcia' => $akcia);
-		if ( ! empty($_POST['gc_id']) && ! empty($_POST['gc_cp'])) {
-			$args = array(
-				'team'  => '',
-				'user'  => '',
-				'akcia' => $akcia,
-				'id'    => sanitize_text_field(wp_unslash($_POST['gc_id'])),
-				'cp'    => sanitize_text_field(wp_unslash($_POST['gc_cp'])),
-			);
-			if ( ! empty($_POST['gc_return'])) {
-				$args['return_url'] = esc_url_raw(wp_unslash($_POST['gc_return']));
-			}
-		}
-		return add_query_arg($args, home_url($quiz_path));
-	}
-
-	/**
 	 * Render the retry button. If $previous_state is non-empty, render as a
 	 * form POST so the form page can pre-fill + highlight previous answers.
 	 * Otherwise render a plain GET link (legacy behavior).

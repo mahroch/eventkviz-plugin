@@ -17,14 +17,9 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
     public function eventkviz_sudoku_form($atts = '') {
         
         $user_code = get_query_var( 'user' );
-        $akcia_code = get_query_var( 'akcia' );
-        $this->load_basic_event_settings( $akcia_code);
-
-        // GeoChallenge: per-participant scoping via cp query arg
-        $gc_user = $this->geo_user_code('form');
-        if ($gc_user !== '') $user_code = $gc_user;
-
-        $team_code = $this->set_team_code($user_code, $akcia_code);
+        $akcia_code = get_query_var( 'akcia' ); 
+         $this->load_basic_event_settings( $akcia_code);
+        $team_code = $this->set_team_code($user_code, $akcia_code,);
         //$this->sudoku_quiz_settings($akcia_code, $user_code, $team_code);
 
         if($this->cAkcia->sudoku_settings['show_entry_form'] === true){
@@ -154,15 +149,13 @@ class Eventkviz_SudokuEval_Quiz_Class extends Eventkviz_Quiz_Class{
         global $gained_credits;
         
         $akcia = $_POST['akcia'];
-        $this->load_basic_event_settings( $akcia);
+         $this->load_basic_event_settings( $akcia);
         $questions = json_decode(wp_unslash($_POST['set']), true);
+        //print_r($questions);
         $user = $_POST['user'];
         $team = $_POST['team'];
-
-        // GeoChallenge: per-participant scoping via gc_cp POST field
-        $gc_user = $this->geo_user_code('eval');
-        if ($gc_user !== '') $user = $gc_user;
-
+        
+        //$this->sudoku_quiz_settings($akcia, $user, $team);
         $check_result = $this->check_number_of_tries($user, $akcia,'sudoku',$team);
         
         if($check_result === true) {
