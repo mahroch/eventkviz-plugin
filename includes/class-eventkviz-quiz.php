@@ -208,12 +208,16 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 }
 
 	public function show_total_credits_gained($gained_credits='', $user='', $team=''){
-		if(!empty($user) && $team=="none"){
-			echo "<h1>Sumár získaných bodov:<br>" . $gained_credits . " bodov <br>(spočítané pre hráča <b>" . $user . "</b>)</h1>";
-		} elseif(empty($user) && !empty($team)){
-			echo "<h1>Sumár získaných bodov:<br><span class='eventkviz_gained_points'>" . $gained_credits . " bodov</span> <br>(spočítané pre team <b>" . $team ."</b>)</h1>";
+		// Don't show internal GC session id (gc_<uuid>) — it's not a real player name.
+		$is_gc_internal = is_string($user) && strpos($user, 'gc_') === 0;
+		$user_visible   = $is_gc_internal ? '' : $user;
+
+		if(!empty($user_visible) && $team=="none"){
+			echo "<h1>Sumár získaných bodov:<br>" . $gained_credits . " bodov <br>(spočítané pre hráča <b>" . esc_html($user_visible) . "</b>)</h1>";
+		} elseif(empty($user_visible) && !empty($team) && $team !== 'none'){
+			echo "<h1>Sumár získaných bodov:<br><span class='eventkviz_gained_points'>" . $gained_credits . " bodov</span> <br>(spočítané pre team <b>" . esc_html($team) . "</b>)</h1>";
 		} else {
-			echo "<h1>Sumár získaných bodov:<br>" . $gained_credits . " bodov </h1>";
+			echo "<h1>Sumár získaných bodov:<br><span class='eventkviz_gained_points'>" . $gained_credits . " bodov</span></h1>";
 		}
 
 		$this->show_link_back($user, $team);
