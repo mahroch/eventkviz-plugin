@@ -294,11 +294,18 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
             $this->show_total_credits_gained($gained_credits, $user, $team, );
 
             if($this->cAkcia->music_settings['min_body_na_postup'] > 0 && $gained_credits >= $this->cAkcia->music_settings['min_body_na_postup']) {
+                    $is_gc = !empty($this->cAkcia->all_quizes_settings['geochallenge_integration']);
                     echo '<div class="ek-quiz-message ek-quiz-message--success">';
-                    echo '<p>Získali ste dosť bodov na postup a zobrazenie ďalšej indície.</p>';
-                    echo '<p>Vaša ďalšia indícia je:</p>';
-                    $url = wp_get_attachment_image_src( $this->cAkcia->music_settings['obrazok_pri_splneni_kvizu'],'large' );
-                    echo "<img src='" . esc_url($url[0]) . "' style='width:100%;border-radius:12px;display:block;margin-top:12px;'>";
+                    if ($is_gc) {
+                        echo '<p>Získali ste dosť bodov. Použite kód nižšie v GeoChallenge appke.</p>';
+                    } else {
+                        echo '<p>Získali ste dosť bodov na postup a zobrazenie ďalšej indície.</p>';
+                        echo '<p>Vaša ďalšia indícia je:</p>';
+                        $url = wp_get_attachment_image_src( $this->cAkcia->music_settings['obrazok_pri_splneni_kvizu'],'large' );
+                        if (!empty($url[0])) {
+                            echo "<img src='" . esc_url($url[0]) . "' style='width:100%;border-radius:12px;display:block;margin-top:12px;'>";
+                        }
+                    }
                     echo '</div>';
 
                     $this->show_geochallenge_return($gained_credits);

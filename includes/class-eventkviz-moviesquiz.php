@@ -310,16 +310,21 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
             $this->show_total_credits_gained($gained_credits, $user, $team);
 
             if($this->cAkcia->movies_settings['min_body_na_postup'] > 0 && $gained_credits >= $this->cAkcia->movies_settings['min_body_na_postup']) {
+                    $is_gc = !empty($this->cAkcia->all_quizes_settings['geochallenge_integration']);
                     echo '<div class="ek-quiz-message ek-quiz-message--success">';
-                    echo '<p>Získali ste dosť bodov na postup a zobrazenie ďalšej indície.</p>';
-                    $format = $this->cAkcia->movies_settings['format_pri_splneni'] ?? 'obrazok';
-                    if ($format === 'text' && !empty($this->cAkcia->movies_settings['text_pri_splneni_kvizu'])) {
-                        echo '<div class="eventkviz_splnenie_kvizu">' . wp_kses_post($this->cAkcia->movies_settings['text_pri_splneni_kvizu']) . '</div>';
+                    if ($is_gc) {
+                        echo '<p>Získali ste dosť bodov. Použite kód nižšie v GeoChallenge appke.</p>';
                     } else {
-                        echo '<p>Vaša ďalšia indícia je:</p>';
-                        $url = wp_get_attachment_image_src( $this->cAkcia->movies_settings['obrazok_pri_splneni_kvizu'],'large' );
-                        if ($url) {
-                            echo "<img src='" . esc_url($url[0]) . "' style='width:100%;border-radius:12px;display:block;margin-top:12px;'>";
+                        echo '<p>Získali ste dosť bodov na postup a zobrazenie ďalšej indície.</p>';
+                        $format = $this->cAkcia->movies_settings['format_pri_splneni'] ?? 'obrazok';
+                        if ($format === 'text' && !empty($this->cAkcia->movies_settings['text_pri_splneni_kvizu'])) {
+                            echo '<div class="eventkviz_splnenie_kvizu">' . wp_kses_post($this->cAkcia->movies_settings['text_pri_splneni_kvizu']) . '</div>';
+                        } else {
+                            echo '<p>Vaša ďalšia indícia je:</p>';
+                            $url = wp_get_attachment_image_src( $this->cAkcia->movies_settings['obrazok_pri_splneni_kvizu'],'large' );
+                            if ($url) {
+                                echo "<img src='" . esc_url($url[0]) . "' style='width:100%;border-radius:12px;display:block;margin-top:12px;'>";
+                            }
                         }
                     }
                     echo '</div>';

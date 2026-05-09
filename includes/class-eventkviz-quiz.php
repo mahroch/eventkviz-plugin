@@ -381,13 +381,11 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 			return;
 		}
 
-		$gc_id = isset($_POST['gc_id']) ? sanitize_text_field($_POST['gc_id']) : '';
-		$gc_cp = isset($_POST['gc_cp']) ? sanitize_text_field($_POST['gc_cp']) : '';
+		// gc_return is the URL back to the GeoChallenge app (deep link). Only present
+		// when the GC app generated the eventkviz link with return_url query param.
+		// gc_id/gc_cp may be missing in the static-QR / cookie scenario — but we
+		// still want to show the code so the player can manually type it back.
 		$gc_return = isset($_POST['gc_return']) ? esc_url_raw($_POST['gc_return']) : '';
-
-		if (empty($gc_id) || empty($gc_cp)) {
-			return;
-		}
 
 		$code = $this->generate_geochallenge_code($gained_credits);
 
