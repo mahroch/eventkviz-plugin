@@ -251,7 +251,7 @@ class Eventkviz_SudokuEval_Quiz_Class extends Eventkviz_Quiz_Class{
         if($form_sudoku == $correct_sudoku) {
             $credits_for_difficulty = $this->get_credits_for_difficulty($iteration_no);
             $gained_credits += $credits_for_difficulty;
-            $this->show_answer("Odpoveď bola správna, hráč získava +" . $credits_for_difficulty . " bodov", 'sudoku');
+            $this->show_answer("Odpoveď bola správna, hráč získava +" . $credits_for_difficulty . " bodov", 'sudoku', 'eventkviz_standard_answer', 'user_result');
         }
 
         echo '</div>'; // .ek-question

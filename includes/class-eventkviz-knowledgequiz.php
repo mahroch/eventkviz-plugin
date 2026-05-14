@@ -549,9 +549,9 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
 
             if($result === true && $this->cAkcia->knowledge_settings['zobraz_spravne_uhadnute_odpovede'] === true ) {
                 $gained_credits += $credits['corr_answer'];
-                $this->show_answer("Odpoveď je správna, hráč získava +" . $credits['corr_answer'] . " bodov", 'knowledge', 'eventkviz_correct_answer');
+                $this->show_answer("Odpoveď je správna, hráč získava +" . $credits['corr_answer'] . " bodov", 'knowledge', 'eventkviz_correct_answer', 'user_result');
             } else {
-                $this->show_answer("Odpoveď nie je správna, hráč získava 0 bodov.", 'knowledge', 'eventkviz_incorrect_answer');
+                $this->show_answer("Odpoveď nie je správna, hráč získava 0 bodov.", 'knowledge', 'eventkviz_incorrect_answer', 'user_result');
             }
 
         } else {
