@@ -129,10 +129,23 @@
                 return r.ok ? r.json() : null;
             }).then(function (data) { if (data) renderRiversOverlay(data); }).catch(function () {});
         }
-        if (overlaysCfg.cities) {
+        if (overlaysCfg.cities_main || overlaysCfg.cities_regional) {
             fetch(ekMapaCfg.geoJsonBase + 'sk-cities.geojson').then(function (r) {
                 return r.ok ? r.json() : null;
-            }).then(function (data) { if (data) renderCitiesOverlay(data); }).catch(function () {});
+            }).then(function (data) {
+                if (!data) return;
+                // Filter podľa tier: tier 1 = krajské, tier 2 = okresné. Admin si vyberie.
+                var filtered = {
+                    type: 'FeatureCollection',
+                    features: data.features.filter(function (f) {
+                        var t = f.properties && f.properties.tier;
+                        if (t === 1) return !!overlaysCfg.cities_main;
+                        if (t === 2) return !!overlaysCfg.cities_regional;
+                        return false;
+                    })
+                };
+                renderCitiesOverlay(filtered);
+            }).catch(function () {});
         }
     }
 

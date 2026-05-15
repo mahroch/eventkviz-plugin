@@ -146,9 +146,10 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         $overlays      = is_string( $overlays_json ) && $overlays_json !== '' ? json_decode( $overlays_json, true ) : array();
         if ( ! is_array( $overlays ) ) $overlays = array();
         $overlays_attr = wp_json_encode( array(
-            'cities'  => ! empty( $overlays['cities'] ),
-            'regions' => ! empty( $overlays['regions'] ),
-            'rivers'  => ! empty( $overlays['rivers'] ),
+            'cities_main'     => ! empty( $overlays['cities_main'] ),
+            'cities_regional' => ! empty( $overlays['cities_regional'] ),
+            'regions'         => ! empty( $overlays['regions'] ),
+            'rivers'          => ! empty( $overlays['rivers'] ),
         ) );
 
         // Container for player map + task list. JS handles rendering.
@@ -397,9 +398,10 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
         $overlays      = is_string( $overlays_json ) && $overlays_json !== '' ? json_decode( $overlays_json, true ) : array();
         if ( ! is_array( $overlays ) ) $overlays = array();
         $overlays_attr = wp_json_encode( array(
-            'cities'  => ! empty( $overlays['cities'] ),
-            'regions' => ! empty( $overlays['regions'] ),
-            'rivers'  => ! empty( $overlays['rivers'] ),
+            'cities_main'     => ! empty( $overlays['cities_main'] ),
+            'cities_regional' => ! empty( $overlays['cities_regional'] ),
+            'regions'         => ! empty( $overlays['regions'] ),
+            'rivers'          => ! empty( $overlays['rivers'] ),
         ) );
 
         // Review map container — JS reads window.ekMapaReview

@@ -117,9 +117,11 @@ class Eventkviz_MapQuiz_Editor {
     }
 
     public static function get_player_detail_presets() {
+        // Pozn.: kľúče musia prejsť sanitize_key() — žiadny `+` ani iné špec. znaky,
+        // inak save handler vyhodí value do fallbacku 'outline-only'.
         return array(
-            'outline-only' => 'Iba obrys regiónu',
-            '+regions'     => 'Obrys + administratívne hranice',
+            'outline-only'     => 'Iba obrys regiónu',
+            'outline-regions'  => 'Obrys + administratívne hranice',
         );
     }
 
@@ -183,8 +185,12 @@ class Eventkviz_MapQuiz_Editor {
             <legend style="font-weight:600; padding:0 6px">Vodítka pre hráča (overlay vrstvy nad blanket mapou)</legend>
             <p class="description" style="margin:0 0 8px">Zaškrtnuté vrstvy sa zobrazia na hráčskej mape ako pomôcka pri hľadaní lokácií. Funguje len pre región <strong>Slovensko</strong> v tejto verzii — dáta sú napevno bundleované v plugine, žiadne online sťahovanie.</p>
             <label style="margin-right:18px">
-                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[cities]" value="1" <?php checked( ! empty( $overlays['cities'] ) ); ?> />
-                Mestá (krajské + významné okresné, ~34 bodov)
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[cities_main]" value="1" <?php checked( ! empty( $overlays['cities_main'] ) ); ?> />
+                Krajské mestá (8 — BA, TT, TN, NR, ZA, BB, PO, KE)
+            </label>
+            <label style="margin-right:18px">
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[cities_regional]" value="1" <?php checked( ! empty( $overlays['cities_regional'] ) ); ?> />
+                Významné okresné mestá (26 — Martin, Poprad, Lučenec, …)
             </label>
             <label style="margin-right:18px">
                 <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[regions]" value="1" <?php checked( ! empty( $overlays['regions'] ) ); ?> />
@@ -294,9 +300,10 @@ class Eventkviz_MapQuiz_Editor {
         // Overlay vodítka — checkboxes; unchecked sa v $_POST vôbec nezjavia.
         $overlays_raw = isset( $_POST[ self::META_OVERLAYS ] ) && is_array( $_POST[ self::META_OVERLAYS ] ) ? $_POST[ self::META_OVERLAYS ] : array();
         $overlays_clean = array(
-            'cities'  => ! empty( $overlays_raw['cities'] ),
-            'regions' => ! empty( $overlays_raw['regions'] ),
-            'rivers'  => ! empty( $overlays_raw['rivers'] ),
+            'cities_main'     => ! empty( $overlays_raw['cities_main'] ),
+            'cities_regional' => ! empty( $overlays_raw['cities_regional'] ),
+            'regions'         => ! empty( $overlays_raw['regions'] ),
+            'rivers'          => ! empty( $overlays_raw['rivers'] ),
         );
         update_post_meta( $post_id, self::META_OVERLAYS, wp_json_encode( $overlays_clean ) );
 
