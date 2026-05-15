@@ -123,19 +123,23 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         $count_in_set = min( $count_in_set, count( $all_pins ) );
 
         if ( ! $treat_as_new ) {
-            // Reuse pin ids from prior session — ale len ak VŠETKY stored IDs existujú
-            // v aktuálnom poole. Inak (napr. admin zmenil quiz_type alebo upravil pins
-            // template) treat_as_new aby sa vygenerovala fresh sada.
+            // Reuse stored set, ale len ak:
+            //   1) VŠETKY IDs existujú v aktuálnom poole (po zmene quiz_type/template by neexistovali)
+            //   2) Počet uložených IDs sa zhoduje s aktuálnym pocet_otazok_v_sete
+            //      (po zmene počtu by stary set bol nesprávnej veľkosti)
+            // Inak treat_as_new — regeneruje sa fresh sada s aktuálnymi nastaveniami.
             $stored_ids = is_array( $this->questions_set ) ? $this->questions_set : array();
             $selected = array();
-            $all_match = ! empty( $stored_ids );
-            foreach ( $stored_ids as $pid ) {
-                $found = null;
-                foreach ( $all_pins as $p ) {
-                    if ( (string) $p['id'] === (string) $pid ) { $found = $p; break; }
+            $all_match = ! empty( $stored_ids ) && count( $stored_ids ) === $count_in_set;
+            if ( $all_match ) {
+                foreach ( $stored_ids as $pid ) {
+                    $found = null;
+                    foreach ( $all_pins as $p ) {
+                        if ( (string) $p['id'] === (string) $pid ) { $found = $p; break; }
+                    }
+                    if ( $found ) { $selected[] = $found; }
+                    else { $all_match = false; break; }
                 }
-                if ( $found ) { $selected[] = $found; }
-                else { $all_match = false; break; }
             }
             if ( ! $all_match ) {
                 $treat_as_new = true;
@@ -207,6 +211,7 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
             'cities_regional' => ! empty( $overlays['cities_regional'] ),
             'regions'         => ! empty( $overlays['regions'] ),
             'rivers'          => ! empty( $overlays['rivers'] ),
+            'feature_labels'  => ! empty( $overlays['feature_labels'] ),
         ) );
 
         // Container for player map + task list. JS handles rendering.
@@ -495,6 +500,7 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
             'cities_regional' => ! empty( $overlays['cities_regional'] ),
             'regions'         => ! empty( $overlays['regions'] ),
             'rivers'          => ! empty( $overlays['rivers'] ),
+            'feature_labels'  => ! empty( $overlays['feature_labels'] ),
         ) );
 
         // Review map container — JS reads window.ekMapaReview

@@ -242,9 +242,18 @@ class Eventkviz_MapQuiz_Editor {
                 <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[regions]" value="1" <?php checked( ! empty( $overlays['regions'] ) ); ?> />
                 Kraje (8 administratívnych krajov)
             </label>
-            <label>
+            <label style="margin-right:18px">
                 <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[rivers]" value="1" <?php checked( ! empty( $overlays['rivers'] ) ); ?> />
                 Rieky (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec)
+            </label>
+            <hr style="margin:10px 0; border:none; border-top:1px dashed #ccd0d4">
+            <label style="display:block; padding-top:4px">
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[feature_labels]" value="1" <?php checked( ! empty( $overlays['feature_labels'] ) ); ?> />
+                <strong>Pomôcť hráčovi názvami pri hover</strong> <em style="color:#888">(len pre quiz typy „rieka" / „pohorie")</em>
+                <p class="description" style="margin:4px 0 0 24px">
+                    <strong>Vypnuté</strong> (default): hráč nevidí názov rieky/pohoria pri hover — musí ich vedieť rozpoznať podľa polohy. Pre súťažné prostredie.<br>
+                    <strong>Zapnuté:</strong> hráč pri prejdení myšou nad riekou/pohorím uvidí jej názov v tooltip. Vhodné pre žiakov / vzdelávacie účely.
+                </p>
             </label>
         </fieldset>
 
@@ -403,6 +412,9 @@ class Eventkviz_MapQuiz_Editor {
             'cities_regional' => ! empty( $overlays_raw['cities_regional'] ),
             'regions'         => ! empty( $overlays_raw['regions'] ),
             'rivers'          => ! empty( $overlays_raw['rivers'] ),
+            // Pomôcka pre žiakov: hover tooltip s názvom rieky/pohoria. Default OFF —
+            // anti-cheat, hráč nesmie vidieť odpoveď cez hover.
+            'feature_labels'  => ! empty( $overlays_raw['feature_labels'] ),
         );
         update_post_meta( $post_id, self::META_OVERLAYS, wp_json_encode( $overlays_clean ) );
 

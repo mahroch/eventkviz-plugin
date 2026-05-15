@@ -173,6 +173,11 @@
             return r.ok ? r.json() : null;
         }).then(function (data) {
             if (!data) return;
+            // Pomocné názvy pri hover sú anti-cheat issue — admin musí explicitne
+            // povoliť cez overlay checkbox „feature_labels" (default OFF). Pre
+            // súťažné kvízy ostáva map clean. V review móde tooltip dáva zmysel
+            // (kvíz už skončil) — ale držíme rovnaký flag pre konzistentnosť.
+            var showLabels = !!overlaysCfg.feature_labels;
             featureLayer = L.geoJSON(data, {
                 style: featureBaseStyle,
                 onEachFeature: function (feature, layer) {
@@ -185,7 +190,9 @@
                     layer.on('mouseout', function () {
                         applyFeatureStyle(layer);
                     });
-                    if (name) layer.bindTooltip(name, { permanent: false, direction: 'top', sticky: true });
+                    if (showLabels) {
+                        layer.bindTooltip(name, { permanent: false, direction: 'top', sticky: true });
+                    }
                 }
             }).addTo(map);
             // V review móde renderujeme overlay so správnym zvýraznením
