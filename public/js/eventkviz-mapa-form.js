@@ -575,21 +575,21 @@
                     }
                 }
             } else {
-                if (placed) $row.append('<span class="ek-mapa-task-check">✓</span>');
-                else $row.append('<span class="ek-mapa-task-pending">…</span>');
+                if (placed) {
+                    var $status = $('<span class="ek-mapa-task-check">✓</span>');
+                    if (quizType === 'river' || quizType === 'mountain') {
+                        var $x = $('<button type="button" class="ek-mapa-task-unpick" title="Odznačiť">×</button>');
+                        $x.on('click', function (e) { e.stopPropagation(); unpickFeature(idx); });
+                        $status = $status.add($x);
+                    }
+                    $row.append($status);
+                } else {
+                    $row.append('<span class="ek-mapa-task-pending">…</span>');
+                }
                 if (t.hint) $row.append('<div class="ek-mapa-task-hint">' + escapeHtml(t.hint) + '</div>');
                 if (t.description) $row.append('<div class="ek-mapa-task-desc">' + escapeHtml(t.description) + '</div>');
                 if (t.photo_url) {
                     $row.append('<img class="ek-mapa-task-photo" src="' + t.photo_url + '" alt="" />');
-                }
-                // Pre river/mountain s placed pickom: tlačidlo na odznač
-                if (placed && (quizType === 'river' || quizType === 'mountain')) {
-                    var $unpick = $('<button type="button" class="ek-mapa-task-unpick" title="Odznačiť výber">✗ odznačiť</button>');
-                    $unpick.on('click', function (e) {
-                        e.stopPropagation();
-                        unpickFeature(idx);
-                    });
-                    $row.append($unpick);
                 }
             }
 

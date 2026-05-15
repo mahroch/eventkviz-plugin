@@ -133,22 +133,17 @@
     font-size: 18px;
 }
 .ek-mapa-task-unpick {
-    grid-column: 1 / -1;
-    margin-top: 6px;
-    padding: 3px 8px;
-    background: rgba(229,57,53,0.18);
-    border: 1px solid rgba(229,57,53,0.4);
-    color: #ffbdb8;
-    border-radius: 4px;
-    font-size: 11px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 4px;
+    margin-left: 4px;
     cursor: pointer;
-    align-self: start;
-    justify-self: start;
-    width: max-content;
 }
 .ek-mapa-task-unpick:hover {
-    background: rgba(229,57,53,0.32);
-    color: #fff;
+    color: #ff8a85;
 }
 .ek-mapa-task-hint,
 .ek-mapa-task-desc {
