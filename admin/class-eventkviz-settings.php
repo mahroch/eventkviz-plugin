@@ -24,7 +24,7 @@ class Eventkviz_Settings {
 
     public static function register_menu() {
         add_submenu_page(
-            'eventkviz-leaderboard',                  // parent: existing EventKviz top-level
+            'edit.php?post_type=eventkviz_event',     // parent: existing EventKviz CPT top-level
             __( 'EventKviz – Nastavenia', 'eventkviz' ),
             __( '⚙️ Nastavenia', 'eventkviz' ),
             'manage_options',

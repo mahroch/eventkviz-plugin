@@ -206,4 +206,12 @@ Map kvíz používa **rovnaké spoločné helpery** ako music/movies/knowledge/s
 - Retry-with-previous-state musí byť odskúšaný v prehliadači (autosave pre mapa quiz Fáza 7)
 - GeoChallenge fail-flow: ak `gained_credits === 0`, neukáže sa GC kód. Konzistentné s ostatnými kvízmi.
 
-**Fázy 6-8** — viď chat history / plán
+**Fáza 6 — Hub integrácia + admin menu cleanup** ✅
+- [x] `Eventkviz_OneLink_Quiz_Class::show_link_to_quiz` (`/eventkviz-vstup/?type=mapa`) — pridaný `mapa` do `$type_to_slug` → JS redirect na `/mapa-quiz/?team=...&user=...&akcia=...` keď `mapa_quiz_active`
+- [x] `Eventkviz_AllLinks_Quiz_Class::show_team_links` (`[show_team_links]` shortcode) — pridaný `link5` + single-quiz check + karta `🗺️ Mapový kvíz` v multi-quiz view + per-quiz redirect
+- [x] Admin metabox „🔗 Linky pre hráčov" (`Eventkviz_Event_Links_Admin::QUIZ_SLUGS`) — pridaný `mapa => mapa-quiz` do 3 sekcií: per-quiz hub, priame URL, label v štatistike
+- [x] Admin menu cleanup: zlúčené 2x „EventKviz" top-level menu do jedného (`edit.php?post_type=eventkviz_event` zostáva ako jediný parent). Leaderboard, Mapové šablóny CPT a Nastavenia teraz registrované cez `add_submenu_page` pod `edit.php?post_type=eventkviz_event`. Žiadny duplikát.
+
+**Otestované:** Hub `?akcia=druzba` → zobrazuje 3 aktívne karty: Hudobný, Vedomostný, Mapový. Po výbere tímu klik na kartu otvorí cieľový kvíz. Admin Linky pre hráčov zobrazuje mapa link vo všetkých sekciách. Admin menu má len jeden „EventKviz" so submenu: Zoznam eventov, Pridaj event, Všetky mapové šablóny, 🏆 Výsledky, ⚙️ Nastavenia.
+
+**Fázy 7-8** — autosave coords + final polish (viď chat history)

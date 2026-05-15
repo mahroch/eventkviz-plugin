@@ -42,8 +42,8 @@ class Eventkviz_MapQuiz_CPT {
             'public'             => false,
             'publicly_queryable' => false,
             'show_ui'            => true,
-            // String value = parent menu slug → registers as submenu under existing EventKviz menu
-            'show_in_menu'       => 'eventkviz-leaderboard',
+            // String value = parent menu slug → registers as submenu under existing EventKviz CPT menu
+            'show_in_menu'       => 'edit.php?post_type=eventkviz_event',
             'query_var'          => false,
             'capability_type'    => 'post',
             'has_archive'        => false,

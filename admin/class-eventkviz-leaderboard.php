@@ -11,19 +11,10 @@ class Eventkviz_Leaderboard {
     }
 
     public static function register_menu() {
-        add_menu_page(
-            __( 'EventKviz', 'eventkviz' ),
-            __( 'EventKviz', 'eventkviz' ),
-            'manage_options',
-            'eventkviz-leaderboard',
-            array( __CLASS__, 'render_page' ),
-            'dashicons-awards',
-            58
-        );
-
-        // Override default first-submenu label (would otherwise inherit parent name "EventKviz")
+        // Submenu pod existujúce CPT menu „EventKviz" (edit.php?post_type=eventkviz_event)
+        // — jednotný admin menu pattern, žiadny duplikát top-level menu.
         add_submenu_page(
-            'eventkviz-leaderboard',
+            'edit.php?post_type=eventkviz_event',
             __( 'Výsledky', 'eventkviz' ),
             __( '🏆 Výsledky', 'eventkviz' ),
             'manage_options',
