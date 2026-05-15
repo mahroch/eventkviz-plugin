@@ -7,7 +7,11 @@ if ( ! defined( 'WPINC' ) ) {
 class Eventkviz_Leaderboard {
 
     public static function init() {
-        add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
+        // Priority 15 — registers AFTER admin.php's add_plugin_admin_menu (priority 10).
+        // Critical: parent menu's first submenu MUST be „Zoznam eventov" (slug =
+        // edit.php?post_type=eventkviz_event) — inak sa top-level klik pokúsi ísť na URL
+        // odvodené z prvého submenu (eventkviz-leaderboard) a vznikne 404.
+        add_action( 'admin_menu', array( __CLASS__, 'register_menu' ), 15 );
     }
 
     public static function register_menu() {
@@ -16,7 +20,7 @@ class Eventkviz_Leaderboard {
         add_submenu_page(
             'edit.php?post_type=eventkviz_event',
             __( 'Výsledky', 'eventkviz' ),
-            __( '🏆 Výsledky', 'eventkviz' ),
+            __( 'Výsledky', 'eventkviz' ),
             'manage_options',
             'eventkviz-leaderboard',
             array( __CLASS__, 'render_page' )

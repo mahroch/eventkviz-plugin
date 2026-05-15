@@ -180,6 +180,16 @@ public function add_plugin_admin_menu() {
         'manage_options',
         'post-new.php?post_type=eventkviz_event'
     );
+
+    // Submenu: Mapové šablóny — manuálne (CPT má show_in_menu=false)
+    // aby sa zobrazila TU v poradí, nie ako auto-prvá pod parentom.
+    add_submenu_page(
+        'edit.php?post_type=eventkviz_event',
+        __( 'Mapové šablóny', 'eventkviz' ),
+        __( 'Mapové šablóny', 'eventkviz' ),
+        'manage_options',
+        'edit.php?post_type=mapquiz_template'
+    );
 }
 
 /**
@@ -228,7 +238,7 @@ public function render_settings_tabs( $post ) {
             <li><a href="#tab-movies">Movies</a></li>
             <li><a href="#tab-knowledge">Knowledge</a></li>
             <li><a href="#tab-sudoku">Sudoku</a></li>
-            <li><a href="#tab-mapa">🗺️ Mapa</a></li>
+            <li><a href="#tab-mapa">Mapa</a></li>
         </ul>
 
         <div class="eventkviz-tab-content">
@@ -1824,18 +1834,26 @@ private function render_mapa_tab( $post, $meta ) {
                 </tr>
 
                 <tr>
-                    <th><label>Override: max body na pin</label></th>
+                    <th><label>Maximálne body za celý kvíz <em style="color:#888;font-weight:400">(override)</em></label></th>
                     <td>
-                        <input type="number" name="event_mapa[max_points_override]" value="<?php echo esc_attr( $meta['event_mapa_max_points_override'][0] ?? '' ); ?>" min="0" max="9999" class="small-text" placeholder="prázdne = template default" />
-                        <p class="description">Nepovinné. Ak prázdne, použije sa hodnota zo šablóny. Ak zadané, override pre tento event.</p>
+                        <input type="number" name="event_mapa[max_points_override]" value="<?php echo esc_attr( $meta['event_mapa_max_points_override'][0] ?? '' ); ?>" min="0" max="9999" class="small-text" placeholder="prázdne = default zo šablóny" />
+                        <p class="description">
+                            Celkový bodový strop ktorý hráč môže získať za <strong>všetky piny dohromady</strong>. Body sa rozdelia rovnomerne medzi otázky:<br>
+                            <code>max_per_pin = max_body / počet_otázok_v_sete</code> (napr. 100 b / 10 pinov = 10 b za pin).<br>
+                            <strong>Prázdne</strong> = použije sa hodnota zadaná v mapovej šablóne (default 100).
+                        </p>
                     </td>
                 </tr>
 
                 <tr>
-                    <th><label>Override: score tiers JSON</label></th>
+                    <th><label>Stupne hodnotenia podľa vzdialenosti <em style="color:#888;font-weight:400">(override, JSON)</em></label></th>
                     <td>
-                        <textarea name="event_mapa[score_tiers_override]" rows="3" class="large-text" placeholder="[{&quot;maxKm&quot;:5,&quot;percent&quot;:100},...] — prázdne = template default"><?php echo esc_textarea( $meta['event_mapa_score_tiers_override'][0] ?? '' ); ?></textarea>
-                        <p class="description">Nepovinné. JSON pole stupňov. Ak prázdne, použije sa template default. Pre v1 — JSON treba zadať ručne (UI repeater príde neskôr).</p>
+                        <textarea name="event_mapa[score_tiers_override]" rows="3" class="large-text" placeholder='[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},...]  — prázdne = default zo šablóny'><?php echo esc_textarea( $meta['event_mapa_score_tiers_override'][0] ?? '' ); ?></textarea>
+                        <p class="description">
+                            Pre každú úlohu sa vypočíta <strong>vzdialenosť hráčovho odhadu od správnej lokácie v km</strong> a nájde sa <em>prvý</em> stupeň kde <code>vzdialenosť ≤ maxKm</code>. Body za úlohu = <code>max_per_pin × percent ÷ 100</code>.<br>
+                            <strong>Príklad:</strong> <code>[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},{"maxKm":20,"percent":50}]</code> = do 5 km plných 100 % bodov, do 10 km 75 %, do 20 km 50 %, ďalej už nič.<br>
+                            <strong>Prázdne</strong> = použije sa default zo šablóny. JSON sa zatiaľ zadáva ručne (vizuálny repeater UI príde neskôr).
+                        </p>
                     </td>
                 </tr>
 

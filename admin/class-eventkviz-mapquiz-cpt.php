@@ -42,8 +42,10 @@ class Eventkviz_MapQuiz_CPT {
             'public'             => false,
             'publicly_queryable' => false,
             'show_ui'            => true,
-            // String value = parent menu slug → registers as submenu under existing EventKviz CPT menu
-            'show_in_menu'       => 'edit.php?post_type=eventkviz_event',
+            // false → CPT-auto submenu sa nezobrazí; admin/class-eventkviz-admin.php
+            // pridáva submenu „Mapové šablóny" manuálne aby sme dosiahli
+            // požadované poradie (Zoznam eventov, Pridaj event, Mapové šablóny, …).
+            'show_in_menu'       => false,
             'query_var'          => false,
             'capability_type'    => 'post',
             'has_archive'        => false,

@@ -21,12 +21,16 @@ class Eventkviz_Activator {
 				'content' => '[statistika]',
 			),
 			'mapa-quiz'            => array(
-				'title'   => 'Mapový kvíz',
-				'content' => '[mapa_form_dynamic]',
+				'title'    => 'Mapový kvíz',
+				'content'  => '[mapa_form_dynamic]',
+				// Elementor Canvas — žiadny header/footer/sidebar; mapa potrebuje
+				// celú šírku obrazovky aby Slovensko nebolo mikroskopické.
+				'template' => 'elementor_canvas',
 			),
 			'mapa-quiz-dynamic-evaluation' => array(
-				'title'   => 'Mapový kvíz — vyhodnotenie',
-				'content' => '[eval_mapa_quiz_dynamic]',
+				'title'    => 'Mapový kvíz — vyhodnotenie',
+				'content'  => '[eval_mapa_quiz_dynamic]',
+				'template' => 'elementor_canvas',
 			),
 		);
 	}
@@ -43,9 +47,16 @@ class Eventkviz_Activator {
 		foreach ( self::hub_pages() as $slug => $cfg ) {
 			$existing = get_page_by_path( $slug );
 			if ( $existing instanceof WP_Post ) {
+				// Backfill page template for existing pages (e.g. mapa-quiz needs full-width).
+				if ( ! empty( $cfg['template'] ) ) {
+					$current_tpl = get_post_meta( $existing->ID, '_wp_page_template', true );
+					if ( $current_tpl !== $cfg['template'] ) {
+						update_post_meta( $existing->ID, '_wp_page_template', $cfg['template'] );
+					}
+				}
 				continue;
 			}
-			wp_insert_post( array(
+			$post_id = wp_insert_post( array(
 				'post_title'    => $cfg['title'],
 				'post_name'     => $slug,
 				'post_content'  => $cfg['content'],
@@ -54,6 +65,9 @@ class Eventkviz_Activator {
 				'comment_status'=> 'closed',
 				'ping_status'   => 'closed',
 			) );
+			if ( $post_id && ! is_wp_error( $post_id ) && ! empty( $cfg['template'] ) ) {
+				update_post_meta( $post_id, '_wp_page_template', $cfg['template'] );
+			}
 		}
 	}
 

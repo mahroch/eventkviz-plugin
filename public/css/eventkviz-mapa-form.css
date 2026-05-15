@@ -6,8 +6,8 @@
     margin-bottom: 18px;
 }
 .ek-mapa-tasks {
-    flex: 0 0 280px;
-    max-height: 540px;
+    flex: 0 0 220px;
+    max-height: 600px;
     overflow-y: auto;
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.15);
@@ -22,10 +22,27 @@
 }
 .ek-mapa-map {
     flex: 1 1 auto;
-    height: 540px;
+    height: 600px;
     border-radius: var(--ek-radius-sm, 10px);
     border: 1px solid rgba(255,255,255,0.15);
     background: #fff;
+}
+
+/* Leaflet zoom controls — bigger + dark background so they sú viditeľné
+   na light fill polygónov. Default Leaflet je 26px biele tlačidlá. */
+.ek-mapa-map .leaflet-control-zoom a {
+    background: #2c3e50;
+    color: #fff;
+    border-color: #1a252f;
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 18px;
+    font-weight: 700;
+}
+.ek-mapa-map .leaflet-control-zoom a:hover {
+    background: #34495e;
+    color: #fff;
 }
 @media (max-width: 720px) {
     #ek-mapa-container {

@@ -26,7 +26,7 @@ class Eventkviz_Settings {
         add_submenu_page(
             'edit.php?post_type=eventkviz_event',     // parent: existing EventKviz CPT top-level
             __( 'EventKviz – Nastavenia', 'eventkviz' ),
-            __( '⚙️ Nastavenia', 'eventkviz' ),
+            __( 'Nastavenia', 'eventkviz' ),
             'manage_options',
             self::PAGE_SLUG,
             array( __CLASS__, 'render_page' )
