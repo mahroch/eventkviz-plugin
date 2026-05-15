@@ -214,4 +214,17 @@ Map kvíz používa **rovnaké spoločné helpery** ako music/movies/knowledge/s
 
 **Otestované:** Hub `?akcia=druzba` → zobrazuje 3 aktívne karty: Hudobný, Vedomostný, Mapový. Po výbere tímu klik na kartu otvorí cieľový kvíz. Admin Linky pre hráčov zobrazuje mapa link vo všetkých sekciách. Admin menu má len jeden „EventKviz" so submenu: Zoznam eventov, Pridaj event, Všetky mapové šablóny, 🏆 Výsledky, ⚙️ Nastavenia.
 
-**Fázy 7-8** — autosave coords + final polish (viď chat history)
+**Fáza 7 — Autosave coords do localStorage** ✅
+- [x] Po každom klik/drag → `writeHidden()` zavolá `saveCoordsToStorage()` ktorá uloží `mapa<N>_lat/lon/pin` do localStorage pod kľúčom `ek_autosave:mapa:<akcia>:<team>:<user>:<setHash>` (rovnaký formát ako iné kvízy v `eventkviz-quiz-form.js`)
+- [x] `setHash` = `shortHash` zo serializovaného `set` JSON-u → keď admin pri retry vygeneruje nový set, autosave kľúč sa zmení a stale dáta sa neaplikujú
+- [x] Restore-on-load: `restorePrevReview()` najprv volá `restoreFromStorage()` ktorá doplní hidden inputs z localStorage (POST `prev_review` má prednosť — neprepíše už existujúce hodnoty)
+- [x] Banner „💾 Obnovené z predchádzajúcej relácie. [Vymazať a začať znova]" sa zobrazí keď restore prebehol. Klik na tlačidlo zmaže markery, hidden inputs, localStorage kľúč
+- [x] localStorage sa neclearje pri submit (úmyselne — retry/reload vie obnoviť stav)
+
+**Otestované:** Klik na 2 lokácie → reload page → banner sa zobrazil, oba piny obnovené v správnych pozíciách, sidebar tasks ✓. Klik „Vymazať" → piny zmazané, banner zmizol, localStorage prázdne.
+
+**Známé limity:**
+- Autosave nevypisuje custom `ek-quiz-form.js`-style restored hint na other quizoch — tu má vlastný hint špecifický pre mapa flow.
+- Žiadny TTL na localStorage — zostáva dokým prehliadač nezmaže.
+
+**Fáza 8** — final polish (viď chat history)

@@ -141,6 +141,49 @@
         var hn = taskIdx + 1;
         $('#ek-mapa-lat-' + hn).val(lat.toFixed(6));
         $('#ek-mapa-lon-' + hn).val(lon.toFixed(6));
+        // Persist coords to localStorage so refresh/close-tab doesn't lose progress.
+        // Uses the same key format as eventkviz-quiz-form.js so restore-on-load
+        // (which runs in quiz-form.js) reads the same data.
+        saveCoordsToStorage();
+    }
+
+    // Tiny non-crypto hash matching shortHash() in eventkviz-quiz-form.js.
+    function shortHash(s) {
+        var h = 0, i;
+        s = String(s || '');
+        for (i = 0; i < s.length; i++) {
+            h = ((h << 5) - h) + s.charCodeAt(i);
+            h |= 0;
+        }
+        return Math.abs(h).toString(36);
+    }
+
+    function autosaveKey() {
+        var $form = $('form.ek-quiz-form[data-quiz-type="mapa"]').first();
+        if (!$form.length) return null;
+        var akcia   = $form.find('input[name=akcia]').val() || '';
+        var team    = $form.find('input[name=team]').val() || '';
+        var user    = $form.find('input[name=user]').val() || '';
+        var setVal  = $form.find('input[name=set]').val() || '';
+        return 'ek_autosave:mapa:' + akcia + ':' + team + ':' + user + ':' + shortHash(setVal);
+    }
+
+    function saveCoordsToStorage() {
+        var key = autosaveKey();
+        if (!key) return;
+        try {
+            // Collect all hidden inputs that eventkviz-quiz-form.js's restore-on-load
+            // would re-apply (its filter excludes set/set_sig/team/user/akcia/gc_).
+            var data = {};
+            var $form = $('form.ek-quiz-form[data-quiz-type="mapa"]').first();
+            $form.find('input').each(function () {
+                var name = $(this).attr('name');
+                if (!name) return;
+                if (/^(set|set_sig|team|user|akcia|gc_)/.test(name)) return;
+                data[name] = $(this).val();
+            });
+            localStorage.setItem(key, JSON.stringify(data));
+        } catch (err) {}
     }
 
     function selectTask(taskIdx) {
@@ -234,8 +277,38 @@
         })[c]; });
     }
 
+    function restoreFromStorage() {
+        // localStorage → populate hidden inputs (writeHidden() will also
+        // re-save them, which is fine — idempotent). Skipped if hidden
+        // inputs already have a value (POST prev_review or autosave that
+        // PHP echoed via form rendering takes precedence).
+        var key = autosaveKey();
+        if (!key) return false;
+        try {
+            var raw = localStorage.getItem(key);
+            if (!raw) return false;
+            var data = JSON.parse(raw);
+            if (!data || typeof data !== 'object') return false;
+            var didRestore = false;
+            tasks.forEach(function (t, idx) {
+                var hn = idx + 1;
+                var latKey = 'mapa' + hn + '_lat';
+                var lonKey = 'mapa' + hn + '_lon';
+                if (data[latKey] && data[lonKey] && $('#ek-mapa-lat-' + hn).val() === '') {
+                    $('#ek-mapa-lat-' + hn).val(data[latKey]);
+                    $('#ek-mapa-lon-' + hn).val(data[lonKey]);
+                    didRestore = true;
+                }
+            });
+            return didRestore;
+        } catch (err) { return false; }
+    }
+
     function restorePrevReview() {
-        // Pre-fill markers from POST hidden inputs (autosave or prev_review)
+        // Restore order: POST hidden inputs (PHP-rendered prev_review) win,
+        // localStorage fills gaps. Then place markers from whatever is in the DOM.
+        var restored = restoreFromStorage();
+
         tasks.forEach(function (t, idx) {
             var hn = idx + 1;
             var lat = parseFloat($('#ek-mapa-lat-' + hn).val());
@@ -245,6 +318,35 @@
             }
         });
         selectTask(findNextUnanswered(-1) >= 0 ? findNextUnanswered(-1) : 0);
+
+        if (restored) showRestoredHint();
+    }
+
+    function showRestoredHint() {
+        if ($('.ek-mapa-restored-hint').length) return;
+        var $hint = $(
+            '<div class="ek-mapa-restored-hint" role="status">' +
+            '💾 Obnovené z predchádzajúcej relácie. ' +
+            '<button type="button" class="ek-mapa-restored-clear">Vymazať a začať znova</button>' +
+            '</div>'
+        );
+        $('#ek-mapa-container').before($hint);
+        $hint.find('.ek-mapa-restored-clear').on('click', function () {
+            // Remove all markers + clear hidden inputs + clear localStorage
+            Object.keys(taskMarkers).forEach(function (k) {
+                map.removeLayer(taskMarkers[k]);
+            });
+            taskMarkers = {};
+            tasks.forEach(function (t, idx) {
+                var hn = idx + 1;
+                $('#ek-mapa-lat-' + hn).val('');
+                $('#ek-mapa-lon-' + hn).val('');
+            });
+            try { localStorage.removeItem(autosaveKey()); } catch (err) {}
+            selectTask(0);
+            renderTaskList();
+            $hint.remove();
+        });
     }
 
     function renderReviewMarkers() {
