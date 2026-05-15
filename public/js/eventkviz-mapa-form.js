@@ -174,17 +174,21 @@
         }).then(function (data) {
             if (!data) return;
 
-            // Hint pre žiakov: ak overlay flag feature_only_set, zobraz IBA features
-            // ktoré sú task-mi v tomto pokuse (= eliminuje rozptyľovače). V review
-            // móde filter neaplikujeme — hráč chce vidieť aj svoj guess feature aj
-            // ostatné pre kontext.
-            if (overlaysCfg.feature_only_set && !isReview) {
-                var taskIds = {};
-                tasks.forEach(function (t) { taskIds[t.id] = true; });
+            // Ak overlay flag feature_only_set, zobraz IBA features relevantné pre
+            // tento pokus — eliminuje rozptyľovače. V review móde do "relevantných"
+            // zaradíme aj nesprávny guess hráča, aby ho videl ako červenú.
+            if (overlaysCfg.feature_only_set) {
+                var visibleNames = {};
+                tasks.forEach(function (t) {
+                    if (t.id) visibleNames[t.id] = true;
+                    // Review mode shape: { correct_feature, guess_feature, is_correct, ... }
+                    if (t.correct_feature) visibleNames[t.correct_feature] = true;
+                    if (t.guess_feature) visibleNames[t.guess_feature] = true;
+                });
                 data = {
                     type: 'FeatureCollection',
                     features: data.features.filter(function (f) {
-                        return f.properties && taskIds[f.properties.name];
+                        return f.properties && visibleNames[f.properties.name];
                     })
                 };
             }
