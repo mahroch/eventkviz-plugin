@@ -171,19 +171,32 @@ class Eventkviz_MapQuiz_Editor {
                 </select>
             </label>
 
-            <label style="margin-left:18px">
-                <strong>Detail pre hráča:</strong>
-                <select name="<?php echo esc_attr( self::META_PLAYER_DETAIL ); ?>" id="ekm-player-detail">
-                    <?php foreach ( $details as $key => $label ) : ?>
-                        <option value="<?php echo esc_attr( $key ); ?>" <?php selected( $player_detail, $key ); ?>><?php echo esc_html( $label ); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
         </div>
 
         <fieldset style="margin:10px 0; padding:10px; border:1px solid #dcdcde; border-radius:4px; background:#f9f9f9">
-            <legend style="font-weight:600; padding:0 6px">Vodítka pre hráča (overlay vrstvy nad blanket mapou)</legend>
-            <p class="description" style="margin:0 0 8px">Zaškrtnuté vrstvy sa zobrazia na hráčskej mape ako pomôcka pri hľadaní lokácií. Funguje len pre región <strong>Slovensko</strong> v tejto verzii — dáta sú napevno bundleované v plugine, žiadne online sťahovanie.</p>
+            <legend style="font-weight:600; padding:0 6px">Mapové podklady pre hráča</legend>
+            <p class="description" style="margin:0 0 8px">
+                Default je <strong>iba obrys</strong> regiónu na bielom pozadí (najťažšia úroveň pre hráča, žiadny MapTiler tile cost).
+                Zaškrtni jednu alebo viac tile vrstiev — hráč ich potom môže prepínať tlačidlom v rohu mapy.
+                Napr. pre žiakov povoľ Streets + Outdoor; pre pokročilých nechaj iba obrys.
+            </p>
+            <label style="margin-right:18px">
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[tile_streets]" value="1" <?php checked( ! empty( $overlays['tile_streets'] ) ); ?> />
+                Streets (uličná mapa s názvami)
+            </label>
+            <label style="margin-right:18px">
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[tile_satellite]" value="1" <?php checked( ! empty( $overlays['tile_satellite'] ) ); ?> />
+                Satelit (letecké zábery)
+            </label>
+            <label>
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[tile_outdoor]" value="1" <?php checked( ! empty( $overlays['tile_outdoor'] ) ); ?> />
+                Outdoor (turistická / topografická)
+            </label>
+        </fieldset>
+
+        <fieldset style="margin:10px 0; padding:10px; border:1px solid #dcdcde; border-radius:4px; background:#f9f9f9">
+            <legend style="font-weight:600; padding:0 6px">Geografické vodítka (overlay nad mapou)</legend>
+            <p class="description" style="margin:0 0 8px">Zaškrtnuté vrstvy sa zobrazia ako pomôcka. Funguje pre <strong>Slovensko</strong>; dáta napevno v plugine.</p>
             <label style="margin-right:18px">
                 <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[cities_main]" value="1" <?php checked( ! empty( $overlays['cities_main'] ) ); ?> />
                 Krajské mestá (8 — BA, TT, TN, NR, ZA, BB, PO, KE)
@@ -297,9 +310,14 @@ class Eventkviz_MapQuiz_Editor {
         if ( ! array_key_exists( $detail, self::get_player_detail_presets() ) ) $detail = 'outline-only';
         update_post_meta( $post_id, self::META_PLAYER_DETAIL, $detail );
 
-        // Overlay vodítka — checkboxes; unchecked sa v $_POST vôbec nezjavia.
+        // Overlay vodítka + tile vrstvy — checkboxes; unchecked sa v $_POST vôbec nezjavia.
         $overlays_raw = isset( $_POST[ self::META_OVERLAYS ] ) && is_array( $_POST[ self::META_OVERLAYS ] ) ? $_POST[ self::META_OVERLAYS ] : array();
         $overlays_clean = array(
+            // Tile base layers — ak ≥1 zvolená, hráč dostane MapTiler tile + L.control.layers prepinač.
+            'tile_streets'    => ! empty( $overlays_raw['tile_streets'] ),
+            'tile_satellite'  => ! empty( $overlays_raw['tile_satellite'] ),
+            'tile_outdoor'    => ! empty( $overlays_raw['tile_outdoor'] ),
+            // Geografické overlays nad mapou.
             'cities_main'     => ! empty( $overlays_raw['cities_main'] ),
             'cities_regional' => ! empty( $overlays_raw['cities_regional'] ),
             'regions'         => ! empty( $overlays_raw['regions'] ),

@@ -188,11 +188,19 @@ class Eventkviz_Public {
 				$this->version,
 				true
 			);
+			$maptiler_key = '';
+			if ( class_exists( 'Eventkviz_Settings' ) ) {
+				$maptiler_key = Eventkviz_Settings::get_maptiler_key();
+			} elseif ( file_exists( plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-eventkviz-settings.php' ) ) {
+				require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-eventkviz-settings.php';
+				$maptiler_key = Eventkviz_Settings::get_maptiler_key();
+			}
 			wp_localize_script(
 				$this->eventkviz . '-mapa-form',
 				'ekMapaCfg',
 				array(
-					'geoJsonBase' => plugin_dir_url( __FILE__ ) . 'data/regions/',
+					'geoJsonBase'  => plugin_dir_url( __FILE__ ) . 'data/regions/',
+					'maptilerKey'  => (string) $maptiler_key,
 				)
 			);
 		}

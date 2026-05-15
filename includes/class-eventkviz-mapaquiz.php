@@ -146,6 +146,9 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         $overlays      = is_string( $overlays_json ) && $overlays_json !== '' ? json_decode( $overlays_json, true ) : array();
         if ( ! is_array( $overlays ) ) $overlays = array();
         $overlays_attr = wp_json_encode( array(
+            'tile_streets'    => ! empty( $overlays['tile_streets'] ),
+            'tile_satellite'  => ! empty( $overlays['tile_satellite'] ),
+            'tile_outdoor'    => ! empty( $overlays['tile_outdoor'] ),
             'cities_main'     => ! empty( $overlays['cities_main'] ),
             'cities_regional' => ! empty( $overlays['cities_regional'] ),
             'regions'         => ! empty( $overlays['regions'] ),
@@ -398,6 +401,9 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
         $overlays      = is_string( $overlays_json ) && $overlays_json !== '' ? json_decode( $overlays_json, true ) : array();
         if ( ! is_array( $overlays ) ) $overlays = array();
         $overlays_attr = wp_json_encode( array(
+            'tile_streets'    => ! empty( $overlays['tile_streets'] ),
+            'tile_satellite'  => ! empty( $overlays['tile_satellite'] ),
+            'tile_outdoor'    => ! empty( $overlays['tile_outdoor'] ),
             'cities_main'     => ! empty( $overlays['cities_main'] ),
             'cities_regional' => ! empty( $overlays['cities_regional'] ),
             'regions'         => ! empty( $overlays['regions'] ),

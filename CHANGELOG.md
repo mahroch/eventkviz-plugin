@@ -4,6 +4,12 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Changed (mapový kvíz — base map redesign)
+- Zrušený dropdown „Detail pre hráča" v admin šablóne (duplicita s overlay „Kraje"). Postmeta `_mapquiz_player_detail` ostáva pre legacy data, UI ho už nezobrazuje.
+- Nová sekcia v šablóne **„Mapové podklady pre hráča"** so 3 checkboxami pre MapTiler tile vrstvy: **Streets** (uličná mapa), **Satelit** (letecké zábery), **Outdoor** (turistická / topografická). Default: žiadna zaškrtnutá → hráč vidí iba obrys regiónu (zero MapTiler tile cost — pôvodné správanie).
+- Ak admin povolí ≥1 tile vrstvu, hráč dostane MapTiler tile + Leaflet `L.control.layers` prepínač v rohu mapy (môže prepínať medzi povolenými vrstvami). Ak iba 1 vrstva, prepínač sa neukáže (jedna by aj tak nemala čo prepnúť).
+- MapTiler API key passnutý do hráčskej JS cez `wp_localize_script` (`ekMapaCfg.maptilerKey`).
+
 ### Added (mapový kvíz — overlay vodítka pre hráča)
 - Admin mapová šablóna má novú sekciu „Vodítka pre hráča" so 3 checkboxami: **Mestá** (34 SK miest — krajské + významné okresné), **Kraje** (8 administratívnych krajov), **Rieky** (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec). Stav per-šablóna v postmeta `_mapquiz_overlays` (JSON `{cities,regions,rivers}`).
 - Render na hráčskej + review mape: krajské mestá s permanentnými labelmi, okresné bodky s tooltipom on hover, kraje ako dashed hranice (jemné), rieky ako modré línie s hover tooltipom názvu.

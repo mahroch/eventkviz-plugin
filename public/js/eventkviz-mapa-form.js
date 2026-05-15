@@ -53,21 +53,36 @@
         map.setMaxBounds(b.pad(0.3));
         map.fitBounds(b);
 
-        // Try to load region GeoJSON (outline). Fall back to bounds rectangle if not present.
-        var geoUrl = ekMapaCfg.geoJsonBase + region + '.geojson';
-        fetch(geoUrl).then(function (r) {
-            if (!r.ok) throw new Error('geojson missing');
-            return r.json();
-        }).then(function (data) {
-            renderRegion(data);
-            refitToRegion(b);
+        // Base layer logic:
+        //   - Ak admin povolil aspoň jednu MapTiler tile vrstvu → MapTiler tile + Leaflet
+        //     control.layers prepinač. Žiadny outline polygon (tile už ukazuje hranice).
+        //   - Inak fallback na blanket outline (zero MapTiler tile cost).
+        var enabledTiles = buildTileLayers();
+        if (enabledTiles.layers.length > 0) {
+            // Pridaj prvý ako default
+            enabledTiles.layers[0].layer.addTo(map);
+            if (enabledTiles.layers.length > 1) {
+                var baseControl = {};
+                enabledTiles.layers.forEach(function (l) { baseControl[l.label] = l.layer; });
+                L.control.layers(baseControl, null, { position: 'topright', collapsed: false }).addTo(map);
+            }
             loadOverlays();
-        }).catch(function () {
-            // Placeholder rectangle for regions without bundled geojson
-            renderPlaceholderRect(preset.bounds);
-            refitToRegion(b);
-            loadOverlays();
-        });
+        } else {
+            // Outline mode — fetch region geojson, render, then overlays
+            var geoUrl = ekMapaCfg.geoJsonBase + region + '.geojson';
+            fetch(geoUrl).then(function (r) {
+                if (!r.ok) throw new Error('geojson missing');
+                return r.json();
+            }).then(function (data) {
+                renderRegion(data);
+                refitToRegion(b);
+                loadOverlays();
+            }).catch(function () {
+                renderPlaceholderRect(preset.bounds);
+                refitToRegion(b);
+                loadOverlays();
+            });
+        }
 
         if (!isReview) {
             map.on('click', onMapClick);
@@ -113,6 +128,36 @@
             fillColor: '#f6f7f7',
             fillOpacity: 1.0
         }).addTo(map);
+    }
+
+    function buildTileLayers() {
+        // Vyberie zoznam povolených MapTiler tile vrstiev podľa overlaysCfg
+        // tile_streets / tile_satellite / tile_outdoor flagov. Ak žiadny key
+        // nie je nastavený v plugin Settings, žiadne tiles sa nedajú renderovať.
+        var key = (ekMapaCfg && ekMapaCfg.maptilerKey) || '';
+        var out = { layers: [] };
+        if (!key) return out;
+        var TILE_SOURCES = [
+            { flag: 'tile_streets',   label: 'Streets',  style: 'streets-v2' },
+            { flag: 'tile_outdoor',   label: 'Outdoor',  style: 'outdoor-v2' },
+            { flag: 'tile_satellite', label: 'Satelit',  style: 'satellite' }
+        ];
+        TILE_SOURCES.forEach(function (src) {
+            if (!overlaysCfg[src.flag]) return;
+            var url;
+            if (src.style === 'satellite') {
+                url = 'https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=' + encodeURIComponent(key);
+            } else {
+                url = 'https://api.maptiler.com/maps/' + src.style + '/{z}/{x}/{y}.png?key=' + encodeURIComponent(key);
+            }
+            var layer = L.tileLayer(url, {
+                tileSize: 256,
+                maxZoom: 18,
+                attribution: '&copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            });
+            out.layers.push({ label: src.label, layer: layer });
+        });
+        return out;
     }
 
     function loadOverlays() {
