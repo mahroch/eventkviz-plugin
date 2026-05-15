@@ -20,6 +20,10 @@ class Eventkviz_Activator {
 				'title'   => 'Eventkviz – štatistika',
 				'content' => '[statistika]',
 			),
+			'mapa-quiz'            => array(
+				'title'   => 'Mapový kvíz',
+				'content' => '[mapa_form_dynamic]',
+			),
 		);
 	}
 

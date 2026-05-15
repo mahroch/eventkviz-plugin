@@ -141,4 +141,38 @@ Map kvíz používa **rovnaké spoločné helpery** ako music/movies/knowledge/s
 
 **Otestované:** Mapa tab vidno v navigácii Edit Event, template dropdown vidí „Hrady SR (test)", expand/collapse funguje, save hook prevzal mapa fields automaticky. Žiadny regression na ostatné kvízy (smoke test → 200).
 
-**Fázy 4-8** — viď chat history / plán
+**Fáza 4 — Hráčsky form** ✅
+- [x] Shortcode `[mapa_form_dynamic]` registrovaný v `eventkviz.php` cez `Eventkviz_MapaForm_Quiz_Class::load_shortcodes`
+- [x] Trieda `Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class` v `includes/class-eventkviz-mapaquiz.php` — flow:
+  1. Load akcia/team/user + `geo_user_code('form')` override (cookie alebo `cp`-based)
+  2. `select_from_teams_array` → entry form (existujúci helper)
+  3. `check_number_of_tries()` exit ak vyčerpané + render tries banner
+  4. Load `template_id` z eventu, validuje template post + `_mapquiz_pins` JSON
+  5. `check_if_questions_set_exists`/`new_questions_on_retry` rozhoduje reuse vs regenerate
+  6. Random pick `pocet_otazok_v_sete` pinov + uloží set + HMAC sign
+  7. **Strip lat/lon** z JS-exposed task dát (klient dostane len id/name/hint/description/photo_url — anti-cheat)
+  8. Render sidebar (task list) + map container + hidden inputs `mapa<N>_lat/lon/pin`
+  9. POST → `/mapa-quiz-dynamic-evaluation/` (eval shortcode bude Fáza 5)
+- [x] Player Leaflet JS (`public/js/eventkviz-mapa-form.js`):
+  - **Zero tile cost** — žiadny TileLayer, len GeoJSON outline z `public/data/regions/<region>.geojson`
+  - Region presets pre center/zoom/bounds (slovakia, czechia, europe, world)
+  - Klik na mapu → umiestni numbered pin na aktívnu úlohu, auto-advance na ďalšiu unanswered
+  - Pin draggable → updatuje hidden inputs
+  - Task list sidebar: číslo, name, status (… pending / ✓ placed), hint, description, photo
+  - `restorePrevReview()` rieši retry/autosave restore
+- [x] Player CSS (`public/css/eventkviz-mapa-form.css`) — flex layout 280px sidebar + map, mobile breakpoint 720px
+- [x] Region GeoJSON outlines v `public/data/regions/`:
+  - `slovakia.geojson` ✅ (zjednodušený obrys, ~30 bodov)
+  - `czechia.geojson` ✅ (zjednodušený obrys, ~38 bodov)
+  - `europe.geojson` + `world.geojson` — TODO Fáza 5+ (fallback placeholder rectangle zatiaľ)
+- [x] Public enqueue (`public/class-eventkviz-public.php`) — `is_mapa_form_page()` helper, Leaflet CDN + custom JS/CSS sa loadnu len keď stránka obsahuje `[mapa_form_dynamic]`
+- [x] Hub page auto-create — `Eventkviz_Activator::hub_pages()` zahŕňa `mapa-quiz` → `[mapa_form_dynamic]` shortcode (idempotent na každom `admin_init`)
+
+**Otestované:** Page `mapa-quiz` (ID 1975) auto-vytvorená v DB. Smoke test existujúcich kvízov (music/movies/knowledge/sudoku/vstup) všetky vracajú HTTP 200. Lint: PHP `-l` + `node --check` + JSON validation všetko OK.
+
+**Známé limity Fázy 4 (riešené v ďalších fázach):**
+- Eval shortcode `[eval_mapa_quiz_dynamic]` na `/mapa-quiz-dynamic-evaluation/` zatiaľ neexistuje — submit form bude 404. Fáza 5.
+- Autosave coords (localStorage) zatiaľ nie je riešený. Fáza 7.
+- Europe + World GeoJSON sú placeholder, treba realne polygony pred použitím týchto regiónov.
+
+**Fázy 5-8** — viď chat history / plán

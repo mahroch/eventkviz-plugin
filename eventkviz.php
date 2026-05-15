@@ -68,6 +68,7 @@ require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-musicquiz.
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-moviesquiz.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-knowledgequiz.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-sudokuquiz.php' );
+require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-mapaquiz.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-links.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-statistika.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-seedpage.php' );
@@ -168,6 +169,8 @@ add_action( 'init', array( 'Eventkviz_KnowledgeEval_Quiz_Class', 'load_shortcode
 
 add_action( 'init', array( 'Eventkviz_SudokuForm_Quiz_Class', 'load_shortcodes' ) );
 add_action( 'init', array( 'Eventkviz_SudokuEval_Quiz_Class', 'load_shortcodes' ) );
+
+add_action( 'init', array( 'Eventkviz_MapaForm_Quiz_Class', 'load_shortcodes' ) );
 
 add_action( 'init', array( 'Eventkviz_OneLink_Quiz_Class', 'load_shortcodes' ) );
 add_action( 'init', array( 'Eventkviz_AllLinks_Quiz_Class', 'load_shortcodes' ) );

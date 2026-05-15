@@ -87,6 +87,12 @@ class Eventkviz_Public {
 		return $this->detect_quiz_type() !== false;
 	}
 
+	private function is_mapa_form_page() {
+		if ( ! function_exists( 'is_singular' ) || ! is_singular() ) return false;
+		$post = get_queried_object();
+		return ( $post instanceof WP_Post && has_shortcode( $post->post_content, 'mapa_form_dynamic' ) );
+	}
+
 	/**
 	 * Register the stylesheets for the public-facing side of the site.
 	 *
@@ -142,13 +148,50 @@ class Eventkviz_Public {
 
 		wp_enqueue_script( $this->eventkviz, plugin_dir_url( __FILE__ ) . 'js/eventkviz-public.js', array( 'jquery' ), $this->version, false );
 
-		if ($this->detect_quiz_type() !== false) {
+		if ($this->detect_quiz_type() !== false || $this->is_mapa_form_page()) {
 			wp_enqueue_script(
 				$this->eventkviz . '-quiz-form',
 				plugin_dir_url( __FILE__ ) . 'js/eventkviz-quiz-form.js',
 				array( 'jquery' ),
 				$this->version,
 				true
+			);
+		}
+
+		// Mapa quiz: Leaflet + custom JS + CSS — len keď je shortcode [mapa_form_dynamic] na stránke
+		if ($this->is_mapa_form_page()) {
+			wp_enqueue_style(
+				'leaflet',
+				'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+				array(),
+				'1.9.4'
+			);
+			wp_enqueue_script(
+				'leaflet',
+				'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+				array(),
+				'1.9.4',
+				true
+			);
+			wp_enqueue_style(
+				$this->eventkviz . '-mapa-form',
+				plugin_dir_url( __FILE__ ) . 'css/eventkviz-mapa-form.css',
+				array( 'leaflet' ),
+				$this->version
+			);
+			wp_enqueue_script(
+				$this->eventkviz . '-mapa-form',
+				plugin_dir_url( __FILE__ ) . 'js/eventkviz-mapa-form.js',
+				array( 'leaflet', 'jquery' ),
+				$this->version,
+				true
+			);
+			wp_localize_script(
+				$this->eventkviz . '-mapa-form',
+				'ekMapaCfg',
+				array(
+					'geoJsonBase' => plugin_dir_url( __FILE__ ) . 'data/regions/',
+				)
 			);
 		}
 
