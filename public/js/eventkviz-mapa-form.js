@@ -265,23 +265,29 @@
         if (!name) { layer.setStyle(featureBaseStyle()); return; }
 
         if (isReview) {
-            // Priorita: hráčov guess (zelený=správny / červený=zlý) > nezvolená správna
-            // feature (zelená dashed). Inak base. Vďaka tomu sa pohorie ktoré je AJ
-            // guess (zlý) AJ správna lokalita pre iný task zobrazí ako červené (hráč
-            // ho pickol → výrazná chyba) namiesto green dashed.
+            // Zbierame OBA stavy (môže byť oboje súčasne — pohorie hráč zle pickol
+            // a zároveň ho mal correct pre iný task).
+            var guessTask = null, missedTask = null;
             for (var i = 0; i < tasks.length; i++) {
-                if (tasks[i].guess_feature === name) {
-                    layer.setStyle(featureSelectedStyle(tasks[i].is_correct));
-                    return;
-                }
+                if (tasks[i].guess_feature === name) guessTask = tasks[i];
+                if (tasks[i].correct_feature === name && !tasks[i].is_correct) missedTask = tasks[i];
             }
-            for (var j = 0; j < tasks.length; j++) {
-                if (tasks[j].correct_feature === name && !tasks[j].is_correct) {
-                    // Nezvolená správna lokácia — zelená dashed, indicates "where it
-                    // was supposed to be but you didn't pick it"
-                    layer.setStyle({ color: '#43a047', weight: 3, fillColor: '#a5d6a7', fillOpacity: 0.35, dashArray: '5,4' });
-                    return;
-                }
+
+            if (guessTask && missedTask) {
+                // Kombinovaný: červený fill (guess wrong) + zelený dashed border
+                // (= „toto je AJ správna lokácia pre iný task"). Hráč vidí oboje.
+                layer.setStyle({ color: '#43a047', weight: 4, fillColor: '#ef5350', fillOpacity: 0.55, dashArray: '6,5' });
+                return;
+            }
+            if (guessTask) {
+                layer.setStyle(featureSelectedStyle(guessTask.is_correct));
+                return;
+            }
+            if (missedTask) {
+                // Iba nezvolená správna — zelená dashed, indicates "where it was
+                // supposed to be but you didn't pick it"
+                layer.setStyle({ color: '#43a047', weight: 3, fillColor: '#a5d6a7', fillOpacity: 0.35, dashArray: '5,4' });
+                return;
             }
             layer.setStyle(featureBaseStyle());
             return;

@@ -577,10 +577,12 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                 }
             }
 
-            // „Správna lokalita: X" — zbytočné pre feature mode keď je guess správny
-            // (hráč už vie čo klikol). Pre pin mode zobraz vždy (hráč klikol blízko
-            // ale nie presné miesto). Pre feature mode zobraz iba pri wrong/missing.
-            $show_correct = ( $quiz_type === 'pin' ) || empty( $r['is_correct'] );
+            // „Správna lokalita: X" — pre PIN mode má zmysel (hráč klikol blízko ale
+            // nie na presné miesto). Pre FEATURE mode je text úplne redundantný —
+            // názov correct lokácie už hráč vidí v hlavičke úlohy („Nájdi pohorie: X"
+            // alebo span „X" v per-task summary). Plus na mape je zobrazené pozícia
+            // cez zelený dashed border (z applyFeatureStyle missedTask vetvy).
+            $show_correct = ( $quiz_type === 'pin' );
             if ( $show_correct ) {
                 $name_txt = isset( $r['pin']['name'] ) ? $r['pin']['name'] : '';
                 $desc_txt = isset( $r['pin']['description'] ) ? (string) $r['pin']['description'] : '';
