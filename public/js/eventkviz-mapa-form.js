@@ -576,11 +576,14 @@
                 }
             } else {
                 if (placed) {
-                    var $status = $('<span class="ek-mapa-task-check">✓</span>');
+                    // Wrap do jedného containera aby ✓ + × obsadili 1 grid cell (col 3),
+                    // nie aby × spadla do nového riadku (4. neexistuje).
+                    var $status = $('<span class="ek-mapa-task-status"></span>');
+                    $status.append('<span class="ek-mapa-task-check">✓</span>');
                     if (quizType === 'river' || quizType === 'mountain') {
                         var $x = $('<button type="button" class="ek-mapa-task-unpick" title="Odznačiť">×</button>');
                         $x.on('click', function (e) { e.stopPropagation(); unpickFeature(idx); });
-                        $status = $status.add($x);
+                        $status.append($x);
                     }
                     $row.append($status);
                 } else {
