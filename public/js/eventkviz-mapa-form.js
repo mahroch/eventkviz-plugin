@@ -173,6 +173,21 @@
             return r.ok ? r.json() : null;
         }).then(function (data) {
             if (!data) return;
+
+            // Hint pre žiakov: ak overlay flag feature_only_set, zobraz IBA features
+            // ktoré sú task-mi v tomto pokuse (= eliminuje rozptyľovače). V review
+            // móde filter neaplikujeme — hráč chce vidieť aj svoj guess feature aj
+            // ostatné pre kontext.
+            if (overlaysCfg.feature_only_set && !isReview) {
+                var taskIds = {};
+                tasks.forEach(function (t) { taskIds[t.id] = true; });
+                data = {
+                    type: 'FeatureCollection',
+                    features: data.features.filter(function (f) {
+                        return f.properties && taskIds[f.properties.name];
+                    })
+                };
+            }
             // Pomocné názvy pri hover sú anti-cheat issue — admin musí explicitne
             // povoliť cez overlay checkbox „feature_labels" (default OFF). Pre
             // súťažné kvízy ostáva map clean. V review móde tooltip dáva zmysel

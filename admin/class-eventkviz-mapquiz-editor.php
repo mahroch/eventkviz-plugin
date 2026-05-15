@@ -251,16 +251,27 @@ class Eventkviz_MapQuiz_Editor {
             </label>
         </fieldset>
 
-        <?php // feature_labels checkbox je relevantný iba pre river/mountain quiz typy ?>
-        <fieldset class="ekm-mode" id="ekm-mode-feature-labels" <?php if ( ! in_array( $quiz_type, array( 'river', 'mountain' ), true ) ) echo 'style="display:none"'; ?>
+        <?php // Pomôcky relevantné iba pre river/mountain quiz typy — skryté pre pin ?>
+        <?php $hide_features_helpers = ! in_array( $quiz_type, array( 'river', 'mountain' ), true ); ?>
+        <fieldset class="ekm-mode" id="ekm-mode-feature-labels" <?php if ( $hide_features_helpers ) echo 'style="display:none"'; ?>
             style="margin:10px 0; padding:10px; border:1px solid #dcdcde; border-radius:4px; background:#f9f9f9">
-            <legend style="font-weight:600; padding:0 6px">Pomôcka pre hráča (rieky / pohoria)</legend>
-            <label style="display:block; padding-top:4px">
+            <legend style="font-weight:600; padding:0 6px">Pomôcky pre hráča (rieky / pohoria)</legend>
+
+            <label style="display:block; padding:4px 0">
                 <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[feature_labels]" value="1" <?php checked( ! empty( $overlays['feature_labels'] ) ); ?> />
                 <strong>Zobraziť názvy pri hover myšou</strong>
                 <p class="description" style="margin:4px 0 0 24px">
-                    <strong>Vypnuté</strong> (default): hráč nevidí názov rieky/pohoria pri hover — musí ich vedieť rozpoznať podľa polohy. Pre súťažné prostredie.<br>
-                    <strong>Zapnuté:</strong> hráč pri prejdení myšou nad riekou/pohorím uvidí jej názov v tooltip. Vhodné pre žiakov / vzdelávacie účely.
+                    <strong>Vypnuté</strong> (default): hráč nevidí názov rieky/pohoria pri hover — musí ich vedieť rozpoznať podľa polohy.<br>
+                    <strong>Zapnuté:</strong> hráč pri hover uvidí názov v tooltip. Vhodné pre žiakov / vzdelávacie účely.
+                </p>
+            </label>
+
+            <label style="display:block; padding:4px 0; margin-top:6px; border-top:1px dashed #ccd0d4; padding-top:10px">
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[feature_only_set]" value="1" <?php checked( ! empty( $overlays['feature_only_set'] ) ); ?> />
+                <strong>Zobraziť na mape iba features ktoré hráč háda</strong> (skry rozptyľovače)
+                <p class="description" style="margin:4px 0 0 24px">
+                    <strong>Vypnuté</strong> (default): hráč vidí <em>všetky</em> rieky/pohoria z poolu a musí ich rozlíšiť podľa polohy. Ťažšie, viac výberu.<br>
+                    <strong>Zapnuté:</strong> hráč vidí iba tie rieky/pohoria ktoré práve <em>háda</em> (napr. admin nastaví pool 10, hráč háda 3 → vidí len tie 3 zvýraznené). Eliminuje rozptyľovače — vhodné pre žiakov.
                 </p>
             </label>
         </fieldset>
@@ -431,6 +442,9 @@ class Eventkviz_MapQuiz_Editor {
             // Pomôcka pre žiakov: hover tooltip s názvom rieky/pohoria. Default OFF —
             // anti-cheat, hráč nesmie vidieť odpoveď cez hover.
             'feature_labels'  => ! empty( $overlays_raw['feature_labels'] ),
+            // Ďalšia pomôcka: pre river/mountain mód skryje rozptyľovače — hráč
+            // vidí iba features ktoré práve háda, nie celý pool.
+            'feature_only_set' => ! empty( $overlays_raw['feature_only_set'] ),
         );
         update_post_meta( $post_id, self::META_OVERLAYS, wp_json_encode( $overlays_clean ) );
 

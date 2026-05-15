@@ -240,6 +240,7 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
             'regions'         => ! empty( $overlays['regions'] ),
             'rivers'          => ! empty( $overlays['rivers'] ),
             'feature_labels'  => ! empty( $overlays['feature_labels'] ),
+            'feature_only_set' => ! empty( $overlays['feature_only_set'] ),
         ) );
 
         // Container for player map + task list. JS handles rendering.
@@ -529,6 +530,7 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
             'regions'         => ! empty( $overlays['regions'] ),
             'rivers'          => ! empty( $overlays['rivers'] ),
             'feature_labels'  => ! empty( $overlays['feature_labels'] ),
+            'feature_only_set' => ! empty( $overlays['feature_only_set'] ),
         ) );
 
         // Review map container — JS reads window.ekMapaReview
