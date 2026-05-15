@@ -607,8 +607,22 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
             $this->show_geochallenge_return( $gained_credits );
         }
 
+        // Vyhodnoť či hráč mal perfektný pokus (žiaden zmysel ponúkať retry).
+        //   - pin mode: všetky úlohy v top tier (percent == 100)
+        //   - feature mode (river/mountain): všetky is_correct === true
+        $is_perfect_run = ! empty( $per_task_results );
+        foreach ( $per_task_results as $r ) {
+            if ( $quiz_type === 'pin' ) {
+                if ( ! isset( $r['percent'] ) || (float) $r['percent'] < 100 ) { $is_perfect_run = false; break; }
+            } else {
+                if ( empty( $r['is_correct'] ) ) { $is_perfect_run = false; break; }
+            }
+        }
+
         // Retry button — passes previous answers if mark_correctness_on_retry is on
-        if ( empty( $pocet_pokusov_reached ) ) {
+        if ( $is_perfect_run ) {
+            echo '<p style="margin-top:30px;text-align:center;font-weight:600;color:#43a047;">🎉 Perfektný výsledok — všetky odpovede správne. Opakovanie kvízu netreba.</p>';
+        } elseif ( empty( $pocet_pokusov_reached ) ) {
             $pocet_pokusov = isset( $this->cAkcia->mapa_settings['pocet_pokusov'] ) ? (int) $this->cAkcia->mapa_settings['pocet_pokusov'] : 0;
             // Mirror logic from other quizzes: remaining = pocet - entries_so_far
             // (we just inserted one row; check_number_of_tries above returned true but
