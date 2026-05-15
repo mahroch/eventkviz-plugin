@@ -1838,8 +1838,8 @@ private function render_mapa_tab( $post, $meta ) {
                     <td>
                         <input type="number" name="event_mapa[max_points_override]" value="<?php echo esc_attr( $meta['event_mapa_max_points_override'][0] ?? '' ); ?>" min="0" max="9999" class="small-text" placeholder="prázdne = default zo šablóny" />
                         <p class="description">
-                            Celkový bodový strop ktorý hráč môže získať za <strong>všetky piny dohromady</strong>. Body sa rozdelia rovnomerne medzi otázky:<br>
-                            <code>max_per_pin = max_body / počet_otázok_v_sete</code> (napr. 100 b / 10 pinov = 10 b za pin).<br>
+                            Celkový bodový strop ktorý hráč môže získať za <strong>všetky úlohy dohromady</strong>. Body sa rozdelia rovnomerne medzi otázky:<br>
+                            <code>max_per_úloha = max_body / počet_otázok_v_sete</code> (napr. 100 b / 10 úloh = 10 b za úlohu).<br>
                             <strong>Prázdne</strong> = použije sa hodnota zadaná v mapovej šablóne (default 100).
                         </p>
                     </td>
@@ -1850,9 +1850,10 @@ private function render_mapa_tab( $post, $meta ) {
                     <td>
                         <textarea name="event_mapa[score_tiers_override]" rows="3" class="large-text" placeholder='[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},...]  — prázdne = default zo šablóny'><?php echo esc_textarea( $meta['event_mapa_score_tiers_override'][0] ?? '' ); ?></textarea>
                         <p class="description">
-                            Pre každú úlohu sa vypočíta <strong>vzdialenosť hráčovho odhadu od správnej lokácie v km</strong> a nájde sa <em>prvý</em> stupeň kde <code>vzdialenosť ≤ maxKm</code>. Body za úlohu = <code>max_per_pin × percent ÷ 100</code>.<br>
+                            <strong style="color:#d63638">⚠ Aplikuje sa LEN pre šablóny typu „Hľadanie miest na mape" (pin).</strong> Pre šablóny typu „Označenie rieky" / „Označenie pohoria" je hodnotenie <strong>binárne</strong> (správna feature = <code>max_per_úloha</code> bodov, nesprávna alebo neoznačená = 0) — toto pole je pre také šablóny ignorované.<br><br>
+                            <em>Pre pin režim:</em> Pre každú úlohu sa vypočíta <strong>vzdialenosť hráčovho odhadu od správnej lokácie v km</strong> a nájde sa <em>prvý</em> stupeň kde <code>vzdialenosť ≤ maxKm</code>. Body = <code>max_per_úloha × percent ÷ 100</code>.<br>
                             <strong>Príklad:</strong> <code>[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},{"maxKm":20,"percent":50}]</code> = do 5 km plných 100 % bodov, do 10 km 75 %, do 20 km 50 %, ďalej už nič.<br>
-                            <strong>Prázdne</strong> = použije sa default zo šablóny. JSON sa zatiaľ zadáva ručne (vizuálny repeater UI príde neskôr).
+                            <strong>Prázdne</strong> = použije sa default zo šablóny.
                         </p>
                     </td>
                 </tr>

@@ -516,12 +516,25 @@
             $row.append('<span class="ek-mapa-task-name">' + escapeHtml(displayName) + '</span>');
 
             if (isReview) {
-                if (t.distance_km !== null && typeof t.distance_km !== 'undefined') {
-                    var dist = Number(t.distance_km).toFixed(2);
-                    var ptsClass = t.points > 0 ? 'ek-mapa-task-result ek-mapa-task-result--ok' : 'ek-mapa-task-result ek-mapa-task-result--miss';
-                    $row.append('<div class="' + ptsClass + '">' + dist + ' km · ' + (t.points || 0) + ' b</div>');
+                if (quizType === 'pin') {
+                    // Pin mode: km + body (alebo neoznačené)
+                    if (t.distance_km !== null && typeof t.distance_km !== 'undefined') {
+                        var dist = Number(t.distance_km).toFixed(2);
+                        var ptsClass = t.points > 0 ? 'ek-mapa-task-result ek-mapa-task-result--ok' : 'ek-mapa-task-result ek-mapa-task-result--miss';
+                        $row.append('<div class="' + ptsClass + '">' + dist + ' km · ' + (t.points || 0) + ' b</div>');
+                    } else {
+                        $row.append('<div class="ek-mapa-task-result ek-mapa-task-result--miss">neoznačené · 0 b</div>');
+                    }
                 } else {
-                    $row.append('<div class="ek-mapa-task-result ek-mapa-task-result--miss">neoznačené · 0 b</div>');
+                    // Feature mode (river/mountain): binárne výsledky bez km
+                    var pts = t.points || 0;
+                    if (typeof t.guess_feature === 'undefined' || t.guess_feature === null || t.guess_feature === '') {
+                        $row.append('<div class="ek-mapa-task-result ek-mapa-task-result--miss">neoznačené · 0 b</div>');
+                    } else if (t.is_correct) {
+                        $row.append('<div class="ek-mapa-task-result ek-mapa-task-result--ok">✓ správne · ' + pts + ' b</div>');
+                    } else {
+                        $row.append('<div class="ek-mapa-task-result ek-mapa-task-result--miss">✗ ' + escapeHtml(t.guess_feature) + ' · 0 b</div>');
+                    }
                 }
             } else {
                 if (placed) $row.append('<span class="ek-mapa-task-check">✓</span>');
@@ -639,6 +652,10 @@
     }
 
     function renderReviewMarkers() {
+        // Pin mode only — feature mode has its own visual via featureLayer styles
+        // (zelený correct / červený wrong fill in applyFeatureStyle).
+        if (quizType !== 'pin') return;
+
         // For each task: green marker at correct location + red marker at guess (if any).
         // Markers are non-interactive (no drag, no click handler that changes state).
         tasks.forEach(function (t, idx) {
