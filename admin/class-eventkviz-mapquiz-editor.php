@@ -169,13 +169,16 @@ class Eventkviz_MapQuiz_Editor {
         $details = self::get_player_detail_presets();
         $maptiler_set = ( class_exists( 'Eventkviz_Settings' ) && Eventkviz_Settings::get_maptiler_key() !== '' );
 
-        // Bundleovaný zoznam pohorí pre quiz_type=mountain — admin si vyberie pool
+        // Bundleovaný zoznam pohorí pre quiz_type=mountain — admin si vyberie pool.
+        // Názvy musia presne zodpovedať `properties.name` v sk-mountains.geojson
+        // (16 OSM `natural=mountain_range` geomorphological-unit relations).
         $available_mountains = array(
-            'Vysoké Tatry', 'Nízke Tatry', 'Belianske Tatry',
+            'Vysoké Tatry', 'Západné Tatry', 'Nízke Tatry',
             'Malá Fatra', 'Veľká Fatra',
             'Malé Karpaty', 'Biele Karpaty', 'Strážovské vrchy',
-            'Štiavnické vrchy', 'Slovenský raj',
-            'Vihorlat', 'Poľana', 'Slovenské rudohorie', 'Branisko',
+            'Štiavnické vrchy', 'Tribeč',
+            'Vihorlat', 'Poľana', 'Branisko',
+            'Slanské vrchy', 'Levočské vrchy', 'Slovenský kras',
         );
         ?>
 
