@@ -1,16 +1,21 @@
 (function ($) {
     'use strict';
 
-    if (typeof window.ekMapaTasks === 'undefined') return;
-
-    var tasks = window.ekMapaTasks;
     var $container = $('#ek-mapa-container');
     if ($container.length === 0) return;
+
+    // Two modes: form (interactive) and review (read-only, post-eval).
+    // window.ekMapaTasks  → form
+    // window.ekMapaReview → review (also sets data-review="1")
+    var isReview = $container.data('review') === 1 || $container.data('review') === '1';
+    var tasks = isReview ? (window.ekMapaReview || []) : (window.ekMapaTasks || []);
+    if (!tasks || tasks.length === 0) return;
 
     var region = $container.data('region') || 'slovakia';
     var detail = $container.data('detail') || 'outline-only';
     var map = null;
-    var taskMarkers = {};   // taskIdx → L.Marker
+    var taskMarkers = {};   // taskIdx → L.Marker (form mode: guess pin)
+    var correctMarkers = {}; // review mode only: green correct pin
     var currentTaskIdx = 0;
 
     // Region presets — center + zoom + bounds for fitBounds
@@ -53,7 +58,9 @@
             renderPlaceholderRect(preset.bounds);
         });
 
-        map.on('click', onMapClick);
+        if (!isReview) {
+            map.on('click', onMapClick);
+        }
     }
 
     function renderRegion(geojson) {
@@ -132,8 +139,12 @@
         return -1;
     }
 
-    function makeNumberedIcon(number, isActive) {
-        var color = isActive ? '#ff9800' : '#1976d2';
+    function makeNumberedIcon(number, isActive, variant) {
+        // variant: 'guess' (red, review), 'correct' (green, review), or default (blue/orange form)
+        var color;
+        if (variant === 'guess') color = '#e53935';
+        else if (variant === 'correct') color = '#43a047';
+        else color = isActive ? '#ff9800' : '#1976d2';
         var html = '<div class="ek-mapa-marker" style="background:' + color + '">' + number + '</div>';
         return L.divIcon({
             className: 'ek-mapa-marker-wrap',
@@ -145,8 +156,8 @@
 
     function renderTaskList() {
         var $list = $('#ek-mapa-tasks').empty();
-        var $header = $('<h3 class="ek-mapa-tasks-header">Úlohy</h3>');
-        $list.append($header);
+        var headerTxt = isReview ? 'Výsledky' : 'Úlohy';
+        $list.append($('<h3 class="ek-mapa-tasks-header"></h3>').text(headerTxt));
         tasks.forEach(function (t, idx) {
             var hn = idx + 1;
             var placed = !!taskMarkers[idx];
@@ -156,16 +167,42 @@
                 .attr('data-idx', idx);
             $row.append('<span class="ek-mapa-task-num">' + hn + '</span>');
             $row.append('<span class="ek-mapa-task-name">' + escapeHtml(t.name || ('Miesto ' + hn)) + '</span>');
-            if (placed) $row.append('<span class="ek-mapa-task-check">✓</span>');
-            else $row.append('<span class="ek-mapa-task-pending">…</span>');
-            if (t.hint) $row.append('<div class="ek-mapa-task-hint">' + escapeHtml(t.hint) + '</div>');
-            if (t.description) $row.append('<div class="ek-mapa-task-desc">' + escapeHtml(t.description) + '</div>');
-            if (t.photo_url) {
-                $row.append('<img class="ek-mapa-task-photo" src="' + t.photo_url + '" alt="" />');
+
+            if (isReview) {
+                if (t.distance_km !== null && typeof t.distance_km !== 'undefined') {
+                    var dist = Number(t.distance_km).toFixed(2);
+                    var ptsClass = t.points > 0 ? 'ek-mapa-task-result ek-mapa-task-result--ok' : 'ek-mapa-task-result ek-mapa-task-result--miss';
+                    $row.append('<div class="' + ptsClass + '">' + dist + ' km · ' + (t.points || 0) + ' b</div>');
+                } else {
+                    $row.append('<div class="ek-mapa-task-result ek-mapa-task-result--miss">neoznačené · 0 b</div>');
+                }
+            } else {
+                if (placed) $row.append('<span class="ek-mapa-task-check">✓</span>');
+                else $row.append('<span class="ek-mapa-task-pending">…</span>');
+                if (t.hint) $row.append('<div class="ek-mapa-task-hint">' + escapeHtml(t.hint) + '</div>');
+                if (t.description) $row.append('<div class="ek-mapa-task-desc">' + escapeHtml(t.description) + '</div>');
+                if (t.photo_url) {
+                    $row.append('<img class="ek-mapa-task-photo" src="' + t.photo_url + '" alt="" />');
+                }
             }
-            $row.on('click', function () { selectTask(idx); });
+
+            $row.on('click', function () { focusTask(idx); });
             $list.append($row);
         });
+    }
+
+    // Review mode: pan map to selected task instead of changing active state
+    function focusTask(idx) {
+        if (isReview) {
+            var t = tasks[idx];
+            if (t.guess_lat !== null && typeof t.guess_lat !== 'undefined') {
+                map.panTo([t.guess_lat, t.guess_lon]);
+            } else if (t.correct_lat) {
+                map.panTo([t.correct_lat, t.correct_lon]);
+            }
+        } else {
+            selectTask(idx);
+        }
     }
 
     function escapeHtml(s) {
@@ -187,12 +224,43 @@
         selectTask(findNextUnanswered(-1) >= 0 ? findNextUnanswered(-1) : 0);
     }
 
+    function renderReviewMarkers() {
+        // For each task: green marker at correct location + red marker at guess (if any).
+        // Markers are non-interactive (no drag, no click handler that changes state).
+        tasks.forEach(function (t, idx) {
+            var hn = idx + 1;
+            if (t.correct_lat !== null && typeof t.correct_lat !== 'undefined') {
+                var mc = L.marker([t.correct_lat, t.correct_lon], {
+                    title: (t.name || ('Miesto ' + hn)) + ' (správne)',
+                    icon: makeNumberedIcon(hn, false, 'correct')
+                }).addTo(map);
+                mc.bindTooltip('✅ ' + (t.name || ('Miesto ' + hn)), { permanent: false, direction: 'top' });
+                correctMarkers[idx] = mc;
+            }
+            if (t.guess_lat !== null && typeof t.guess_lat !== 'undefined') {
+                var mg = L.marker([t.guess_lat, t.guess_lon], {
+                    title: 'Vaš odhad pre ' + (t.name || ('Miesto ' + hn)),
+                    icon: makeNumberedIcon(hn, false, 'guess')
+                }).addTo(map);
+                var dist = (t.distance_km !== null && typeof t.distance_km !== 'undefined')
+                    ? Number(t.distance_km).toFixed(2) + ' km · ' + (t.points || 0) + ' b'
+                    : '';
+                mg.bindTooltip('❌ Váš odhad' + (dist ? ' (' + dist + ')' : ''), { permanent: false, direction: 'top' });
+                taskMarkers[idx] = mg;
+            }
+        });
+    }
+
     $(function () {
         if (!document.getElementById('ek-mapa-map')) return;
         initMap();
         renderTaskList();
-        // Wait a tick for map to size, then restore
-        setTimeout(restorePrevReview, 100);
+        if (isReview) {
+            setTimeout(renderReviewMarkers, 100);
+        } else {
+            // Wait a tick for map to size, then restore
+            setTimeout(restorePrevReview, 100);
+        }
     });
 
 })(jQuery);

@@ -129,3 +129,35 @@
     border-radius: 8px;
     color: #fff;
 }
+
+/* Review-mode (post-eval) — sidebar shows distance + points */
+.ek-mapa-task-result {
+    grid-column: 2 / -1;
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 3px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    width: max-content;
+}
+.ek-mapa-task-result--ok {
+    background: rgba(67,160,71,0.25);
+    color: #6dd58c;
+}
+.ek-mapa-task-result--miss {
+    background: rgba(229,57,53,0.25);
+    color: #ff8a85;
+}
+.ek-mapa-eval-list {
+    margin-top: 16px;
+}
+.ek-review-banner {
+    background: rgba(33,150,243,0.15);
+    border: 1px solid rgba(33,150,243,0.4);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    color: var(--ek-text, #fff);
+    font-size: 14px;
+}

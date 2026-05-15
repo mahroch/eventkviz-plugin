@@ -171,8 +171,39 @@ Map kvíz používa **rovnaké spoločné helpery** ako music/movies/knowledge/s
 **Otestované:** Page `mapa-quiz` (ID 1975) auto-vytvorená v DB. Smoke test existujúcich kvízov (music/movies/knowledge/sudoku/vstup) všetky vracajú HTTP 200. Lint: PHP `-l` + `node --check` + JSON validation všetko OK.
 
 **Známé limity Fázy 4 (riešené v ďalších fázach):**
-- Eval shortcode `[eval_mapa_quiz_dynamic]` na `/mapa-quiz-dynamic-evaluation/` zatiaľ neexistuje — submit form bude 404. Fáza 5.
+- ~~Eval shortcode `[eval_mapa_quiz_dynamic]`~~ ✅ vyriešené v Fáze 5
 - Autosave coords (localStorage) zatiaľ nie je riešený. Fáza 7.
 - Europe + World GeoJSON sú placeholder, treba realne polygony pred použitím týchto regiónov.
 
-**Fázy 5-8** — viď chat history / plán
+**Fáza 5 — Eval (vyhodnotenie)** ✅
+- [x] Eval shortcode `[eval_mapa_quiz_dynamic]` registrovaný v `eventkviz.php` → `Eventkviz_MapaEval_Quiz_Class::load_shortcodes`
+- [x] Trieda `Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class` v `includes/class-eventkviz-mapaquiz.php`
+- [x] Flow:
+  1. POST → load akcia + GC user override (`geo_user_code('eval')`)
+  2. `verify_question_set_signature` (HMAC) — chráni proti zmene `set` v POST
+  3. `check_number_of_tries('mapa')` — exit ak limit vyčerpaný
+  4. Load template + `_mapquiz_pins` JSON → mapa pin_id → pin (autoritatívne lat/lon)
+  5. Resolve max_points (event override → template default → 100) + tiers (event override → template default → 4 default tiers)
+  6. Per task: haversine vzdialenosť medzi guess (POST mapa<N>_lat/lon) a correct (server-side pin), find tier, percent × max_per_task
+  7. `gained_credits = sum(points)`, write_results_to_db (insert), send_email, show_seed, show_geochallenge_return
+  8. Render: review map (red guess + green correct pin) + textual per-task summary + retry button s previous_state (ak mark_correctness_on_retry + ! new_questions_on_retry)
+- [x] Haversine: `Eventkviz_MapaEval_Quiz_Class::haversine_km($lat1,$lon1,$lat2,$lon2)` — sférická formula s polomerom 6371 km
+- [x] Tier scoring: `percent_for_distance($km, $tiers)` — pre vzostupne usporiadané tiers vráti percent prvého, kde `$km <= maxKm`, inak 0
+- [x] Parent class doplnenia (`class-eventkviz-quiz.php`):
+  - `check_number_of_tries`: pridaný `elseif($place == 'mapa') $pocet_pokusov = mapa_settings['pocet_pokusov']`
+  - `show_answer`: pridaný `elseif($quiz_type == 'mapa')` čítanie z `mapa_settings`
+  - `send_results_by_email`: pridaný `elseif($quiz_type == 'mapa')`
+- [x] Player JS (`public/js/eventkviz-mapa-form.js`) dual-mode:
+  - Form mode: `window.ekMapaTasks` + interaktívna klikací renderer (existujúci flow)
+  - Review mode: `window.ekMapaReview` + `data-review="1"` na kontajneri → read-only markery (red guess, green correct), sidebar zobrazuje distance + body per task
+- [x] Public enqueue: `is_mapa_form_page()` rozšírený na detection oboch shortcodov (`mapa_form_dynamic` + `eval_mapa_quiz_dynamic`) — Leaflet + JS/CSS sa loadnu aj na eval stránke
+- [x] CSS (`public/css/eventkviz-mapa-form.css`) doplnený o `.ek-mapa-task-result--ok/--miss` + `.ek-review-banner`
+- [x] Hub page auto-create: `mapa-quiz-dynamic-evaluation` → `[eval_mapa_quiz_dynamic]` v `Eventkviz_Activator::hub_pages()`
+
+**Otestované:** Eval page (ID 1976) auto-vytvorená. Smoke test (curl) všetkých kvízov + hub stránok → HTTP 200. Lint PHP/JS/JSON OK. End-to-end browser test odložený — formulár sa otestuje keď event Druzba bude mať nastavený template.
+
+**Známé limity Fázy 5 (riešené ďalej):**
+- Retry-with-previous-state musí byť odskúšaný v prehliadači (autosave pre mapa quiz Fáza 7)
+- GeoChallenge fail-flow: ak `gained_credits === 0`, neukáže sa GC kód. Konzistentné s ostatnými kvízmi.
+
+**Fázy 6-8** — viď chat history / plán

@@ -171,6 +171,7 @@ add_action( 'init', array( 'Eventkviz_SudokuForm_Quiz_Class', 'load_shortcodes' 
 add_action( 'init', array( 'Eventkviz_SudokuEval_Quiz_Class', 'load_shortcodes' ) );
 
 add_action( 'init', array( 'Eventkviz_MapaForm_Quiz_Class', 'load_shortcodes' ) );
+add_action( 'init', array( 'Eventkviz_MapaEval_Quiz_Class', 'load_shortcodes' ) );
 
 add_action( 'init', array( 'Eventkviz_OneLink_Quiz_Class', 'load_shortcodes' ) );
 add_action( 'init', array( 'Eventkviz_AllLinks_Quiz_Class', 'load_shortcodes' ) );

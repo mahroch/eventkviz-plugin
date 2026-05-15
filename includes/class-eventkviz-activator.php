@@ -24,6 +24,10 @@ class Eventkviz_Activator {
 				'title'   => 'Mapový kvíz',
 				'content' => '[mapa_form_dynamic]',
 			),
+			'mapa-quiz-dynamic-evaluation' => array(
+				'title'   => 'Mapový kvíz — vyhodnotenie',
+				'content' => '[eval_mapa_quiz_dynamic]',
+			),
 		);
 	}
 

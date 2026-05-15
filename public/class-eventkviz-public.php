@@ -90,7 +90,9 @@ class Eventkviz_Public {
 	private function is_mapa_form_page() {
 		if ( ! function_exists( 'is_singular' ) || ! is_singular() ) return false;
 		$post = get_queried_object();
-		return ( $post instanceof WP_Post && has_shortcode( $post->post_content, 'mapa_form_dynamic' ) );
+		if ( ! ( $post instanceof WP_Post ) ) return false;
+		return has_shortcode( $post->post_content, 'mapa_form_dynamic' )
+			|| has_shortcode( $post->post_content, 'eval_mapa_quiz_dynamic' );
 	}
 
 	/**

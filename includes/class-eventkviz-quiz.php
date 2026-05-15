@@ -312,6 +312,8 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 				//global $sudoku_settings;
 				//$this->sudoku_quiz_settings($akcia_code);
 				$pocet_pokusov = $this->cAkcia->sudoku_settings['pocet_pokusov'];
+			}elseif($place == 'mapa'){
+				$pocet_pokusov = $this->cAkcia->mapa_settings['pocet_pokusov'];
 			}elseif($place == 'final'){
 				$pocet_pokusov = $this->cAkcia->all_quizes_settings['final_place_pocet_pokusov'];
 			}else {
@@ -699,6 +701,9 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 		} elseif($quiz_type == 'sudoku'){
 			$show = $this->cAkcia->sudoku_settings['zobraz_spravne_odpovede'];
 			$show_jeho = $this->cAkcia->sudoku_settings['zobraz_spravne_uhadnute_odpovede'];
+		} elseif($quiz_type == 'mapa'){
+			$show = $this->cAkcia->mapa_settings['zobraz_spravne_odpovede'];
+			$show_jeho = $this->cAkcia->mapa_settings['zobraz_spravne_uhadnute_odpovede'];
 		} else {
 			$show = true;
 			$show_jeho = true;
@@ -852,6 +857,10 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 			$send_email = $this->cAkcia->sudoku_settings['poslat_vysledok_usera_mailom'];
 			$title = 'Sudoku quiz';
 			$email = $this->cAkcia->sudoku_settings['admin_mail'];
+		} elseif($quiz_type == 'mapa') {
+			$send_email = $this->cAkcia->mapa_settings['poslat_vysledok_usera_mailom'];
+			$title = 'Mapa quiz';
+			$email = $this->cAkcia->mapa_settings['admin_mail'];
 		} else {
 			$send_email = $this->cAkcia->all_quizes_settings['poslat_vysledok_usera_mailom'];
 			$title = 'PLace: ' . $quiz_type;
