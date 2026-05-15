@@ -78,13 +78,21 @@ if ( is_admin() ) {
 	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-leaderboard.php' );
 	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-questions-admin.php' );
 	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-event-links.php' );
+	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-settings.php' );
 	Eventkviz_Leaderboard::init();
 	Eventkviz_Questions_Admin::init();
 	Eventkviz_Event_Links_Admin::init();
+	Eventkviz_Settings::init();
 
 	// Idempotently ensure global hub pages exist (covers already-active installs).
 	add_action( 'admin_init', array( 'Eventkviz_Activator', 'ensure_hub_pages' ) );
 }
+
+// Map quiz CPT — registers on `init` action; works in both admin + frontend
+// (frontend may need to read templates for rendering, even though CPT itself
+// is not publicly queryable).
+require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-mapquiz-cpt.php' );
+Eventkviz_MapQuiz_CPT::init();
 
 Eventkviz_Rest_Search::init();
 
