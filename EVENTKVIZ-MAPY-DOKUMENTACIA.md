@@ -123,6 +123,22 @@ Map kvíz používa **rovnaké spoločné helpery** ako music/movies/knowledge/s
 
 **Známé limity Fázy 2 (riešené v ďalších fázach):**
 - Hráčov outline-only renderer ešte neexistuje (Fáza 4) — uložená hodnota `_mapquiz_player_detail` sa zatiaľ nikde nepoužíva.
-- Per-event tab „Mapa" v Edit Event (Fáza 3) — admin si zatiaľ nemôže priradiť template k eventu.
 
-**Fázy 3-8** — viď chat history / plán
+**Fáza 3 — Per-event tab „Mapa"** ✅
+- [x] Nový tab „🗺️ Mapa" v Edit Event UI (`render_mapa_tab` v `admin/class-eventkviz-admin.php`) — pridaný do existujúcej tab navigácie ako 6. tab
+- [x] Mapa active toggle s collapse/expand fields container
+- [x] Template selector — dropdown s publish-nutými `mapquiz_template` postami
+- [x] Per-event settings:
+  - `pocet_otazok_v_sete` — koľko pinov v sete (default 10)
+  - `max_points_override` (text, prázdne = template default)
+  - `score_tiers_override` (JSON textarea, prázdne = template default; UI repeater odložený)
+  - `show_entry_form`, `pocet_pokusov`, `min_body_na_postup`
+  - `mark_correctness_on_retry`, `new_questions_on_retry`
+  - `zobraz_spravne_odpovede`, `zobraz_spravne_uhadnute_odpovede`
+  - `poslat_vysledok_usera_mailom` + admin_mail
+- [x] Save flow: existujúci generický loop iteruje `$quiz_types` array; pridaný `'mapa'` → automatický save všetkých fields. Checkbox auto-uncheck via existujúci `$quiz_checkbox_keys` map.
+- [x] Bool key cast list (`class-eventkviz-quiz.php:113`) pridaný `mapa_quiz_active`. Quiz_types array (`class-eventkviz-quiz.php:97`) pridaný `'mapa' => 'mapa_settings'`.
+
+**Otestované:** Mapa tab vidno v navigácii Edit Event, template dropdown vidí „Hrady SR (test)", expand/collapse funguje, save hook prevzal mapa fields automaticky. Žiadny regression na ostatné kvízy (smoke test → 200).
+
+**Fázy 4-8** — viď chat history / plán

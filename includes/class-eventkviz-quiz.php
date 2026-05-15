@@ -98,7 +98,8 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
             'music'     => 'music_settings',
             'movies'    => 'movies_settings',
             'knowledge' => 'knowledge_settings',
-            'sudoku'    => 'sudoku_settings'
+            'sudoku'    => 'sudoku_settings',
+            'mapa'      => 'mapa_settings',
         );
 
         foreach ( $quiz_types as $type => $property ) {
@@ -110,7 +111,7 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
                     $value = maybe_unserialize( $value_array[0] );
 
                     // Bool konverzia
-                    if ( in_array( $key, ['sudoku_quiz_active','knowledge_quiz_active','movies_quiz_active', 'music_quiz_active','show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'moze_si_vybrat_difficulty', 'mark_correctness_on_retry', 'new_questions_on_retry'] ) ) {
+                    if ( in_array( $key, ['sudoku_quiz_active','knowledge_quiz_active','movies_quiz_active', 'music_quiz_active','mapa_quiz_active','show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'moze_si_vybrat_difficulty', 'mark_correctness_on_retry', 'new_questions_on_retry'] ) ) {
                         $value = $value === '1' || $value === 'yes' || $value === true;
                     } elseif ( in_array( $key, ['pocet_otazok_v_sete', 'pocet_pokusov', 'min_body_na_postup', 'obrazok_pri_splneni_kvizu'] ) ) {
                         $value = (int) $value;
