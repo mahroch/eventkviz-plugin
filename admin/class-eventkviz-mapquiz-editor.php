@@ -345,31 +345,39 @@ class Eventkviz_MapQuiz_Editor {
         $max_points = (int) ( get_post_meta( $post->ID, self::META_MAX_POINTS, true ) ?: 100 );
         $tiers_json = get_post_meta( $post->ID, self::META_SCORE_TIERS, true );
         if ( empty( $tiers_json ) ) $tiers_json = self::DEFAULT_TIERS;
+        $quiz_type  = get_post_meta( $post->ID, self::META_QUIZ_TYPE, true ) ?: 'pin';
+        $is_pin     = ( $quiz_type === 'pin' );
         ?>
         <p>
             <label>
-                <strong>Max body na pin (pri plnom tieri):</strong>
+                <strong><?php echo $is_pin ? 'Max body za pin (pri plnom tieri):' : 'Max body za úlohu (správna feature):'; ?></strong>
                 <input type="number" name="<?php echo esc_attr( self::META_MAX_POINTS ); ?>" value="<?php echo esc_attr( $max_points ); ?>" min="1" max="9999" class="small-text" />
             </label>
         </p>
 
-        <p><strong>Stupne (klesajúce podľa vzdialenosti):</strong></p>
-        <table id="ekm-tiers-table" class="widefat" style="max-width:520px">
-            <thead>
-                <tr>
-                    <th style="width:120px">Do vzdialenosti</th>
-                    <th style="width:120px">% z max bodov</th>
-                    <th style="width:60px"></th>
-                </tr>
-            </thead>
-            <tbody id="ekm-tiers-tbody">
-                <!-- populated by JS from tiers_json -->
-            </tbody>
-        </table>
-        <p>
-            <button type="button" class="button" id="ekm-tier-add">+ Pridať stupeň</button>
-        </p>
-        <p class="description">Pri vzdialenosti väčšej než posledný stupeň hráč dostane 0 bodov. Príklad: 0–5 km = 100 %, 5–10 km = 75 %, atď.</p>
+        <?php if ( $is_pin ) : ?>
+            <p><strong>Stupne (klesajúce podľa vzdialenosti):</strong></p>
+            <table id="ekm-tiers-table" class="widefat" style="max-width:520px">
+                <thead>
+                    <tr>
+                        <th style="width:120px">Do vzdialenosti</th>
+                        <th style="width:120px">% z max bodov</th>
+                        <th style="width:60px"></th>
+                    </tr>
+                </thead>
+                <tbody id="ekm-tiers-tbody">
+                    <!-- populated by JS from tiers_json -->
+                </tbody>
+            </table>
+            <p>
+                <button type="button" class="button" id="ekm-tier-add">+ Pridať stupeň</button>
+            </p>
+            <p class="description">Pri vzdialenosti väčšej než posledný stupeň hráč dostane 0 bodov. Príklad: 0–5 km = 100 %, 5–10 km = 75 %, atď.</p>
+        <?php else : ?>
+            <div style="padding:10px 12px; background:#f0f6fc; border-left:3px solid #2271b1; color:#1d2327; font-size:13px; max-width:520px">
+                ℹ Pre šablóny typu „<strong><?php echo esc_html( $quiz_type === 'river' ? 'Označenie rieky' : 'Označenie pohoria' ); ?></strong>" je hodnotenie <strong>binárne</strong>: hráč buď klikne na správnu feature (= max body za úlohu), alebo nie (= 0). Stupne podľa vzdialenosti sa neuplatňujú.
+            </div>
+        <?php endif; ?>
 
         <input type="hidden" name="<?php echo esc_attr( self::META_SCORE_TIERS ); ?>" id="ekm-tiers-json" value="<?php echo esc_attr( $tiers_json ); ?>" />
         <?php
