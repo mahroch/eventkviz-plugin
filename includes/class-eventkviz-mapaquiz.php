@@ -577,18 +577,23 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                 }
             }
 
-            // Show correct location name + photo via toggle A
-            $name_txt = isset( $r['pin']['name'] ) ? $r['pin']['name'] : '';
-            $desc_txt = isset( $r['pin']['description'] ) ? (string) $r['pin']['description'] : '';
-            $photo    = '';
-            if ( ! empty( $r['pin']['photo_id'] ) ) {
-                $url = wp_get_attachment_image_url( (int) $r['pin']['photo_id'], 'medium' );
-                if ( $url ) $photo = $url;
+            // „Správna lokalita: X" — zbytočné pre feature mode keď je guess správny
+            // (hráč už vie čo klikol). Pre pin mode zobraz vždy (hráč klikol blízko
+            // ale nie presné miesto). Pre feature mode zobraz iba pri wrong/missing.
+            $show_correct = ( $quiz_type === 'pin' ) || empty( $r['is_correct'] );
+            if ( $show_correct ) {
+                $name_txt = isset( $r['pin']['name'] ) ? $r['pin']['name'] : '';
+                $desc_txt = isset( $r['pin']['description'] ) ? (string) $r['pin']['description'] : '';
+                $photo    = '';
+                if ( ! empty( $r['pin']['photo_id'] ) ) {
+                    $url = wp_get_attachment_image_url( (int) $r['pin']['photo_id'], 'medium' );
+                    if ( $url ) $photo = $url;
+                }
+                $correct_html = '🎯 Správna lokalita: <strong>' . esc_html( $name_txt ) . '</strong>';
+                if ( $desc_txt !== '' ) $correct_html .= '<br><span style="font-style:italic">' . esc_html( $desc_txt ) . '</span>';
+                if ( $photo !== '' ) $correct_html .= '<br><img src="' . esc_url( $photo ) . '" alt="" style="max-width:200px;border-radius:6px;margin-top:6px;">';
+                $this->show_answer( $correct_html, 'mapa', 'eventkviz_standard_answer', 'correct_answer' );
             }
-            $correct_html = '🎯 Správna lokalita: <strong>' . esc_html( $name_txt ) . '</strong>';
-            if ( $desc_txt !== '' ) $correct_html .= '<br><span style="font-style:italic">' . esc_html( $desc_txt ) . '</span>';
-            if ( $photo !== '' ) $correct_html .= '<br><img src="' . esc_url( $photo ) . '" alt="" style="max-width:200px;border-radius:6px;margin-top:6px;">';
-            $this->show_answer( $correct_html, 'mapa', 'eventkviz_standard_answer', 'correct_answer' );
 
             echo '</div>'; // .ek-question
         }

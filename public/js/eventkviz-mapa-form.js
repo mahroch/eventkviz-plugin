@@ -265,15 +265,20 @@
         if (!name) { layer.setStyle(featureBaseStyle()); return; }
 
         if (isReview) {
-            // tasks v review móde majú correct_feature, guess_feature, is_correct
+            // Priorita: hráčov guess (zelený=správny / červený=zlý) > nezvolená správna
+            // feature (zelená dashed). Inak base. Vďaka tomu sa pohorie ktoré je AJ
+            // guess (zlý) AJ správna lokalita pre iný task zobrazí ako červené (hráč
+            // ho pickol → výrazná chyba) namiesto green dashed.
             for (var i = 0; i < tasks.length; i++) {
-                var t = tasks[i];
-                if (t.guess_feature === name) {
-                    layer.setStyle(featureSelectedStyle(t.is_correct));
+                if (tasks[i].guess_feature === name) {
+                    layer.setStyle(featureSelectedStyle(tasks[i].is_correct));
                     return;
                 }
-                if (t.correct_feature === name && !t.is_correct) {
-                    // Ukáž správnu lokáciu trochu zvýraznenú aj keď ju hráč nevybral
+            }
+            for (var j = 0; j < tasks.length; j++) {
+                if (tasks[j].correct_feature === name && !tasks[j].is_correct) {
+                    // Nezvolená správna lokácia — zelená dashed, indicates "where it
+                    // was supposed to be but you didn't pick it"
                     layer.setStyle({ color: '#43a047', weight: 3, fillColor: '#a5d6a7', fillOpacity: 0.35, dashArray: '5,4' });
                     return;
                 }
