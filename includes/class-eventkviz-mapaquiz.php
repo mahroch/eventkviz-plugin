@@ -621,7 +621,12 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
 
         // Retry button — passes previous answers if mark_correctness_on_retry is on
         if ( $is_perfect_run ) {
-            echo '<p style="margin-top:30px;text-align:center;font-weight:600;color:#43a047;">🎉 Perfektný výsledok — všetky odpovede správne. Opakovanie kvízu netreba.</p>';
+            // Box štýl ako GeoChallenge return — svetlé pozadie s tmavým textom,
+            // dobre čitateľné na ľubovoľnom Elementor backgrounde.
+            echo '<div style="margin-top:30px;padding:16px 20px;background:#e8f5e9;border:2px solid #4caf50;border-radius:10px;text-align:center;color:#1b3a23;">';
+            echo '<div style="font-size:18px;font-weight:700;color:#1b3a23;">🎉 Perfektný výsledok</div>';
+            echo '<div style="font-size:14px;margin-top:4px;color:#1b3a23;">Všetky odpovede správne — opakovanie kvízu netreba.</div>';
+            echo '</div>';
         } elseif ( empty( $pocet_pokusov_reached ) ) {
             $pocet_pokusov = isset( $this->cAkcia->mapa_settings['pocet_pokusov'] ) ? (int) $this->cAkcia->mapa_settings['pocet_pokusov'] : 0;
             // Mirror logic from other quizzes: remaining = pocet - entries_so_far
