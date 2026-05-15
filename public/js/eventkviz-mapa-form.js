@@ -222,7 +222,9 @@
 
     function featureHoverStyle() {
         if (quizType === 'river') return { color: '#1976d2', weight: 6, opacity: 1.0 };
-        return { color: '#1b5e20', weight: 3, fillColor: '#558b2f', fillOpacity: 0.85 };
+        // Mountain hover — jasná modrá vs base zelená pre maximálny kontrast.
+        // (Predtým „tmavšia zelená" splývala s base zelenou, ťažko sa rozlišovalo.)
+        return { color: '#0d47a1', weight: 3, fillColor: '#42a5f5', fillOpacity: 0.85 };
     }
 
     function featureSelectedStyle(isCorrect) {
