@@ -800,9 +800,19 @@
             $el.data('ek-init', true);
 
             var featureName = $el.data('feature');
+            var pinLat = $el.data('pin-lat');
+            var pinLon = $el.data('pin-lon');
             var region = $el.data('region') || 'slovakia';
-            var qt = $el.data('quiz-type'); // 'river' or 'mountain'
-            if (!featureName || (qt !== 'river' && qt !== 'mountain')) return;
+            var qt = $el.data('quiz-type'); // 'pin' | 'river' | 'mountain'
+
+            // Pin mode treba lat/lon; feature mode treba názov.
+            if (qt === 'pin') {
+                if (typeof pinLat !== 'number' || typeof pinLon !== 'number') return;
+            } else if (qt === 'river' || qt === 'mountain') {
+                if (!featureName) return;
+            } else {
+                return;
+            }
 
             var preset = REGION_PRESETS[region] || REGION_PRESETS.slovakia;
             var miniMap = L.map($el[0], {
@@ -824,23 +834,33 @@
                     }).addTo(miniMap);
                 });
 
-            // 2) Highlighted feature (zelená)
-            var dataset = qt === 'river' ? 'sk-rivers.geojson' : 'sk-mountains.geojson';
-            fetch(ekMapaCfg.geoJsonBase + dataset)
-                .then(function (r) { return r.ok ? r.json() : null; })
-                .then(function (data) {
-                    if (!data) return;
-                    var matching = data.features.filter(function (f) {
-                        return f.properties && f.properties.name === featureName;
-                    });
-                    if (!matching.length) return;
-                    var style = qt === 'river'
-                        ? { color: '#1976d2', weight: 5, opacity: 1 }
-                        : { color: '#1b5e20', weight: 2, fillColor: '#43a047', fillOpacity: 0.75 };
-                    L.geoJSON({ type: 'FeatureCollection', features: matching }, {
-                        style: style, interactive: false
-                    }).addTo(miniMap);
+            // 2) Highlighted location
+            if (qt === 'pin') {
+                // Zelený numbered marker — rovnaký style ako correct pin v hlavnej review mape
+                var icon = L.divIcon({
+                    className: 'ek-mapa-marker-wrap',
+                    html: '<div class="ek-mapa-marker" style="background:#43a047">✓</div>',
+                    iconSize: [30, 30], iconAnchor: [15, 15]
                 });
+                L.marker([pinLat, pinLon], { icon: icon, interactive: false }).addTo(miniMap);
+            } else {
+                var dataset = qt === 'river' ? 'sk-rivers.geojson' : 'sk-mountains.geojson';
+                fetch(ekMapaCfg.geoJsonBase + dataset)
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (data) {
+                        if (!data) return;
+                        var matching = data.features.filter(function (f) {
+                            return f.properties && f.properties.name === featureName;
+                        });
+                        if (!matching.length) return;
+                        var style = qt === 'river'
+                            ? { color: '#1976d2', weight: 5, opacity: 1 }
+                            : { color: '#1b5e20', weight: 2, fillColor: '#43a047', fillOpacity: 0.75 };
+                        L.geoJSON({ type: 'FeatureCollection', features: matching }, {
+                            style: style, interactive: false
+                        }).addTo(miniMap);
+                    });
+            }
 
             // ResizeObserver kvôli Elementor stretched layoutu (kontajner môže byť 0×0 pri inite)
             if (typeof ResizeObserver !== 'undefined') {

@@ -577,17 +577,37 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                 }
             }
 
-            // Pre FEATURE mode (river/mountain), ak admin má toggle A
-            // („zobraz_spravne_odpovede") ON, a odpoveď je wrong/missing,
-            // vykreslime mini-mapu so správnou feature zvýraznenou — hráč sa
-            // naučí kde tá feature leží. Pre is_correct=true netreba (vie).
+            // Mini-mapa pre vzdelávací účel — ak admin má toggle A
+            // („zobraz_spravne_odpovede") ON a odpoveď nie je perfektná:
+            //   - feature mode (river/mountain): wrong/missing → mini-mapa s feature
+            //   - pin mode: not top-tier (points < max_per_task) → mini-mapa s pin
             $show_correct_answers = ! empty( $this->cAkcia->mapa_settings['zobraz_spravne_odpovede'] );
-            if ( $quiz_type !== 'pin' && $show_correct_answers && empty( $r['is_correct'] ) ) {
+            $needs_mini_map = false;
+            if ( $show_correct_answers ) {
+                if ( $quiz_type === 'pin' ) {
+                    // Pre pin mode: ak hráč nemal full credit (percent < 100), ukáž mini-mapu
+                    $needs_mini_map = ! isset( $r['percent'] ) || (float) $r['percent'] < 100;
+                } else {
+                    $needs_mini_map = empty( $r['is_correct'] );
+                }
+            }
+            if ( $needs_mini_map ) {
                 $correct_name = isset( $r['pin']['name'] ) ? $r['pin']['name'] : '';
                 if ( $correct_name !== '' ) {
                     echo '<div class="ek-mapa-mini-wrap">';
-                    echo '<div class="ek-mapa-mini-label">🎯 Správna lokalita: <strong>' . esc_html( $correct_name ) . '</strong></div>';
-                    echo '<div class="ek-mapa-mini" data-feature="' . esc_attr( $correct_name ) . '" data-region="' . esc_attr( $region ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '"></div>';
+                    // Label nad mini-mapou ukazujeme iba pre feature mode (v pin móde
+                    // sa „Správna lokalita: X" + photo + description vykreslí cez
+                    // show_answer nižšie — duplikát by mätol).
+                    if ( $quiz_type !== 'pin' ) {
+                        echo '<div class="ek-mapa-mini-label">🎯 Správna lokalita: <strong>' . esc_html( $correct_name ) . '</strong></div>';
+                    }
+                    if ( $quiz_type === 'pin' ) {
+                        $plat = isset( $r['pin']['lat'] ) ? (float) $r['pin']['lat'] : 0;
+                        $plon = isset( $r['pin']['lon'] ) ? (float) $r['pin']['lon'] : 0;
+                        echo '<div class="ek-mapa-mini" data-pin-lat="' . esc_attr( $plat ) . '" data-pin-lon="' . esc_attr( $plon ) . '" data-region="' . esc_attr( $region ) . '" data-quiz-type="pin"></div>';
+                    } else {
+                        echo '<div class="ek-mapa-mini" data-feature="' . esc_attr( $correct_name ) . '" data-region="' . esc_attr( $region ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '"></div>';
+                    }
                     echo '</div>';
                 }
             }
