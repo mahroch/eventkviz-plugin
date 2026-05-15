@@ -94,6 +94,12 @@ if ( is_admin() ) {
 require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-mapquiz-cpt.php' );
 Eventkviz_MapQuiz_CPT::init();
 
+// Map quiz admin editor — meta boxes + save hook + asset enqueues. Admin-only.
+if ( is_admin() ) {
+	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-mapquiz-editor.php' );
+	Eventkviz_MapQuiz_Editor::init();
+}
+
 Eventkviz_Rest_Search::init();
 
 /**

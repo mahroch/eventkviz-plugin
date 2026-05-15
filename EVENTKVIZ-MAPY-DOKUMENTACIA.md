@@ -104,6 +104,25 @@ Map kvíz používa **rovnaké spoločné helpery** ako music/movies/knowledge/s
 - [x] Plugin Settings stránka (`admin/class-eventkviz-settings.php`) — submenu „⚙️ Nastavenia" pod „EventKviz výsledky". Aktuálne obsahuje len MapTiler API key field (`wp_options` → `eventkviz_options['maptiler_api_key']`). Helper: `Eventkviz_Settings::get_maptiler_key()`.
 - [x] Dokumentačný súbor (tento)
 
-**Pozor:** v Fáze 1 nie je žiadny custom UI pre pridávanie pinov — admin „Pridať mapový kvíz" zobrazí len natívny WP edit screen s title-only support. Pin editor (Leaflet + MapTiler) sa pridáva vo Fáze 2.
+**Fáza 2 — Admin pin editor** ✅
+- [x] Meta box „🗺️ Mapa + piny" — Leaflet + MapTiler streets-v2 tiles
+- [x] Region dropdown (slovakia/czechia/europe/world) — preset center+zoom v JS
+- [x] Player detail dropdown (outline-only / +regions) — len uložené, hráčsky renderer príde vo Fáze 4
+- [x] Klik na mapu → drop pin (lat/lon z `e.latlng`). Marker draggable.
+- [x] Sidebar editor pinu: name, hint, description, fotka (WP media library)
+- [x] Pin list pod editorom s klik-to-select, „is-selected" highlight
+- [x] Pri zmene name v editore: live update markeru tooltip + list-u
+- [x] Pin delete s confirm dialogom
+- [x] Meta box „🏆 Bodovanie" — max points + score tiers tabuľka s repeater UI (add/remove riadkov, auto-sort by maxKm)
+- [x] Save hook so sanitizáciou + validáciou (region/detail whitelist, max_points clamp 1-9999, pins JSON shape check, tiers sorted by maxKm)
+- [x] Nonce + capability check pre security
+- [x] CSS súbor `admin/css/mapquiz-editor.css` (panel layouty, hover/selected stavy)
+- [x] JS súbor `admin/js/mapquiz-editor.js` (Leaflet init, pin CRUD, photo picker, tiers UI)
 
-**Fázy 2-8** — viď chat history / plán
+**Otestované:** vytvorenie templatu „Hrady SR (test)", klik na mapu vytvorí pin (lat=48.64, lon=19.48), name „Tematín" sa uloží do JSON v postmeta `_mapquiz_pins`. Score tiers majú default 4 stupne. Existujúce kvízy (music/movies/knowledge/hub) ostávajú HTTP 200.
+
+**Známé limity Fázy 2 (riešené v ďalších fázach):**
+- Hráčov outline-only renderer ešte neexistuje (Fáza 4) — uložená hodnota `_mapquiz_player_detail` sa zatiaľ nikde nepoužíva.
+- Per-event tab „Mapa" v Edit Event (Fáza 3) — admin si zatiaľ nemôže priradiť template k eventu.
+
+**Fázy 3-8** — viď chat history / plán
