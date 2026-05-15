@@ -791,12 +791,79 @@
         });
     }
 
+    function initMiniMaps() {
+        // Pre každý .ek-mapa-mini element vykreslí malú Leaflet mapu s outline
+        // regiónu + jednou highlighted feature (správna lokácia pre wrong task).
+        $('.ek-mapa-mini').each(function () {
+            var $el = $(this);
+            if ($el.data('ek-init')) return;
+            $el.data('ek-init', true);
+
+            var featureName = $el.data('feature');
+            var region = $el.data('region') || 'slovakia';
+            var qt = $el.data('quiz-type'); // 'river' or 'mountain'
+            if (!featureName || (qt !== 'river' && qt !== 'mountain')) return;
+
+            var preset = REGION_PRESETS[region] || REGION_PRESETS.slovakia;
+            var miniMap = L.map($el[0], {
+                zoomControl: false, attributionControl: false,
+                dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
+                touchZoom: false, boxZoom: false, keyboard: false
+            });
+            var b = L.latLngBounds(preset.bounds);
+            miniMap.fitBounds(b);
+
+            // 1) Outline regiónu (jemný šedý)
+            fetch(ekMapaCfg.geoJsonBase + region + '.geojson')
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) {
+                    if (!data) return;
+                    L.geoJSON(data, {
+                        style: { color: '#9aa5b1', weight: 1, fillColor: '#f6f7f7', fillOpacity: 1 },
+                        interactive: false
+                    }).addTo(miniMap);
+                });
+
+            // 2) Highlighted feature (zelená)
+            var dataset = qt === 'river' ? 'sk-rivers.geojson' : 'sk-mountains.geojson';
+            fetch(ekMapaCfg.geoJsonBase + dataset)
+                .then(function (r) { return r.ok ? r.json() : null; })
+                .then(function (data) {
+                    if (!data) return;
+                    var matching = data.features.filter(function (f) {
+                        return f.properties && f.properties.name === featureName;
+                    });
+                    if (!matching.length) return;
+                    var style = qt === 'river'
+                        ? { color: '#1976d2', weight: 5, opacity: 1 }
+                        : { color: '#1b5e20', weight: 2, fillColor: '#43a047', fillOpacity: 0.75 };
+                    L.geoJSON({ type: 'FeatureCollection', features: matching }, {
+                        style: style, interactive: false
+                    }).addTo(miniMap);
+                });
+
+            // ResizeObserver kvôli Elementor stretched layoutu (kontajner môže byť 0×0 pri inite)
+            if (typeof ResizeObserver !== 'undefined') {
+                var ro = new ResizeObserver(function () {
+                    miniMap.invalidateSize(false);
+                    miniMap.fitBounds(b);
+                });
+                ro.observe($el[0]);
+            }
+        });
+    }
+
     $(function () {
-        if (!document.getElementById('ek-mapa-map')) return;
+        if (!document.getElementById('ek-mapa-map')) {
+            // Aj keď nie je primárna mapa, môžu byť mini-mapy (napr. ak primárny div neexistuje)
+            initMiniMaps();
+            return;
+        }
         initMap();
         renderTaskList();
         if (isReview) {
             setTimeout(renderReviewMarkers, 100);
+            setTimeout(initMiniMaps, 300);
         } else {
             // Wait a tick for map to size, then restore
             setTimeout(restorePrevReview, 100);

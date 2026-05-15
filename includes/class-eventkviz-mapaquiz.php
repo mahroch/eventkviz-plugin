@@ -577,11 +577,24 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                 }
             }
 
-            // „Správna lokalita: X" — pre PIN mode má zmysel (hráč klikol blízko ale
-            // nie na presné miesto). Pre FEATURE mode je text úplne redundantný —
-            // názov correct lokácie už hráč vidí v hlavičke úlohy („Nájdi pohorie: X"
-            // alebo span „X" v per-task summary). Plus na mape je zobrazené pozícia
-            // cez zelený dashed border (z applyFeatureStyle missedTask vetvy).
+            // Pre FEATURE mode (river/mountain), ak admin má toggle A
+            // („zobraz_spravne_odpovede") ON, a odpoveď je wrong/missing,
+            // vykreslime mini-mapu so správnou feature zvýraznenou — hráč sa
+            // naučí kde tá feature leží. Pre is_correct=true netreba (vie).
+            $show_correct_answers = ! empty( $this->cAkcia->mapa_settings['zobraz_spravne_odpovede'] );
+            if ( $quiz_type !== 'pin' && $show_correct_answers && empty( $r['is_correct'] ) ) {
+                $correct_name = isset( $r['pin']['name'] ) ? $r['pin']['name'] : '';
+                if ( $correct_name !== '' ) {
+                    echo '<div class="ek-mapa-mini-wrap">';
+                    echo '<div class="ek-mapa-mini-label">🎯 Správna lokalita: <strong>' . esc_html( $correct_name ) . '</strong></div>';
+                    echo '<div class="ek-mapa-mini" data-feature="' . esc_attr( $correct_name ) . '" data-region="' . esc_attr( $region ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '"></div>';
+                    echo '</div>';
+                }
+            }
+
+            // „Správna lokalita: X" textová info — IBA pre PIN mode (hráč klikol blízko
+            // ale nie presne, treba ukázať detail). Pre FEATURE mode máme mini-mapu vyššie
+            // (visual) — textová info je redundantná s hlavičkou úlohy.
             $show_correct = ( $quiz_type === 'pin' );
             if ( $show_correct ) {
                 $name_txt = isset( $r['pin']['name'] ) ? $r['pin']['name'] : '';

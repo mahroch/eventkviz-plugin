@@ -249,6 +249,30 @@
 .ek-mapa-eval-list {
     margin-top: 16px;
 }
+
+/* Mini mapa per-task — zobrazená pre wrong/missing feature tasks
+   keď admin má zapnutý toggle „zobraz_spravne_odpovede". Hráč vidí
+   kde sa nachádza správna lokácia ktorú nezvolil. */
+.ek-mapa-mini-wrap {
+    margin: 10px auto 4px;
+    text-align: center;
+    max-width: 340px;
+}
+.ek-mapa-mini-label {
+    color: rgba(255,255,255,0.92);
+    font-size: 13px;
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+.ek-mapa-mini {
+    width: 320px;
+    height: 200px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    overflow: hidden;
+}
 .ek-review-banner {
     background: rgba(33,150,243,0.15);
     border: 1px solid rgba(33,150,243,0.4);
