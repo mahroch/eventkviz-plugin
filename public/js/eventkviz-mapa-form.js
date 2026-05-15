@@ -394,11 +394,15 @@
         if (quizType === 'pin') return;
         if (currentTaskIdx < 0 || currentTaskIdx >= tasks.length) return;
         var hn = currentTaskIdx + 1;
+        // Klik na rovnakú feature ktorá je už vybraná pre aktívnu úlohu = odznač.
+        var prev = taskMarkers[currentTaskIdx];
+        if (prev && prev.feature === featureName) {
+            unpickFeature(currentTaskIdx);
+            return;
+        }
         $('#ek-mapa-feature-' + hn).val(featureName);
-        // Track answered state
         taskMarkers[currentTaskIdx] = { feature: featureName };
         saveCoordsToStorage();
-        // Visual highlight: refresh feature layer styles
         if (featureLayer) {
             featureLayer.eachLayer(function (layer) {
                 applyFeatureStyle(layer);
@@ -407,6 +411,22 @@
         renderTaskList();
         var next = findNextUnanswered(currentTaskIdx);
         if (next >= 0) selectTask(next);
+    }
+
+    function unpickFeature(idx) {
+        if (idx < 0 || idx >= tasks.length) return;
+        var hn = idx + 1;
+        $('#ek-mapa-feature-' + hn).val('');
+        delete taskMarkers[idx];
+        saveCoordsToStorage();
+        if (featureLayer) {
+            featureLayer.eachLayer(function (layer) {
+                applyFeatureStyle(layer);
+            });
+        }
+        // Po unpick si zachovať aktívny task na práve unpicked (aby hráč mohol klik znova)
+        currentTaskIdx = idx;
+        renderTaskList();
     }
 
     var featureLayer = null;
@@ -561,6 +581,15 @@
                 if (t.description) $row.append('<div class="ek-mapa-task-desc">' + escapeHtml(t.description) + '</div>');
                 if (t.photo_url) {
                     $row.append('<img class="ek-mapa-task-photo" src="' + t.photo_url + '" alt="" />');
+                }
+                // Pre river/mountain s placed pickom: tlačidlo na odznač
+                if (placed && (quizType === 'river' || quizType === 'mountain')) {
+                    var $unpick = $('<button type="button" class="ek-mapa-task-unpick" title="Odznačiť výber">✗ odznačiť</button>');
+                    $unpick.on('click', function (e) {
+                        e.stopPropagation();
+                        unpickFeature(idx);
+                    });
+                    $row.append($unpick);
                 }
             }
 

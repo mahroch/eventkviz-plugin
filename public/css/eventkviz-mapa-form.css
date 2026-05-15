@@ -132,6 +132,24 @@
     color: rgba(255,255,255,0.45);
     font-size: 18px;
 }
+.ek-mapa-task-unpick {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+    padding: 3px 8px;
+    background: rgba(229,57,53,0.18);
+    border: 1px solid rgba(229,57,53,0.4);
+    color: #ffbdb8;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    align-self: start;
+    justify-self: start;
+    width: max-content;
+}
+.ek-mapa-task-unpick:hover {
+    background: rgba(229,57,53,0.32);
+    color: #fff;
+}
 .ek-mapa-task-hint,
 .ek-mapa-task-desc {
     grid-column: 2 / -1;
