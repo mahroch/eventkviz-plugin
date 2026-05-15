@@ -4,6 +4,12 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Added (mapový kvíz — overlay vodítka pre hráča)
+- Admin mapová šablóna má novú sekciu „Vodítka pre hráča" so 3 checkboxami: **Mestá** (34 SK miest — krajské + významné okresné), **Kraje** (8 administratívnych krajov), **Rieky** (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec). Stav per-šablóna v postmeta `_mapquiz_overlays` (JSON `{cities,regions,rivers}`).
+- Render na hráčskej + review mape: krajské mestá s permanentnými labelmi, okresné bodky s tooltipom on hover, kraje ako dashed hranice (jemné), rieky ako modré línie s hover tooltipom názvu.
+- Data napevno bundleované v `public/data/regions/sk-{cities,regions,rivers}.geojson` (~30 KB total) — žiadne online fetching pri evente, plne offline.
+- Aktívne iba pre `region=slovakia` (v1) — pre `czechia/europe/world` budú treba samostatné datasety.
+
 ### Changed (mapový kvíz — admin polish + UX fixes)
 - Admin menu poradie pod „EventKviz": Zoznam eventov, Pridaj event, Mapové šablóny, Výsledky, Nastavenia. Mapquiz CPT auto-submenu vypnuté (`show_in_menu=false`), pridané manuálne v správnom poradí.
 - Submenu „Výsledky" a „Nastavenia" bez emoji ikon. Tab „Mapa" v Edit Event tiež bez ikony.

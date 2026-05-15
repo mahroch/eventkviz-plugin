@@ -141,8 +141,18 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
 
         echo '<form action="' . esc_url( $url ) . '" method="post" class="ek-quiz-form" data-quiz-type="mapa">';
 
+        // Overlay vodítka (mestá / kraje / rieky) — z template settings
+        $overlays_json = get_post_meta( $template_id, '_mapquiz_overlays', true );
+        $overlays      = is_string( $overlays_json ) && $overlays_json !== '' ? json_decode( $overlays_json, true ) : array();
+        if ( ! is_array( $overlays ) ) $overlays = array();
+        $overlays_attr = wp_json_encode( array(
+            'cities'  => ! empty( $overlays['cities'] ),
+            'regions' => ! empty( $overlays['regions'] ),
+            'rivers'  => ! empty( $overlays['rivers'] ),
+        ) );
+
         // Container for player map + task list. JS handles rendering.
-        echo '<div id="ek-mapa-container" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '">';
+        echo '<div id="ek-mapa-container" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '">';
         echo '<div id="ek-mapa-tasks" class="ek-mapa-tasks"></div>';
         echo '<div id="ek-mapa-map" class="ek-mapa-map"></div>';
         echo '</div>';
@@ -382,8 +392,18 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
         echo '<div class="ek-quiz-content">';
         echo '<h1 class="ek-quiz-title">Vyhodnotenie mapového kvízu: ' . esc_html( $template->post_title ) . '</h1>';
 
+        // Overlay vodítka (rovnaké ako form) — pomáhajú hráčovi orientovať sa pri review
+        $overlays_json = get_post_meta( $template_id, '_mapquiz_overlays', true );
+        $overlays      = is_string( $overlays_json ) && $overlays_json !== '' ? json_decode( $overlays_json, true ) : array();
+        if ( ! is_array( $overlays ) ) $overlays = array();
+        $overlays_attr = wp_json_encode( array(
+            'cities'  => ! empty( $overlays['cities'] ),
+            'regions' => ! empty( $overlays['regions'] ),
+            'rivers'  => ! empty( $overlays['rivers'] ),
+        ) );
+
         // Review map container — JS reads window.ekMapaReview
-        echo '<div id="ek-mapa-container" class="ek-mapa-review" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-review="1">';
+        echo '<div id="ek-mapa-container" class="ek-mapa-review" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-review="1">';
         echo '<div id="ek-mapa-tasks" class="ek-mapa-tasks"></div>';
         echo '<div id="ek-mapa-map" class="ek-mapa-map"></div>';
         echo '</div>';

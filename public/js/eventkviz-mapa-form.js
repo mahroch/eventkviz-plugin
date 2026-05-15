@@ -13,6 +13,13 @@
 
     var region = $container.data('region') || 'slovakia';
     var detail = $container.data('detail') || 'outline-only';
+    // data-overlays je JSON object {cities,regions,rivers} — jQuery vie auto-parse JSON,
+    // ale pre istotu defenzívne handling.
+    var overlaysCfg = $container.data('overlays');
+    if (typeof overlaysCfg === 'string') {
+        try { overlaysCfg = JSON.parse(overlaysCfg); } catch (e) { overlaysCfg = {}; }
+    }
+    overlaysCfg = overlaysCfg || {};
     var map = null;
     var taskMarkers = {};   // taskIdx → L.Marker (form mode: guess pin)
     var correctMarkers = {}; // review mode only: green correct pin
@@ -54,10 +61,12 @@
         }).then(function (data) {
             renderRegion(data);
             refitToRegion(b);
+            loadOverlays();
         }).catch(function () {
             // Placeholder rectangle for regions without bundled geojson
             renderPlaceholderRect(preset.bounds);
             refitToRegion(b);
+            loadOverlays();
         });
 
         if (!isReview) {
@@ -103,6 +112,90 @@
             weight: 2,
             fillColor: '#f6f7f7',
             fillOpacity: 1.0
+        }).addTo(map);
+    }
+
+    function loadOverlays() {
+        // Pomocné vrstvy — v1 iba pre Slovensko (dáta bundleované v plugine).
+        if (region !== 'slovakia') return;
+
+        if (overlaysCfg.regions) {
+            fetch(ekMapaCfg.geoJsonBase + 'sk-regions.geojson').then(function (r) {
+                return r.ok ? r.json() : null;
+            }).then(function (data) { if (data) renderRegionsOverlay(data); }).catch(function () {});
+        }
+        if (overlaysCfg.rivers) {
+            fetch(ekMapaCfg.geoJsonBase + 'sk-rivers.geojson').then(function (r) {
+                return r.ok ? r.json() : null;
+            }).then(function (data) { if (data) renderRiversOverlay(data); }).catch(function () {});
+        }
+        if (overlaysCfg.cities) {
+            fetch(ekMapaCfg.geoJsonBase + 'sk-cities.geojson').then(function (r) {
+                return r.ok ? r.json() : null;
+            }).then(function (data) { if (data) renderCitiesOverlay(data); }).catch(function () {});
+        }
+    }
+
+    function renderRegionsOverlay(geojson) {
+        L.geoJSON(geojson, {
+            style: {
+                color: '#9aa5b1',
+                weight: 1,
+                opacity: 0.6,
+                fillColor: 'transparent',
+                fillOpacity: 0,
+                dashArray: '4,3'
+            },
+            interactive: false
+        }).addTo(map);
+    }
+
+    function renderRiversOverlay(geojson) {
+        L.geoJSON(geojson, {
+            style: {
+                color: '#3aa6f0',
+                weight: 1.4,
+                opacity: 0.7
+            },
+            interactive: false,
+            onEachFeature: function (feature, layer) {
+                if (feature.properties && feature.properties.name) {
+                    layer.bindTooltip(feature.properties.name, {
+                        permanent: false,
+                        direction: 'auto',
+                        className: 'ek-mapa-river-tip'
+                    });
+                }
+            }
+        }).addTo(map);
+    }
+
+    function renderCitiesOverlay(geojson) {
+        L.geoJSON(geojson, {
+            pointToLayer: function (feature, latlng) {
+                var tier = feature.properties.tier || 2;
+                var size = tier === 1 ? 8 : 5;
+                return L.circleMarker(latlng, {
+                    radius: size,
+                    fillColor: tier === 1 ? '#444' : '#888',
+                    color: '#fff',
+                    weight: 1.5,
+                    fillOpacity: 0.95,
+                    interactive: true
+                });
+            },
+            onEachFeature: function (feature, layer) {
+                var name = feature.properties.name || '';
+                var tier = feature.properties.tier || 2;
+                if (name) {
+                    layer.bindTooltip(name, {
+                        permanent: tier === 1,  // krajské mestá majú visible label
+                        direction: 'top',
+                        offset: [0, -6],
+                        className: 'ek-mapa-city-tip ek-mapa-city-tip--tier' + tier
+                    });
+                }
+            }
         }).addTo(map);
     }
 

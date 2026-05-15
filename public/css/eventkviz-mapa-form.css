@@ -28,6 +28,38 @@
     background: #fff;
 }
 
+/* Overlay vodítka — mestá / rieky tooltips */
+.ek-mapa-map .ek-mapa-city-tip {
+    background: rgba(255,255,255,0.92);
+    border: 1px solid rgba(0,0,0,0.15);
+    color: #333;
+    font-size: 11px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    box-shadow: none;
+}
+.ek-mapa-map .ek-mapa-city-tip--tier1 {
+    font-weight: 700;
+    font-size: 12px;
+    background: rgba(255,255,255,0.96);
+}
+.ek-mapa-map .ek-mapa-city-tip:before {
+    border: none;  /* no tooltip arrow — clean look */
+}
+.ek-mapa-map .ek-mapa-river-tip {
+    background: rgba(58,166,240,0.92);
+    color: #fff;
+    border: none;
+    font-size: 11px;
+    font-style: italic;
+    padding: 1px 6px;
+    border-radius: 3px;
+    box-shadow: none;
+}
+.ek-mapa-map .ek-mapa-river-tip:before {
+    border: none;
+}
+
 /* Leaflet zoom controls — bigger + dark background so they sú viditeľné
    na light fill polygónov. Default Leaflet je 26px biele tlačidlá. */
 .ek-mapa-map .leaflet-control-zoom a {

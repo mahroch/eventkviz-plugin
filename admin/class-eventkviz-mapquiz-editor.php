@@ -26,6 +26,9 @@ class Eventkviz_MapQuiz_Editor {
     const META_MAX_POINTS    = '_mapquiz_max_points';
     const META_SCORE_TIERS   = '_mapquiz_score_tiers';
     const META_PINS          = '_mapquiz_pins';
+    // JSON object: {"cities":bool,"regions":bool,"rivers":bool}
+    // Overlay vodítka pre hráča — ktoré pomocné vrstvy renderovať na blanket mape
+    const META_OVERLAYS      = '_mapquiz_overlays';
 
     const DEFAULT_TIERS = '[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},{"maxKm":20,"percent":50},{"maxKm":40,"percent":25}]';
 
@@ -147,6 +150,10 @@ class Eventkviz_MapQuiz_Editor {
         $pins_json     = get_post_meta( $post->ID, self::META_PINS, true );
         if ( empty( $pins_json ) ) $pins_json = '[]';
 
+        $overlays_json = get_post_meta( $post->ID, self::META_OVERLAYS, true );
+        $overlays      = is_string( $overlays_json ) && $overlays_json !== '' ? json_decode( $overlays_json, true ) : array();
+        if ( ! is_array( $overlays ) ) $overlays = array();
+
         $regions = self::get_region_presets();
         $details = self::get_player_detail_presets();
         $maptiler_set = ( class_exists( 'Eventkviz_Settings' ) && Eventkviz_Settings::get_maptiler_key() !== '' );
@@ -172,9 +179,26 @@ class Eventkviz_MapQuiz_Editor {
             </label>
         </div>
 
+        <fieldset style="margin:10px 0; padding:10px; border:1px solid #dcdcde; border-radius:4px; background:#f9f9f9">
+            <legend style="font-weight:600; padding:0 6px">Vodítka pre hráča (overlay vrstvy nad blanket mapou)</legend>
+            <p class="description" style="margin:0 0 8px">Zaškrtnuté vrstvy sa zobrazia na hráčskej mape ako pomôcka pri hľadaní lokácií. Funguje len pre región <strong>Slovensko</strong> v tejto verzii — dáta sú napevno bundleované v plugine, žiadne online sťahovanie.</p>
+            <label style="margin-right:18px">
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[cities]" value="1" <?php checked( ! empty( $overlays['cities'] ) ); ?> />
+                Mestá (krajské + významné okresné, ~34 bodov)
+            </label>
+            <label style="margin-right:18px">
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[regions]" value="1" <?php checked( ! empty( $overlays['regions'] ) ); ?> />
+                Kraje (8 administratívnych krajov)
+            </label>
+            <label>
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[rivers]" value="1" <?php checked( ! empty( $overlays['rivers'] ) ); ?> />
+                Rieky (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec)
+            </label>
+        </fieldset>
+
         <?php if ( ! $maptiler_set ) : ?>
             <div class="notice notice-error inline" style="margin:10px 0">
-                <p><strong>MapTiler API kľúč nie je nastavený.</strong> Otvor <a href="<?php echo esc_url( admin_url( 'admin.php?page=eventkviz-settings' ) ); ?>">EventKviz výsledky → ⚙️ Nastavenia</a> a zadaj ho. Bez kľúča sa mapa nezobrazí.</p>
+                <p><strong>MapTiler API kľúč nie je nastavený.</strong> Otvor <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=eventkviz_event&page=eventkviz-settings' ) ); ?>">EventKviz → Nastavenia</a> a zadaj ho. Bez kľúča sa mapa nezobrazí.</p>
             </div>
         <?php endif; ?>
 
@@ -266,6 +290,15 @@ class Eventkviz_MapQuiz_Editor {
         $detail = isset( $_POST[ self::META_PLAYER_DETAIL ] ) ? sanitize_key( $_POST[ self::META_PLAYER_DETAIL ] ) : 'outline-only';
         if ( ! array_key_exists( $detail, self::get_player_detail_presets() ) ) $detail = 'outline-only';
         update_post_meta( $post_id, self::META_PLAYER_DETAIL, $detail );
+
+        // Overlay vodítka — checkboxes; unchecked sa v $_POST vôbec nezjavia.
+        $overlays_raw = isset( $_POST[ self::META_OVERLAYS ] ) && is_array( $_POST[ self::META_OVERLAYS ] ) ? $_POST[ self::META_OVERLAYS ] : array();
+        $overlays_clean = array(
+            'cities'  => ! empty( $overlays_raw['cities'] ),
+            'regions' => ! empty( $overlays_raw['regions'] ),
+            'rivers'  => ! empty( $overlays_raw['rivers'] ),
+        );
+        update_post_meta( $post_id, self::META_OVERLAYS, wp_json_encode( $overlays_clean ) );
 
         // Max points
         $max_points = isset( $_POST[ self::META_MAX_POINTS ] ) ? (int) $_POST[ self::META_MAX_POINTS ] : 100;
