@@ -393,13 +393,31 @@
     function onFeaturePick(featureName) {
         if (quizType === 'pin') return;
         if (currentTaskIdx < 0 || currentTaskIdx >= tasks.length) return;
-        var hn = currentTaskIdx + 1;
-        // Klik na rovnakú feature ktorá je už vybraná pre aktívnu úlohu = odznač.
-        var prev = taskMarkers[currentTaskIdx];
-        if (prev && prev.feature === featureName) {
+
+        // Existuje úloha ktorá už má túto feature vybranú?
+        var existingIdx = -1;
+        for (var i = 0; i < tasks.length; i++) {
+            if (taskMarkers[i] && taskMarkers[i].feature === featureName) {
+                existingIdx = i;
+                break;
+            }
+        }
+
+        // Klik na feature ktorá patrí aktívnej úlohe = odznač (toggle off)
+        if (existingIdx === currentTaskIdx) {
             unpickFeature(currentTaskIdx);
             return;
         }
+
+        // Klik na feature ktorá je už priradená INEJ úlohe — nedovoľ duplicitné
+        // priradenie. Namiesto toho zafokusuj tú úlohu (hráč si vidí kde to má).
+        if (existingIdx >= 0) {
+            selectTask(existingIdx);
+            return;
+        }
+
+        // Nový pick pre aktívnu úlohu
+        var hn = currentTaskIdx + 1;
         $('#ek-mapa-feature-' + hn).val(featureName);
         taskMarkers[currentTaskIdx] = { feature: featureName };
         saveCoordsToStorage();
@@ -505,12 +523,17 @@
 
     function selectTask(taskIdx) {
         currentTaskIdx = taskIdx;
-        // Refresh icons (selected gets highlighted)
-        Object.keys(taskMarkers).forEach(function (k) {
-            var idx = parseInt(k, 10);
-            var hn = idx + 1;
-            taskMarkers[idx].setIcon(makeNumberedIcon(hn, idx === currentTaskIdx));
-        });
+        // Refresh marker icons IBA v pin móde (feature mode má { feature: 'X' } objekty,
+        // nie L.Marker — .setIcon by hodil TypeError a zhodil by celý selectTask).
+        if (quizType === 'pin') {
+            Object.keys(taskMarkers).forEach(function (k) {
+                var idx = parseInt(k, 10);
+                var hn = idx + 1;
+                if (taskMarkers[idx] && typeof taskMarkers[idx].setIcon === 'function') {
+                    taskMarkers[idx].setIcon(makeNumberedIcon(hn, idx === currentTaskIdx));
+                }
+            });
+        }
         renderTaskList();
     }
 
