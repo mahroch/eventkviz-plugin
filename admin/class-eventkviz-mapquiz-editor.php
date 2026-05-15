@@ -291,7 +291,9 @@ class Eventkviz_MapQuiz_Editor {
                 );
             }
         }
-        update_post_meta( $post_id, self::META_PINS, wp_json_encode( $pins_clean ) );
+        // JSON_UNESCAPED_UNICODE: avoid \uXXXX escapes that get mangled by
+        // WP's magic-quote roundtrip — keep diacritics as raw UTF-8 in the DB.
+        update_post_meta( $post_id, self::META_PINS, wp_json_encode( $pins_clean, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) );
 
         // Score tiers JSON
         $tiers_raw = isset( $_POST[ self::META_SCORE_TIERS ] ) ? wp_unslash( $_POST[ self::META_SCORE_TIERS ] ) : self::DEFAULT_TIERS;

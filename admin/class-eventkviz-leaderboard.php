@@ -12,13 +12,23 @@ class Eventkviz_Leaderboard {
 
     public static function register_menu() {
         add_menu_page(
-            __( 'EventKviz výsledky', 'eventkviz' ),
-            __( 'EventKviz výsledky', 'eventkviz' ),
+            __( 'EventKviz', 'eventkviz' ),
+            __( 'EventKviz', 'eventkviz' ),
             'manage_options',
             'eventkviz-leaderboard',
             array( __CLASS__, 'render_page' ),
             'dashicons-awards',
             58
+        );
+
+        // Override default first-submenu label (would otherwise inherit parent name "EventKviz")
+        add_submenu_page(
+            'eventkviz-leaderboard',
+            __( 'Výsledky', 'eventkviz' ),
+            __( '🏆 Výsledky', 'eventkviz' ),
+            'manage_options',
+            'eventkviz-leaderboard',
+            array( __CLASS__, 'render_page' )
         );
     }
 

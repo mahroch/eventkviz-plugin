@@ -53,14 +53,37 @@
             return r.json();
         }).then(function (data) {
             renderRegion(data);
+            refitToRegion(b);
         }).catch(function () {
             // Placeholder rectangle for regions without bundled geojson
             renderPlaceholderRect(preset.bounds);
+            refitToRegion(b);
         });
 
         if (!isReview) {
             map.on('click', onMapClick);
         }
+
+        // Container might be 0x0 at init (Elementor widget, hidden tab, etc.).
+        // invalidateSize + refit once the map's parent has its final dimensions.
+        // ResizeObserver triggers immediately + on any later resize.
+        if (typeof ResizeObserver !== 'undefined') {
+            var ro = new ResizeObserver(function () {
+                map.invalidateSize(false);
+                map.fitBounds(b);
+            });
+            ro.observe(document.getElementById('ek-mapa-map'));
+        } else {
+            // Fallback: a few staggered retries
+            setTimeout(function () { map.invalidateSize(false); map.fitBounds(b); }, 200);
+            setTimeout(function () { map.invalidateSize(false); map.fitBounds(b); }, 600);
+        }
+    }
+
+    function refitToRegion(b) {
+        // Called after geojson loads — ensure view fits region bounds
+        map.invalidateSize(false);
+        map.fitBounds(b);
     }
 
     function renderRegion(geojson) {

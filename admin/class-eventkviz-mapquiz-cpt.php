@@ -22,19 +22,19 @@ class Eventkviz_MapQuiz_CPT {
 
     public static function register() {
         $labels = array(
-            'name'                  => 'Mapové kvízy',
-            'singular_name'         => 'Mapový kvíz',
-            'menu_name'             => '🗺️ Mapové kvízy',
-            'name_admin_bar'        => 'Mapový kvíz',
-            'add_new'               => 'Pridať mapový kvíz',
-            'add_new_item'          => 'Pridať nový mapový kvíz',
-            'new_item'              => 'Nový mapový kvíz',
-            'edit_item'             => 'Uprav mapový kvíz',
-            'view_item'             => 'Zobraz mapový kvíz',
-            'all_items'             => 'Všetky mapové kvízy',
-            'search_items'          => 'Hľadať mapové kvízy',
-            'not_found'             => 'Žiadne mapové kvízy nenájdené.',
-            'not_found_in_trash'    => 'V koši nie sú žiadne mapové kvízy.',
+            'name'                  => 'Mapové šablóny',
+            'singular_name'         => 'Mapová šablóna',
+            'menu_name'             => '🗺️ Mapové šablóny',
+            'name_admin_bar'        => 'Mapová šablóna',
+            'add_new'               => 'Pridať šablónu',
+            'add_new_item'          => 'Pridať novú mapovú šablónu',
+            'new_item'              => 'Nová mapová šablóna',
+            'edit_item'             => 'Uprav mapovú šablónu',
+            'view_item'             => 'Zobraz mapovú šablónu',
+            'all_items'             => 'Všetky mapové šablóny',
+            'search_items'          => 'Hľadať mapové šablóny',
+            'not_found'             => 'Žiadne mapové šablóny nenájdené.',
+            'not_found_in_trash'    => 'V koši nie sú žiadne mapové šablóny.',
         );
 
         $args = array(

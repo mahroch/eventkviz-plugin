@@ -206,6 +206,7 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
     $this->cAkcia->movies_settings    = $this->movies_settings ?? array();
     $this->cAkcia->knowledge_settings = $this->knowledge_settings ?? array();
     $this->cAkcia->sudoku_settings    = $this->sudoku_settings ?? array();
+    $this->cAkcia->mapa_settings      = $this->mapa_settings ?? array();
 }
 
 	public function show_total_credits_gained($gained_credits='', $user='', $team=''){
