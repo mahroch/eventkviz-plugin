@@ -110,6 +110,30 @@
     border-color: #ff9800;
     background: rgba(255,152,0,0.18);
 }
+/* Review-only per-task colours (read-only, žiadny klik) */
+.ek-mapa-review .ek-mapa-task,
+.ek-mapa-task.is-review-correct,
+.ek-mapa-task.is-review-wrong,
+.ek-mapa-task.is-review-missing {
+    cursor: default;
+}
+.ek-mapa-task.is-review-correct {
+    background: rgba(67,160,71,0.22);
+    border-color: rgba(67,160,71,0.55);
+}
+.ek-mapa-task.is-review-wrong {
+    background: rgba(229,57,53,0.22);
+    border-color: rgba(229,57,53,0.55);
+}
+.ek-mapa-task.is-review-missing {
+    background: rgba(255,255,255,0.05);
+    border-color: rgba(255,255,255,0.18);
+}
+.ek-mapa-task.is-review-correct:hover,
+.ek-mapa-task.is-review-wrong:hover,
+.ek-mapa-task.is-review-missing:hover {
+    background: inherit; /* žiadny hover efekt v review */
+}
 .ek-mapa-task.is-placed .ek-mapa-task-num {
     color: #6dd58c;
 }

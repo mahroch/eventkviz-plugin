@@ -199,16 +199,20 @@
             var showLabels = !!overlaysCfg.feature_labels;
             featureLayer = L.geoJSON(data, {
                 style: featureBaseStyle,
+                // V review je feature layer čisto vizuálny — žiadny click ani hover handler.
+                interactive: !isReview,
                 onEachFeature: function (feature, layer) {
                     var name = feature.properties && feature.properties.name;
                     if (!name) return;
-                    layer.on('click', function () { onFeaturePick(name); });
-                    layer.on('mouseover', function () {
-                        if (!isSelected(name) && !isReview) layer.setStyle(featureHoverStyle());
-                    });
-                    layer.on('mouseout', function () {
-                        applyFeatureStyle(layer);
-                    });
+                    if (!isReview) {
+                        layer.on('click', function () { onFeaturePick(name); });
+                        layer.on('mouseover', function () {
+                            if (!isSelected(name)) layer.setStyle(featureHoverStyle());
+                        });
+                        layer.on('mouseout', function () {
+                            applyFeatureStyle(layer);
+                        });
+                    }
                     if (showLabels) {
                         layer.bindTooltip(name, { permanent: false, direction: 'top', sticky: true });
                     }
@@ -573,9 +577,23 @@
             var hn = idx + 1;
             var placed = !!taskMarkers[idx];
             var $row = $('<div class="ek-mapa-task"></div>')
-                .toggleClass('is-active', idx === currentTaskIdx)
+                // is-active highlight len v quiz móde — v review je sidebar read-only
+                .toggleClass('is-active', !isReview && idx === currentTaskIdx)
                 .toggleClass('is-placed', placed)
                 .attr('data-idx', idx);
+
+            // Review-only farby per row: zelená správna / červená nesprávna / neutrálna
+            if (isReview) {
+                if (quizType === 'pin') {
+                    if (t.points > 0) $row.addClass('is-review-correct');
+                    else if (t.distance_km !== null && typeof t.distance_km !== 'undefined') $row.addClass('is-review-wrong');
+                    else $row.addClass('is-review-missing');
+                } else {
+                    if (t.is_correct) $row.addClass('is-review-correct');
+                    else if (t.guess_feature) $row.addClass('is-review-wrong');
+                    else $row.addClass('is-review-missing');
+                }
+            }
             $row.append('<span class="ek-mapa-task-num">' + hn + '</span>');
             var displayName = prefix + (t.name || ('Miesto ' + hn));
             $row.append('<span class="ek-mapa-task-name">' + escapeHtml(displayName) + '</span>');
@@ -623,7 +641,10 @@
                 }
             }
 
-            $row.on('click', function () { focusTask(idx); });
+            // Sidebar klik len v quiz móde — review je read-only
+            if (!isReview) {
+                $row.on('click', function () { focusTask(idx); });
+            }
             $list.append($row);
         });
     }
