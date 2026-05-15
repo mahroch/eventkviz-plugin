@@ -26,9 +26,13 @@ class Eventkviz_MapQuiz_Editor {
     const META_MAX_POINTS    = '_mapquiz_max_points';
     const META_SCORE_TIERS   = '_mapquiz_score_tiers';
     const META_PINS          = '_mapquiz_pins';
-    // JSON object: {"cities":bool,"regions":bool,"rivers":bool}
-    // Overlay vodítka pre hráča — ktoré pomocné vrstvy renderovať na blanket mape
+    // JSON object: {tile_*:bool, cities_*:bool, regions:bool, rivers:bool}
     const META_OVERLAYS      = '_mapquiz_overlays';
+    // Typ kvízu: 'pin' (default — pin-based haversine), 'river', 'mountain' (feature-pick).
+    const META_QUIZ_TYPE     = '_mapquiz_quiz_type';
+    // JSON array of feature names (pre quiz_type=mountain — admin si vyberie ktoré pohoria
+    // budú v pool, hráč dostane N náhodných z toho).
+    const META_FEATURE_POOL  = '_mapquiz_feature_pool';
 
     const DEFAULT_TIERS = '[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},{"maxKm":20,"percent":50},{"maxKm":40,"percent":25}]';
 
@@ -156,11 +160,40 @@ class Eventkviz_MapQuiz_Editor {
         $overlays      = is_string( $overlays_json ) && $overlays_json !== '' ? json_decode( $overlays_json, true ) : array();
         if ( ! is_array( $overlays ) ) $overlays = array();
 
+        $quiz_type = get_post_meta( $post->ID, self::META_QUIZ_TYPE, true ) ?: 'pin';
+        $feature_pool_json = get_post_meta( $post->ID, self::META_FEATURE_POOL, true );
+        $feature_pool = is_string( $feature_pool_json ) && $feature_pool_json !== '' ? json_decode( $feature_pool_json, true ) : array();
+        if ( ! is_array( $feature_pool ) ) $feature_pool = array();
+
         $regions = self::get_region_presets();
         $details = self::get_player_detail_presets();
         $maptiler_set = ( class_exists( 'Eventkviz_Settings' ) && Eventkviz_Settings::get_maptiler_key() !== '' );
 
+        // Bundleovaný zoznam pohorí pre quiz_type=mountain — admin si vyberie pool
+        $available_mountains = array(
+            'Vysoké Tatry', 'Nízke Tatry', 'Belianske Tatry',
+            'Malá Fatra', 'Veľká Fatra',
+            'Malé Karpaty', 'Biele Karpaty', 'Strážovské vrchy',
+            'Štiavnické vrchy', 'Slovenský raj',
+            'Vihorlat', 'Poľana', 'Slovenské rudohorie', 'Branisko',
+        );
         ?>
+
+        <div class="ekm-editor-toolbar" style="margin-bottom:14px; padding:10px; background:#eef4fa; border-left:3px solid #2271b1; border-radius:0 4px 4px 0">
+            <label>
+                <strong>Typ kvízu:</strong>
+                <select name="<?php echo esc_attr( self::META_QUIZ_TYPE ); ?>" id="ekm-quiz-type" onchange="document.querySelectorAll('.ekm-mode').forEach(function(el){el.style.display='none'});var m=document.getElementById('ekm-mode-'+this.value);if(m)m.style.display='';">
+                    <option value="pin"      <?php selected( $quiz_type, 'pin' ); ?>>Hľadanie miest na mape (klik kdekoľvek, scoring podľa vzdialenosti)</option>
+                    <option value="river"    <?php selected( $quiz_type, 'river' ); ?>>Označenie rieky (klikni na správnu rieku)</option>
+                    <option value="mountain" <?php selected( $quiz_type, 'mountain' ); ?>>Označenie pohoria (klikni na správne pohorie)</option>
+                </select>
+            </label>
+            <p class="description" style="margin:6px 0 0">
+                <strong>Hľadanie miest:</strong> admin definuje konkrétne body (lat/lon), hráč klikne kdekoľvek a body sú podľa vzdialenosti od správneho miesta.<br>
+                <strong>Rieka / Pohorie:</strong> hráč dostane úlohu „nájdi <em>X</em>", musí kliknúť priamo na danú rieku/pohorie. Binárne hodnotenie (správne / zle).
+            </p>
+        </div>
+
         <div class="ekm-editor-toolbar">
             <label>
                 <strong>Región:</strong>
@@ -221,6 +254,8 @@ class Eventkviz_MapQuiz_Editor {
             </div>
         <?php endif; ?>
 
+        <!-- Sekcia pre quiz_type = pin (pin editor + mapa) -->
+        <div class="ekm-mode" id="ekm-mode-pin" <?php if ( $quiz_type !== 'pin' ) echo 'style="display:none"'; ?>>
         <div id="ekm-map" style="height:480px; margin:14px 0; border:1px solid #ccd0d4; border-radius:4px; background:#f0f0f1;"></div>
 
         <input type="hidden" name="<?php echo esc_attr( self::META_PINS ); ?>" id="ekm-pins-json" value="<?php echo esc_attr( $pins_json ); ?>" />
@@ -257,6 +292,38 @@ class Eventkviz_MapQuiz_Editor {
             <!-- populated by JS -->
         </ol>
         <p class="description">Klikni na pin v zozname pre editáciu, alebo na mapu pre pridanie nového.</p>
+        </div><!-- /ekm-mode-pin -->
+
+        <!-- Sekcia pre quiz_type = river -->
+        <div class="ekm-mode" id="ekm-mode-river" <?php if ( $quiz_type !== 'river' ) echo 'style="display:none"'; ?>>
+            <div style="margin:14px 0; padding:14px; background:#fff; border:1px solid #ccd0d4; border-radius:4px">
+                <h3 style="margin-top:0">Rieky — pool kvízu</h3>
+                <p>Hráč dostane <strong>náhodný výber</strong> z týchto 8 hlavných slovenských riek (admin nemusí nič vyberať):</p>
+                <ul style="columns:2; max-width:500px">
+                    <li>Dunaj</li><li>Váh</li><li>Hron</li><li>Hornád</li>
+                    <li>Slaná</li><li>Ipeľ</li><li>Morava</li><li>Dunajec</li>
+                </ul>
+                <p class="description">Počet otázok v sete (koľko z 8 hráč háda) sa nastavuje v evente, na taboch <em>Mapa → Počet otázok v sete</em>.</p>
+            </div>
+        </div><!-- /ekm-mode-river -->
+
+        <!-- Sekcia pre quiz_type = mountain -->
+        <div class="ekm-mode" id="ekm-mode-mountain" <?php if ( $quiz_type !== 'mountain' ) echo 'style="display:none"'; ?>>
+            <div style="margin:14px 0; padding:14px; background:#fff; border:1px solid #ccd0d4; border-radius:4px">
+                <h3 style="margin-top:0">Pohoria — vyber pool kvízu</h3>
+                <p>Zaškrtni pohoria ktoré chceš mať v <strong>pool</strong> tejto šablóny. Hráč dostane náhodný podmnožinu (počet sa určuje v evente cez <em>Počet otázok v sete</em>).</p>
+                <div style="columns:2; max-width:600px; column-gap:24px">
+                    <?php foreach ( $available_mountains as $mname ) : ?>
+                        <label style="display:block; padding:3px 0">
+                            <input type="checkbox" name="<?php echo esc_attr( self::META_FEATURE_POOL ); ?>[]" value="<?php echo esc_attr( $mname ); ?>" <?php checked( in_array( $mname, $feature_pool, true ) ); ?> />
+                            <?php echo esc_html( $mname ); ?>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+                <p class="description" style="margin-top:10px">Vyberte aspoň toľko pohorí ako je <em>Počet otázok v sete</em> v evente, inak sa pool capne na zaškrtnuté.</p>
+            </div>
+        </div><!-- /ekm-mode-mountain -->
+
         <?php
     }
 
@@ -304,6 +371,20 @@ class Eventkviz_MapQuiz_Editor {
         $region = isset( $_POST[ self::META_REGION ] ) ? sanitize_key( $_POST[ self::META_REGION ] ) : 'slovakia';
         if ( ! array_key_exists( $region, self::get_region_presets() ) ) $region = 'slovakia';
         update_post_meta( $post_id, self::META_REGION, $region );
+
+        // Quiz type
+        $quiz_type = isset( $_POST[ self::META_QUIZ_TYPE ] ) ? sanitize_key( $_POST[ self::META_QUIZ_TYPE ] ) : 'pin';
+        if ( ! in_array( $quiz_type, array( 'pin', 'river', 'mountain' ), true ) ) $quiz_type = 'pin';
+        update_post_meta( $post_id, self::META_QUIZ_TYPE, $quiz_type );
+
+        // Feature pool (pre quiz_type=mountain — array of mountain names)
+        $pool_raw = isset( $_POST[ self::META_FEATURE_POOL ] ) && is_array( $_POST[ self::META_FEATURE_POOL ] ) ? wp_unslash( $_POST[ self::META_FEATURE_POOL ] ) : array();
+        $pool_clean = array();
+        foreach ( $pool_raw as $name ) {
+            $name = sanitize_text_field( (string) $name );
+            if ( $name !== '' ) $pool_clean[] = $name;
+        }
+        update_post_meta( $post_id, self::META_FEATURE_POOL, wp_json_encode( $pool_clean, JSON_UNESCAPED_UNICODE ) );
 
         // Player detail
         $detail = isset( $_POST[ self::META_PLAYER_DETAIL ] ) ? sanitize_key( $_POST[ self::META_PLAYER_DETAIL ] ) : 'outline-only';

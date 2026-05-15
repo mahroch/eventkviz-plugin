@@ -227,4 +227,28 @@ Map kvíz používa **rovnaké spoločné helpery** ako music/movies/knowledge/s
 - Autosave nevypisuje custom `ek-quiz-form.js`-style restored hint na other quizoch — tu má vlastný hint špecifický pre mapa flow.
 - Žiadny TTL na localStorage — zostáva dokým prehliadač nezmaže.
 
-**Fáza 8** — final polish (viď chat history)
+**Fáza 8 — Quiz typy „rieka" a „pohorie" + base map redesign** ✅
+- [x] Nový dropdown „Typ kvízu" v mapovej šablóne (`_mapquiz_quiz_type`): pin / river / mountain. Per-šablóna jeden mód.
+- [x] **Pin mode** — existujúce (admin definuje lat/lon, scoring haversine + tier).
+- [x] **River mode** — pool fixný = všetkých 8 SK riek z bundle. Admin len nastaví `pocet_otazok_v_sete` v evente.
+- [x] **Mountain mode** — admin checkboxom vyberie subset z 14 bundleovaných pohorí (`_mapquiz_feature_pool` JSON). Hráč dostane N náhodných.
+- [x] **Binárne scoring pre feature mode**: `points = max_per_pin` ak guess_id == correct_id, inak 0.
+- [x] Player JS detekuje `data-quiz-type` na containeri:
+  - `pin`: `onMapClick` placeMarker, hidden inputs `mapaN_lat/lon/pin`
+  - `river`/`mountain`: `loadFeatureLayer` → render features s click handlerom, `onFeaturePick` ukladá hidden input `mapaN_feature`
+- [x] Eval class — quiz_type-aware scoring + render summary (zelený correct, červený wrong v review).
+- [x] Cities overlay `interactive: false` v feature móde aby neblokovali klik na rieky/pohoria.
+- [x] Stale question_set detection: keď admin zmení quiz_type, stored set s pin UUID neexistuje v novom poole → treat_as_new + write update.
+- [x] Base map redesign: zrušený dropdown „Detail pre hráča". Nová sekcia „Mapové podklady" so 3 tile checkboxami (Streets / Satelit / Outdoor) — ak ≥1 zvolená, hráč dostane MapTiler tile + L.control.layers prepinač. Inak iba blanket outline (zero tile cost).
+- [x] Geografické vodítka split: `cities_main` (8 krajských) + `cities_regional` (26 okresných) ako samostatné checkboxes; ostatné (regions, rivers) nezmenené.
+- [x] Bug fix: `+regions` value v dropdown sa po sanitize_key strácala — premenovaný na `outline-regions`. (Dropdown už nie je v UI, ale postmeta key migration.)
+
+**Bundleované dáta SK (`public/data/regions/`):**
+- `slovakia.geojson` — outline 144 bodov (z Natural Earth)
+- `czechia.geojson` — outline 232 bodov
+- `sk-cities.geojson` — 34 miest (8 krajských tier=1 + 26 okresných tier=2), hand-curated
+- `sk-regions.geojson` — 8 administratívnych krajov SR (z NE)
+- `sk-rivers.geojson` — 8 hlavných riek (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec; z NE master + europe, clip na SK bbox)
+- `sk-mountains.geojson` — 14 pohorí SR (z OSM Overpass + simplification, ~95 KB)
+
+**Fázy 1-8 hotové.** Plugin je production-ready pre pin / river / mountain quiz typy na Slovensku.

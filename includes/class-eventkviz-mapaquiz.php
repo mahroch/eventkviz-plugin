@@ -67,12 +67,50 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         // Load template data
         $region        = get_post_meta( $template_id, '_mapquiz_region', true ) ?: 'slovakia';
         $player_detail = get_post_meta( $template_id, '_mapquiz_player_detail', true ) ?: 'outline-only';
-        $pins_json     = get_post_meta( $template_id, '_mapquiz_pins', true );
-        $all_pins      = is_string( $pins_json ) ? json_decode( $pins_json, true ) : array();
-        if ( ! is_array( $all_pins ) ) $all_pins = array();
+        $quiz_type     = get_post_meta( $template_id, '_mapquiz_quiz_type', true ) ?: 'pin';
+        if ( ! in_array( $quiz_type, array( 'pin', 'river', 'mountain' ), true ) ) $quiz_type = 'pin';
+
+        // Build pool podľa quiz_type:
+        //   pin      → pole {id, name, hint, description, photo_id, lat, lon}
+        //   river    → pole {id, name}  (id = name; všetkých 8 riek z bundle)
+        //   mountain → pole {id, name}  (admin selection)
+        $all_pins = array();
+        if ( $quiz_type === 'pin' ) {
+            $pins_json = get_post_meta( $template_id, '_mapquiz_pins', true );
+            $all_pins  = is_string( $pins_json ) ? json_decode( $pins_json, true ) : array();
+            if ( ! is_array( $all_pins ) ) $all_pins = array();
+        } elseif ( $quiz_type === 'river' ) {
+            // Fixed pool z bundleovaných riek
+            $rivers_path = plugin_dir_path( dirname( __FILE__ ) ) . 'public/data/regions/sk-rivers.geojson';
+            if ( file_exists( $rivers_path ) ) {
+                $rivers_data = json_decode( file_get_contents( $rivers_path ), true );
+                if ( is_array( $rivers_data ) && isset( $rivers_data['features'] ) ) {
+                    foreach ( $rivers_data['features'] as $feat ) {
+                        $name = $feat['properties']['name'] ?? '';
+                        if ( $name !== '' ) {
+                            $all_pins[] = array( 'id' => $name, 'name' => $name );
+                        }
+                    }
+                }
+            }
+        } elseif ( $quiz_type === 'mountain' ) {
+            // Admin selection z 14 bundleovaných pohorí
+            $pool_json = get_post_meta( $template_id, '_mapquiz_feature_pool', true );
+            $pool      = is_string( $pool_json ) ? json_decode( $pool_json, true ) : array();
+            if ( ! is_array( $pool ) ) $pool = array();
+            foreach ( $pool as $name ) {
+                $name = (string) $name;
+                if ( $name !== '' ) $all_pins[] = array( 'id' => $name, 'name' => $name );
+            }
+        }
 
         if ( count( $all_pins ) === 0 ) {
-            echo '<p class="ek-quiz-error">Šablóna „' . esc_html( $template->post_title ) . '" nemá žiadne piny. Admin musí v editore šablóny pridať aspoň jeden pin.</p>';
+            $err = $quiz_type === 'mountain'
+                ? 'Šablóna „' . esc_html( $template->post_title ) . '" nemá vybraté žiadne pohoria v pool. Admin musí v editore šablóny zaškrtnúť aspoň jedno.'
+                : ( $quiz_type === 'river'
+                    ? 'Bundleované rieky chýbajú alebo sa nenašli (sk-rivers.geojson).'
+                    : 'Šablóna „' . esc_html( $template->post_title ) . '" nemá žiadne piny. Admin musí v editore šablóny pridať aspoň jeden pin.' );
+            echo '<p class="ek-quiz-error">' . $err . '</p>';
             return;
         }
 
@@ -84,21 +122,33 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         $count_in_set = isset( $this->cAkcia->mapa_settings['pocet_otazok_v_sete'] ) ? max( 1, (int) $this->cAkcia->mapa_settings['pocet_otazok_v_sete'] ) : 10;
         $count_in_set = min( $count_in_set, count( $all_pins ) );
 
+        if ( ! $treat_as_new ) {
+            // Reuse pin ids from prior session — ale len ak VŠETKY stored IDs existujú
+            // v aktuálnom poole. Inak (napr. admin zmenil quiz_type alebo upravil pins
+            // template) treat_as_new aby sa vygenerovala fresh sada.
+            $stored_ids = is_array( $this->questions_set ) ? $this->questions_set : array();
+            $selected = array();
+            $all_match = ! empty( $stored_ids );
+            foreach ( $stored_ids as $pid ) {
+                $found = null;
+                foreach ( $all_pins as $p ) {
+                    if ( (string) $p['id'] === (string) $pid ) { $found = $p; break; }
+                }
+                if ( $found ) { $selected[] = $found; }
+                else { $all_match = false; break; }
+            }
+            if ( ! $all_match ) {
+                $treat_as_new = true;
+            } else {
+                $selected_pin_ids = $stored_ids;
+            }
+        }
+
         if ( $treat_as_new ) {
-            // Random selection of pin ids
             $shuffled = $all_pins;
             shuffle( $shuffled );
             $selected = array_slice( $shuffled, 0, $count_in_set );
             $selected_pin_ids = array_map( function( $p ) { return $p['id']; }, $selected );
-        } else {
-            // Reuse pin ids from prior session (stored in $this->questions_set from check_if_questions_set_exists)
-            $selected_pin_ids = is_array( $this->questions_set ) ? $this->questions_set : array();
-            $selected = array();
-            foreach ( $selected_pin_ids as $pid ) {
-                foreach ( $all_pins as $p ) {
-                    if ( $p['id'] === $pid ) { $selected[] = $p; break; }
-                }
-            }
         }
 
         if ( empty( $selected ) ) {
@@ -106,20 +156,24 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
             return;
         }
 
-        // Build sanitized data for JS — strip out solution coords (lat/lon) so they
-        // are not exposed in the HTML source. Only id + name + hint + photo + description.
+        // Build sanitized data for JS — strip out solution coords (lat/lon for pin mode)
+        // alebo feature_id len v hidden inputs (pre river/mountain — to je correct ID, treba
+        // ho server-side ale klient ho aj tak musí poznať aby vedel aký je task. Anti-cheat
+        // tu je obmedzená — pre feature mód má každá úloha viditeľný "Nájdi: Dunaj").
         $tasks_for_js = array();
         foreach ( $selected as $p ) {
             $task = array(
-                'id'          => (string) $p['id'],
-                'name'        => (string) ( $p['name'] ?? '' ),
-                'hint'        => (string) ( $p['hint'] ?? '' ),
-                'description' => (string) ( $p['description'] ?? '' ),
-                'photo_url'   => '',
+                'id'   => (string) $p['id'],
+                'name' => (string) ( $p['name'] ?? '' ),
             );
-            if ( ! empty( $p['photo_id'] ) ) {
-                $url = wp_get_attachment_image_url( (int) $p['photo_id'], 'medium' );
-                if ( $url ) $task['photo_url'] = $url;
+            if ( $quiz_type === 'pin' ) {
+                $task['hint']        = (string) ( $p['hint'] ?? '' );
+                $task['description'] = (string) ( $p['description'] ?? '' );
+                $task['photo_url']   = '';
+                if ( ! empty( $p['photo_id'] ) ) {
+                    $url = wp_get_attachment_image_url( (int) $p['photo_id'], 'medium' );
+                    if ( $url ) $task['photo_url'] = $url;
+                }
             }
             $tasks_for_js[] = $task;
         }
@@ -156,21 +210,29 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         ) );
 
         // Container for player map + task list. JS handles rendering.
-        echo '<div id="ek-mapa-container" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '">';
+        echo '<div id="ek-mapa-container" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '">';
         echo '<div id="ek-mapa-tasks" class="ek-mapa-tasks"></div>';
         echo '<div id="ek-mapa-map" class="ek-mapa-map"></div>';
         echo '</div>';
 
-        // Hidden inputs per task — JS writes lat/lon on map click. Pre-fill with prev review if any.
+        // Hidden inputs per task. Pin mode: lat/lon. Feature mode: feature_id (hráčov výber).
+        // mapaN_pin obsahuje vždy CORRECT id (task ID) — eval to porovnáva so guess.
         foreach ( $selected as $idx => $p ) {
             $hn = $idx + 1;
-            $prev_lat = $is_review ? ( isset( $_POST['prev_mapa' . $hn . '_lat'] ) ? esc_attr( wp_unslash( $_POST['prev_mapa' . $hn . '_lat'] ) ) : '' ) : '';
-            $prev_lon = $is_review ? ( isset( $_POST['prev_mapa' . $hn . '_lon'] ) ? esc_attr( wp_unslash( $_POST['prev_mapa' . $hn . '_lon'] ) ) : '' ) : '';
-            $prev_pin = $is_review ? ( isset( $_POST['prev_mapa' . $hn . '_pin'] ) ? esc_attr( wp_unslash( $_POST['prev_mapa' . $hn . '_pin'] ) ) : '' ) : '';
-            $prev_correct = $is_review ? ( isset( $_POST['prev_mapa' . $hn . '_correct'] ) ? esc_attr( wp_unslash( $_POST['prev_mapa' . $hn . '_correct'] ) ) : '' ) : '';
-            echo '<input type="hidden" name="mapa' . $hn . '_lat" id="ek-mapa-lat-' . $hn . '" value="' . $prev_lat . '">';
-            echo '<input type="hidden" name="mapa' . $hn . '_lon" id="ek-mapa-lon-' . $hn . '" value="' . $prev_lon . '">';
+            $prev_pin = $is_review && isset( $_POST['prev_mapa' . $hn . '_pin'] ) ? esc_attr( wp_unslash( $_POST['prev_mapa' . $hn . '_pin'] ) ) : '';
+            $prev_correct = $is_review && isset( $_POST['prev_mapa' . $hn . '_correct'] ) ? esc_attr( wp_unslash( $_POST['prev_mapa' . $hn . '_correct'] ) ) : '';
             echo '<input type="hidden" name="mapa' . $hn . '_pin" id="ek-mapa-pin-' . $hn . '" value="' . ( $prev_pin !== '' ? $prev_pin : esc_attr( $p['id'] ) ) . '">';
+
+            if ( $quiz_type === 'pin' ) {
+                $prev_lat = $is_review && isset( $_POST['prev_mapa' . $hn . '_lat'] ) ? esc_attr( wp_unslash( $_POST['prev_mapa' . $hn . '_lat'] ) ) : '';
+                $prev_lon = $is_review && isset( $_POST['prev_mapa' . $hn . '_lon'] ) ? esc_attr( wp_unslash( $_POST['prev_mapa' . $hn . '_lon'] ) ) : '';
+                echo '<input type="hidden" name="mapa' . $hn . '_lat" id="ek-mapa-lat-' . $hn . '" value="' . $prev_lat . '">';
+                echo '<input type="hidden" name="mapa' . $hn . '_lon" id="ek-mapa-lon-' . $hn . '" value="' . $prev_lon . '">';
+            } else {
+                // river/mountain — feature_id (názov vybranej rieky/pohoria)
+                $prev_feat = $is_review && isset( $_POST['prev_mapa' . $hn . '_feature'] ) ? esc_attr( wp_unslash( $_POST['prev_mapa' . $hn . '_feature'] ) ) : '';
+                echo '<input type="hidden" name="mapa' . $hn . '_feature" id="ek-mapa-feature-' . $hn . '" value="' . $prev_feat . '">';
+            }
             if ( $prev_correct !== '' ) {
                 echo '<input type="hidden" name="prev_mapa' . $hn . '_correct" value="' . $prev_correct . '">';
             }
@@ -200,8 +262,13 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         echo '</div>'; // .ek-quiz-content
         echo '</div>'; // .ek-quiz
 
-        // Persist question set for retry reuse (first load only)
+        // Persist question set for retry reuse. Aj keď question_set_exists ale obsah je
+        // mismatch (admin zmenil quiz_type alebo pool), prepíšeme aktuálnym setom cez UPDATE.
         if ( ! $question_set_exists ) {
+            $this->write_question_set_to_db( $serialized_set, $akcia_code, 'mapa', $user_code, $team_code );
+        } elseif ( $treat_as_new ) {
+            // Stored set was stale → rewrite. write_question_set_to_db sa volá v UPDATE móde
+            // ak existing row → update, inak insert. Funguje rovnako pre obidva prípady.
             $this->write_question_set_to_db( $serialized_set, $akcia_code, 'mapa', $user_code, $team_code );
         }
     }
@@ -294,14 +361,27 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
             echo '<p class="ek-quiz-error">Šablóna mapového kvízu nenájdená.</p>';
             return;
         }
-        $pins_json = get_post_meta( $template_id, '_mapquiz_pins', true );
-        $all_pins  = is_string( $pins_json ) ? json_decode( $pins_json, true ) : array();
-        if ( ! is_array( $all_pins ) ) $all_pins = array();
+        $quiz_type = get_post_meta( $template_id, '_mapquiz_quiz_type', true ) ?: 'pin';
+        if ( ! in_array( $quiz_type, array( 'pin', 'river', 'mountain' ), true ) ) $quiz_type = 'pin';
 
-        // Build map: pin_id → pin data (for O(1) lookup per task)
+        // Build authoritative pin/feature map: id → record. Pre pin = lat/lon; pre
+        // river/mountain = id (= správna feature name) — eval len porovnáva guess vs id.
         $pin_by_id = array();
-        foreach ( $all_pins as $p ) {
-            if ( ! empty( $p['id'] ) ) $pin_by_id[ (string) $p['id'] ] = $p;
+        if ( $quiz_type === 'pin' ) {
+            $pins_json = get_post_meta( $template_id, '_mapquiz_pins', true );
+            $all_pins  = is_string( $pins_json ) ? json_decode( $pins_json, true ) : array();
+            if ( ! is_array( $all_pins ) ) $all_pins = array();
+            foreach ( $all_pins as $p ) {
+                if ( ! empty( $p['id'] ) ) $pin_by_id[ (string) $p['id'] ] = $p;
+            }
+        } else {
+            // Pre feature mode používame `selected_pin_ids` ako autoritatívny zoznam
+            // — čo POST poslal v 'set' pole sa overuje cez set_sig vyššie. Stačí teda
+            //   id → {id, name} bez ďalšieho geom lookup.
+            foreach ( $selected_pin_ids as $pid ) {
+                $pid = (string) $pid;
+                $pin_by_id[ $pid ] = array( 'id' => $pid, 'name' => $pid );
+            }
         }
 
         // Resolve scoring config (per-event override → template default)
@@ -332,60 +412,67 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
 
         for ( $i = 0; $i < $task_count; $i++ ) {
             $hn      = $i + 1;
-            $lat_key = 'mapa' . $hn . '_lat';
-            $lon_key = 'mapa' . $hn . '_lon';
             $pin_key = 'mapa' . $hn . '_pin';
-
-            $guess_lat_raw = isset( $_POST[ $lat_key ] ) ? trim( (string) wp_unslash( $_POST[ $lat_key ] ) ) : '';
-            $guess_lon_raw = isset( $_POST[ $lon_key ] ) ? trim( (string) wp_unslash( $_POST[ $lon_key ] ) ) : '';
-            $pin_id        = isset( $_POST[ $pin_key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $pin_key ] ) ) : (string) $selected_pin_ids[ $i ];
+            $pin_id  = isset( $_POST[ $pin_key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $pin_key ] ) ) : (string) $selected_pin_ids[ $i ];
 
             $pin = isset( $pin_by_id[ $pin_id ] ) ? $pin_by_id[ $pin_id ] : null;
-            if ( ! $pin ) {
-                // Should not happen (sig verified), but skip safely
-                continue;
+            if ( ! $pin ) continue;
+
+            if ( $quiz_type === 'pin' ) {
+                $guess_lat_raw = isset( $_POST[ 'mapa' . $hn . '_lat' ] ) ? trim( (string) wp_unslash( $_POST[ 'mapa' . $hn . '_lat' ] ) ) : '';
+                $guess_lon_raw = isset( $_POST[ 'mapa' . $hn . '_lon' ] ) ? trim( (string) wp_unslash( $_POST[ 'mapa' . $hn . '_lon' ] ) ) : '';
+                $is_answered   = ( $guess_lat_raw !== '' && $guess_lon_raw !== '' );
+                $guess_lat     = $is_answered ? (float) $guess_lat_raw : null;
+                $guess_lon     = $is_answered ? (float) $guess_lon_raw : null;
+                $correct_lat   = (float) $pin['lat'];
+                $correct_lon   = (float) $pin['lon'];
+                $distance_km   = $is_answered ? self::haversine_km( $guess_lat, $guess_lon, $correct_lat, $correct_lon ) : null;
+                $percent       = ( $is_answered && $distance_km !== null ) ? self::percent_for_distance( $distance_km, $tiers ) : 0;
+                $points        = (int) round( $max_per_task * $percent / 100 );
+                $gained_credits += $points;
+
+                $previous_state[ 'prev_mapa' . $hn . '_lat' ]     = $guess_lat_raw;
+                $previous_state[ 'prev_mapa' . $hn . '_lon' ]     = $guess_lon_raw;
+                $previous_state[ 'prev_mapa' . $hn . '_pin' ]     = $pin_id;
+                $previous_state[ 'prev_mapa' . $hn . '_correct' ] = $points > 0 ? '1' : '0';
+
+                $per_task_results[] = array(
+                    'idx' => $i, 'hn' => $hn, 'pin' => $pin,
+                    'is_answered' => $is_answered, 'guess_lat' => $guess_lat, 'guess_lon' => $guess_lon,
+                    'distance_km' => $distance_km, 'percent' => $percent, 'points' => $points,
+                    'max_per_task' => $max_per_task,
+                );
+                $tasks_for_js[] = array(
+                    'id' => (string) $pin['id'], 'name' => (string) ( $pin['name'] ?? '' ),
+                    'correct_lat' => $correct_lat, 'correct_lon' => $correct_lon,
+                    'guess_lat' => $is_answered ? $guess_lat : null, 'guess_lon' => $is_answered ? $guess_lon : null,
+                    'distance_km' => $distance_km, 'points' => $points,
+                );
+            } else {
+                // river/mountain — binárne hodnotenie. Hráč pošle mapaN_feature = názov vybranej feature.
+                $guess_feature = isset( $_POST[ 'mapa' . $hn . '_feature' ] ) ? trim( (string) wp_unslash( $_POST[ 'mapa' . $hn . '_feature' ] ) ) : '';
+                $is_answered   = $guess_feature !== '';
+                $is_correct    = ( $is_answered && $guess_feature === $pin_id );
+                $points        = $is_correct ? (int) round( $max_per_task ) : 0;
+                $gained_credits += $points;
+
+                $previous_state[ 'prev_mapa' . $hn . '_feature' ] = $guess_feature;
+                $previous_state[ 'prev_mapa' . $hn . '_pin' ]     = $pin_id;
+                $previous_state[ 'prev_mapa' . $hn . '_correct' ] = $is_correct ? '1' : '0';
+
+                $per_task_results[] = array(
+                    'idx' => $i, 'hn' => $hn, 'pin' => $pin,
+                    'is_answered' => $is_answered, 'guess_feature' => $guess_feature,
+                    'correct_feature' => $pin_id, 'is_correct' => $is_correct,
+                    'points' => $points, 'max_per_task' => $max_per_task,
+                );
+                $tasks_for_js[] = array(
+                    'id' => $pin_id, 'name' => $pin_id,
+                    'correct_feature' => $pin_id,
+                    'guess_feature'   => $is_answered ? $guess_feature : null,
+                    'is_correct'      => $is_correct, 'points' => $points,
+                );
             }
-
-            $correct_lat = (float) $pin['lat'];
-            $correct_lon = (float) $pin['lon'];
-
-            $is_answered = ( $guess_lat_raw !== '' && $guess_lon_raw !== '' );
-            $guess_lat   = $is_answered ? (float) $guess_lat_raw : null;
-            $guess_lon   = $is_answered ? (float) $guess_lon_raw : null;
-
-            $distance_km = $is_answered ? self::haversine_km( $guess_lat, $guess_lon, $correct_lat, $correct_lon ) : null;
-            $percent     = ( $is_answered && $distance_km !== null ) ? self::percent_for_distance( $distance_km, $tiers ) : 0;
-            $points      = (int) round( $max_per_task * $percent / 100 );
-            $gained_credits += $points;
-
-            $previous_state[ 'prev_mapa' . $hn . '_lat' ]     = $guess_lat_raw;
-            $previous_state[ 'prev_mapa' . $hn . '_lon' ]     = $guess_lon_raw;
-            $previous_state[ 'prev_mapa' . $hn . '_pin' ]     = $pin_id;
-            $previous_state[ 'prev_mapa' . $hn . '_correct' ] = $points > 0 ? '1' : '0';
-
-            $per_task_results[] = array(
-                'idx'          => $i,
-                'hn'           => $hn,
-                'pin'          => $pin,
-                'is_answered'  => $is_answered,
-                'guess_lat'    => $guess_lat,
-                'guess_lon'    => $guess_lon,
-                'distance_km'  => $distance_km,
-                'percent'      => $percent,
-                'points'       => $points,
-                'max_per_task' => $max_per_task,
-            );
-
-            $tasks_for_js[] = array(
-                'id'          => (string) $pin['id'],
-                'name'        => (string) ( $pin['name'] ?? '' ),
-                'correct_lat' => $correct_lat,
-                'correct_lon' => $correct_lon,
-                'guess_lat'   => $is_answered ? $guess_lat : null,
-                'guess_lon'   => $is_answered ? $guess_lon : null,
-                'distance_km' => $distance_km,
-                'points'      => $points,
-            );
         }
 
         // --- Render ---
@@ -411,7 +498,7 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
         ) );
 
         // Review map container — JS reads window.ekMapaReview
-        echo '<div id="ek-mapa-container" class="ek-mapa-review" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-review="1">';
+        echo '<div id="ek-mapa-container" class="ek-mapa-review" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-review="1">';
         echo '<div id="ek-mapa-tasks" class="ek-mapa-tasks"></div>';
         echo '<div id="ek-mapa-map" class="ek-mapa-map"></div>';
         echo '</div>';
@@ -428,15 +515,28 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
             echo '<span class="ek-question-label">' . esc_html( $pin_name ) . '</span>';
             echo '</div>';
 
-            if ( ! $r['is_answered'] ) {
-                $this->show_answer( 'Hráč neoznačil miesto na mape — 0 bodov.', 'mapa', 'eventkviz_standard_answer', 'user_result' );
+            if ( $quiz_type === 'pin' ) {
+                if ( ! $r['is_answered'] ) {
+                    $this->show_answer( 'Hráč neoznačil miesto na mape — 0 bodov.', 'mapa', 'eventkviz_standard_answer', 'user_result' );
+                } else {
+                    $dist_txt = number_format( (float) $r['distance_km'], 2, '.', ' ' );
+                    if ( $r['points'] > 0 ) {
+                        $msg = '✅ Vzdialenosť od správneho miesta: <strong>' . $dist_txt . ' km</strong> — hráč získava <strong>+' . $r['points'] . '</strong> bodov (' . (int) $r['percent'] . ' % z ' . number_format( (float) $r['max_per_task'], 1, '.', ' ' ) . ').';
+                        $this->show_answer( $msg, 'mapa', 'eventkviz_standard_answer', 'user_result' );
+                    } else {
+                        $msg = '❌ Vzdialenosť: <strong>' . $dist_txt . ' km</strong> — mimo všetkých stupňov, 0 bodov.';
+                        $this->show_answer( $msg, 'mapa', 'eventkviz_standard_answer', 'user_result' );
+                    }
+                }
             } else {
-                $dist_txt = number_format( (float) $r['distance_km'], 2, '.', ' ' );
-                if ( $r['points'] > 0 ) {
-                    $msg = '✅ Vzdialenosť od správneho miesta: <strong>' . $dist_txt . ' km</strong> — hráč získava <strong>+' . $r['points'] . '</strong> bodov (' . (int) $r['percent'] . ' % z ' . number_format( (float) $r['max_per_task'], 1, '.', ' ' ) . ').';
+                // river/mountain — binárne hodnotenie
+                if ( ! $r['is_answered'] ) {
+                    $this->show_answer( 'Hráč neoznačil žiadnu ' . ( $quiz_type === 'river' ? 'rieku' : 'pohorie' ) . ' — 0 bodov.', 'mapa', 'eventkviz_standard_answer', 'user_result' );
+                } elseif ( $r['is_correct'] ) {
+                    $msg = '✅ Správne — hráč získava <strong>+' . $r['points'] . '</strong> bodov.';
                     $this->show_answer( $msg, 'mapa', 'eventkviz_standard_answer', 'user_result' );
                 } else {
-                    $msg = '❌ Vzdialenosť: <strong>' . $dist_txt . ' km</strong> — mimo všetkých stupňov, 0 bodov.';
+                    $msg = '❌ Hráčov výber: <strong>' . esc_html( $r['guess_feature'] ) . '</strong> — nesprávne, 0 bodov.';
                     $this->show_answer( $msg, 'mapa', 'eventkviz_standard_answer', 'user_result' );
                 }
             }

@@ -13,6 +13,7 @@
 
     var region = $container.data('region') || 'slovakia';
     var detail = $container.data('detail') || 'outline-only';
+    var quizType = $container.data('quiz-type') || 'pin';   // 'pin' | 'river' | 'mountain'
     // data-overlays je JSON object {cities,regions,rivers} — jQuery vie auto-parse JSON,
     // ale pre istotu defenzívne handling.
     var overlaysCfg = $container.data('overlays');
@@ -67,6 +68,7 @@
                 L.control.layers(baseControl, null, { position: 'topright', collapsed: false }).addTo(map);
             }
             loadOverlays();
+            loadFeatureLayer();
         } else {
             // Outline mode — fetch region geojson, render, then overlays
             var geoUrl = ekMapaCfg.geoJsonBase + region + '.geojson';
@@ -77,10 +79,12 @@
                 renderRegion(data);
                 refitToRegion(b);
                 loadOverlays();
+                loadFeatureLayer();
             }).catch(function () {
                 renderPlaceholderRect(preset.bounds);
                 refitToRegion(b);
                 loadOverlays();
+                loadFeatureLayer();
             });
         }
 
@@ -160,6 +164,96 @@
         return out;
     }
 
+    function loadFeatureLayer() {
+        // Pre quiz_type=river/mountain — načíta features GeoJSON, renderuje
+        // všetky features ako interaktívne layers s click handlerom.
+        if (quizType !== 'river' && quizType !== 'mountain') return;
+        var fileName = quizType === 'river' ? 'sk-rivers.geojson' : 'sk-mountains.geojson';
+        fetch(ekMapaCfg.geoJsonBase + fileName).then(function (r) {
+            return r.ok ? r.json() : null;
+        }).then(function (data) {
+            if (!data) return;
+            featureLayer = L.geoJSON(data, {
+                style: featureBaseStyle,
+                onEachFeature: function (feature, layer) {
+                    var name = feature.properties && feature.properties.name;
+                    if (!name) return;
+                    layer.on('click', function () { onFeaturePick(name); });
+                    layer.on('mouseover', function () {
+                        if (!isSelected(name) && !isReview) layer.setStyle(featureHoverStyle());
+                    });
+                    layer.on('mouseout', function () {
+                        applyFeatureStyle(layer);
+                    });
+                    if (name) layer.bindTooltip(name, { permanent: false, direction: 'top', sticky: true });
+                }
+            }).addTo(map);
+            // V review móde renderujeme overlay so správnym zvýraznením
+            if (isReview) {
+                featureLayer.eachLayer(function (l) { applyFeatureStyle(l); });
+            }
+        }).catch(function () {});
+    }
+
+    function isSelected(featureName) {
+        // Existuje task ktorý má vybranú túto feature?
+        for (var i = 0; i < tasks.length; i++) {
+            var picked = taskMarkers[i];
+            if (picked && picked.feature === featureName) return true;
+        }
+        return false;
+    }
+
+    function featureBaseStyle(feature) {
+        if (quizType === 'river') {
+            return { color: '#3aa6f0', weight: 4, opacity: 0.85 };
+        }
+        // mountain (polygon)
+        return { color: '#558b2f', weight: 1.5, fillColor: '#7cb342', fillOpacity: 0.45 };
+    }
+
+    function featureHoverStyle() {
+        if (quizType === 'river') return { color: '#1976d2', weight: 6, opacity: 1.0 };
+        return { color: '#33691e', weight: 2.5, fillColor: '#558b2f', fillOpacity: 0.7 };
+    }
+
+    function featureSelectedStyle(isCorrect) {
+        // V review móde: green = správne, red = nesprávne
+        if (isReview) {
+            if (isCorrect === true)  return { color: '#43a047', weight: 5, fillColor: '#66bb6a', fillOpacity: 0.55 };
+            if (isCorrect === false) return { color: '#e53935', weight: 5, fillColor: '#ef5350', fillOpacity: 0.55 };
+        }
+        // Form mode: orange = vybraté
+        return { color: '#ef6c00', weight: 5, fillColor: '#ff9800', fillOpacity: 0.55 };
+    }
+
+    function applyFeatureStyle(layer) {
+        var name = layer.feature && layer.feature.properties && layer.feature.properties.name;
+        if (!name) { layer.setStyle(featureBaseStyle()); return; }
+
+        if (isReview) {
+            // tasks v review móde majú correct_feature, guess_feature, is_correct
+            for (var i = 0; i < tasks.length; i++) {
+                var t = tasks[i];
+                if (t.guess_feature === name) {
+                    layer.setStyle(featureSelectedStyle(t.is_correct));
+                    return;
+                }
+                if (t.correct_feature === name && !t.is_correct) {
+                    // Ukáž správnu lokáciu trochu zvýraznenú aj keď ju hráč nevybral
+                    layer.setStyle({ color: '#43a047', weight: 3, fillColor: '#a5d6a7', fillOpacity: 0.35, dashArray: '5,4' });
+                    return;
+                }
+            }
+            layer.setStyle(featureBaseStyle());
+            return;
+        }
+
+        // Form mode
+        if (isSelected(name)) layer.setStyle(featureSelectedStyle());
+        else layer.setStyle(featureBaseStyle());
+    }
+
     function loadOverlays() {
         // Pomocné vrstvy — v1 iba pre Slovensko (dáta bundleované v plugine).
         if (region !== 'slovakia') return;
@@ -229,6 +323,8 @@
     }
 
     function renderCitiesOverlay(geojson) {
+        // V river/mountain móde nech mestá nezachytávajú klik (aby šiel na features pod nimi)
+        var interactive = (quizType === 'pin');
         L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
                 var tier = feature.properties.tier || 2;
@@ -239,7 +335,7 @@
                     color: '#fff',
                     weight: 1.5,
                     fillOpacity: 0.95,
-                    interactive: true
+                    interactive: interactive
                 });
             },
             onEachFeature: function (feature, layer) {
@@ -258,12 +354,37 @@
     }
 
     function onMapClick(e) {
+        // Pin mode only — feature modes have per-feature click handlers
+        if (quizType !== 'pin') return;
         if (currentTaskIdx < 0 || currentTaskIdx >= tasks.length) return;
         placeMarker(currentTaskIdx, e.latlng.lat, e.latlng.lng);
         // Advance to next unanswered task (if any)
         var next = findNextUnanswered(currentTaskIdx);
         if (next >= 0) selectTask(next);
     }
+
+    // Feature-pick mode: keď hráč klikne na rieku/pohorie, zaregistrujeme to
+    // pre aktívnu úlohu. Auto-advance na ďalšiu unanswered.
+    function onFeaturePick(featureName) {
+        if (quizType === 'pin') return;
+        if (currentTaskIdx < 0 || currentTaskIdx >= tasks.length) return;
+        var hn = currentTaskIdx + 1;
+        $('#ek-mapa-feature-' + hn).val(featureName);
+        // Track answered state
+        taskMarkers[currentTaskIdx] = { feature: featureName };
+        saveCoordsToStorage();
+        // Visual highlight: refresh feature layer styles
+        if (featureLayer) {
+            featureLayer.eachLayer(function (layer) {
+                applyFeatureStyle(layer);
+            });
+        }
+        renderTaskList();
+        var next = findNextUnanswered(currentTaskIdx);
+        if (next >= 0) selectTask(next);
+    }
+
+    var featureLayer = null;
 
     function placeMarker(taskIdx, lat, lon) {
         // Remove existing marker for this task
@@ -375,6 +496,7 @@
         var $list = $('#ek-mapa-tasks').empty();
         var headerTxt = isReview ? 'Výsledky' : 'Úlohy';
         $list.append($('<h3 class="ek-mapa-tasks-header"></h3>').text(headerTxt));
+        var prefix = (quizType === 'river') ? 'Nájdi rieku: ' : (quizType === 'mountain' ? 'Nájdi pohorie: ' : '');
         tasks.forEach(function (t, idx) {
             var hn = idx + 1;
             var placed = !!taskMarkers[idx];
@@ -383,7 +505,8 @@
                 .toggleClass('is-placed', placed)
                 .attr('data-idx', idx);
             $row.append('<span class="ek-mapa-task-num">' + hn + '</span>');
-            $row.append('<span class="ek-mapa-task-name">' + escapeHtml(t.name || ('Miesto ' + hn)) + '</span>');
+            var displayName = prefix + (t.name || ('Miesto ' + hn));
+            $row.append('<span class="ek-mapa-task-name">' + escapeHtml(displayName) + '</span>');
 
             if (isReview) {
                 if (t.distance_km !== null && typeof t.distance_km !== 'undefined') {
@@ -456,20 +579,28 @@
     }
 
     function restorePrevReview() {
-        // Restore order: POST hidden inputs (PHP-rendered prev_review) win,
-        // localStorage fills gaps. Then place markers from whatever is in the DOM.
         var restored = restoreFromStorage();
 
-        tasks.forEach(function (t, idx) {
-            var hn = idx + 1;
-            var lat = parseFloat($('#ek-mapa-lat-' + hn).val());
-            var lon = parseFloat($('#ek-mapa-lon-' + hn).val());
-            if (!isNaN(lat) && !isNaN(lon)) {
-                placeMarker(idx, lat, lon);
-            }
-        });
-        selectTask(findNextUnanswered(-1) >= 0 ? findNextUnanswered(-1) : 0);
+        if (quizType === 'pin') {
+            tasks.forEach(function (t, idx) {
+                var hn = idx + 1;
+                var lat = parseFloat($('#ek-mapa-lat-' + hn).val());
+                var lon = parseFloat($('#ek-mapa-lon-' + hn).val());
+                if (!isNaN(lat) && !isNaN(lon)) placeMarker(idx, lat, lon);
+            });
+        } else {
+            // Feature mode — fill taskMarkers map from prev feature inputs
+            tasks.forEach(function (t, idx) {
+                var hn = idx + 1;
+                var feat = $('#ek-mapa-feature-' + hn).val();
+                if (feat) taskMarkers[idx] = { feature: feat };
+            });
+            // Re-style features to reflect picks
+            if (featureLayer) featureLayer.eachLayer(applyFeatureStyle);
+            renderTaskList();
+        }
 
+        selectTask(findNextUnanswered(-1) >= 0 ? findNextUnanswered(-1) : 0);
         if (restored) showRestoredHint();
     }
 

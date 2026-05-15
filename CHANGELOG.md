@@ -4,6 +4,19 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Added (mapový kvíz — quiz typy „rieka" a „pohorie")
+- Nový dropdown v mapovej šablóne **„Typ kvízu":** `Hľadanie miest` (pin) | `Označenie rieky` (river) | `Označenie pohoria` (mountain). Per-šablóna jeden mód, žiadne miešanie.
+- **Pin mode:** existujúce správanie (admin definuje konkrétne lokácie, hráč klikne kdekoľvek, scoring podľa haversine vzdialenosti + tier).
+- **River mode:** pool je pevný — všetkých 8 SK riek z bundle (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec). Hráč dostane N náhodných (počet sa nastavuje v evente cez `pocet_otazok_v_sete`).
+- **Mountain mode:** admin v šablóne checkboxom vyberie pohoria z 14 bundleovaných (Vysoké/Nízke/Belianske Tatry, Malá/Veľká Fatra, Malé/Biele Karpaty, Strážovské/Štiavnické vrchy, Slovenský raj, Vihorlat, Poľana, Slovenské rudohorie, Branisko). Pool ukladaný v postmeta `_mapquiz_feature_pool`.
+- Hráčsky form: sidebar zobrazuje úlohy „Nájdi rieku: Dunaj" / „Nájdi pohorie: Vysoké Tatry". Mapa renderuje features ako interaktívne layers — modré línie pre rieky (weight 4), zelený fill pre pohoria. Hover highlight, klik = označenie. Auto-advance na ďalšiu unanswered úlohu.
+- **Binárne hodnotenie:** správna feature = max body za úlohu (`max_per_pin`), nesprávna alebo neoznačená = 0 bodov. Žiadne tier scoring (na rozdiel od pin mode).
+- Eval review map: ✅ zelený fill pre správne vybrané, ❌ červený pre nesprávne, šedo-zelený dashed pre nezvolené správne lokácie.
+- Anti-cheat: `set` JSON s correct feature names podpísaný HMAC (rovnako ako pin mode); v feature mode je správna odpoveď zo svojej podstaty viditeľná v sidebar úlohe — anti-cheat má obmedzenú silu.
+- Bundleovaný dataset `sk-mountains.geojson` (95 KB, 14 pohorí z OSM Overpass + simplification).
+- Cities overlay v feature móde má `interactive: false` — neblokuje klik na rieky/pohoria pod nimi.
+- Stale question_set z minulých submitov (po zmene `quiz_type` admin) sa detekuje a regeneruje (predtým by hádzal „prázdny set" error).
+
 ### Changed (mapový kvíz — base map redesign)
 - Zrušený dropdown „Detail pre hráča" v admin šablóne (duplicita s overlay „Kraje"). Postmeta `_mapquiz_player_detail` ostáva pre legacy data, UI ho už nezobrazuje.
 - Nová sekcia v šablóne **„Mapové podklady pre hráča"** so 3 checkboxami pre MapTiler tile vrstvy: **Streets** (uličná mapa), **Satelit** (letecké zábery), **Outdoor** (turistická / topografická). Default: žiadna zaškrtnutá → hráč vidí iba obrys regiónu (zero MapTiler tile cost — pôvodné správanie).
