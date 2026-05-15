@@ -38,6 +38,25 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
 
         $team_code = $this->set_team_code( $user_code, $akcia_code );
 
+        // ?reset=1 — DELETE všetky uložené záznamy pre tohto hráča/team v tomto evente
+        // (aj question_set aj eval výsledky). Po reset sa otvorí čistý form. Vyžaduje
+        // logged-in admin (manage_options) aby si hráči nemohli mazať vlastné submity.
+        // Notice sa zobrazí v hlavičke kvízu.
+        $just_reset = false;
+        if ( ! empty( $_GET['reset'] ) && current_user_can( 'manage_options' ) ) {
+            global $wpdb;
+            $table = $wpdb->prefix . 'jet_cct_results';
+            $where_user = $this->standardize( $user_code );
+            $where_team = $this->standardize( $team_code );
+            if ( ! empty( $where_user ) ) {
+                $wpdb->delete( $table, array( 'user' => $where_user, 'akcia' => $akcia_code, 'quiz_type' => 'mapa' ) );
+            }
+            if ( ! empty( $where_team ) && $where_team !== 'none' ) {
+                $wpdb->delete( $table, array( 'team' => $where_team, 'akcia' => $akcia_code, 'quiz_type' => 'mapa' ) );
+            }
+            $just_reset = true;
+        }
+
         // Show entry form if needed (mirror pattern from other quizes)
         if ( ! empty( $this->cAkcia->mapa_settings['show_entry_form'] ) ) {
             if ( ! empty( $this->cAkcia->all_quizes_settings['select_from_teams_array'] ) && empty( $team_code ) ) {
@@ -192,6 +211,15 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         echo '<div class="ek-quiz-content">';
         echo '<h1 class="ek-quiz-title">Mapový kvíz: ' . esc_html( $template->post_title ) . '</h1>';
         echo '<p class="ek-quiz-subtitle">Označ na mape miesta uvedené v zozname.</p>';
+        if ( $just_reset ) {
+            echo '<div class="ek-mapa-restored-hint" style="background:rgba(76,175,80,0.18);border-color:rgba(76,175,80,0.4)">🔄 <strong>Reset prebehol.</strong> Zmazané všetky predošlé pokusy a uložený set úloh pre tohto hráča/team v tomto evente. Začínaš od nuly.</div>';
+        }
+        if ( current_user_can( 'manage_options' ) ) {
+            $reset_url = add_query_arg( 'reset', '1' );
+            echo '<div style="margin-bottom:12px;font-size:12px;text-align:right">';
+            echo '<a href="' . esc_url( $reset_url ) . '" style="color:#888;text-decoration:none" onclick="try{Object.keys(localStorage).filter(function(k){return k.indexOf(\'ek_autosave:mapa:\')===0}).forEach(function(k){localStorage.removeItem(k)});}catch(e){};return true;">🔧 Reset (admin only) — vymaže DB záznamy + localStorage pre tento event</a>';
+            echo '</div>';
+        }
         $this->render_tries_remaining_banner( 'mapa' );
         if ( $is_review ) {
             echo '<div class="ek-review-banner">📝 Vaše predchádzajúce odpovede sú vyznačené — <strong style="color:#6dd58c">zelené</strong> boli v tieri (úspech), <strong style="color:#ff6b6b">červené</strong> mimo. Klikni znova na ktorýkoľvek pin a presuň.</div>';

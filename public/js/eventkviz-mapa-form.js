@@ -215,13 +215,14 @@
         if (quizType === 'river') {
             return { color: '#3aa6f0', weight: 4, opacity: 0.85 };
         }
-        // mountain (polygon)
-        return { color: '#558b2f', weight: 1.5, fillColor: '#7cb342', fillOpacity: 0.45 };
+        // Mountain polygons — vyplnená plocha aby bola dobre rozlíšiteľná
+        // (predtým iba jemný obrys s 0.45 fill — slabo viditeľné nad tile vrstvou).
+        return { color: '#33691e', weight: 2, fillColor: '#7cb342', fillOpacity: 0.7 };
     }
 
     function featureHoverStyle() {
         if (quizType === 'river') return { color: '#1976d2', weight: 6, opacity: 1.0 };
-        return { color: '#33691e', weight: 2.5, fillColor: '#558b2f', fillOpacity: 0.7 };
+        return { color: '#1b5e20', weight: 3, fillColor: '#558b2f', fillOpacity: 0.85 };
     }
 
     function featureSelectedStyle(isCorrect) {

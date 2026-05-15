@@ -1845,18 +1845,33 @@ private function render_mapa_tab( $post, $meta ) {
                     </td>
                 </tr>
 
+                <?php
+                // Score tiers má zmysel iba pre quiz_type=pin. Zistíme typ aktuálne
+                // vybranej šablóny a podľa toho pole zobrazíme alebo skryjeme.
+                $tpl_id   = isset( $meta['event_mapa_template_id'][0] ) ? (int) $meta['event_mapa_template_id'][0] : 0;
+                $tpl_type = $tpl_id > 0 ? get_post_meta( $tpl_id, '_mapquiz_quiz_type', true ) : '';
+                if ( $tpl_type === '' ) $tpl_type = 'pin';
+                if ( $tpl_type === 'pin' ) :
+                ?>
                 <tr>
                     <th><label>Stupne hodnotenia podľa vzdialenosti <em style="color:#888;font-weight:400">(override, JSON)</em></label></th>
                     <td>
                         <textarea name="event_mapa[score_tiers_override]" rows="3" class="large-text" placeholder='[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},...]  — prázdne = default zo šablóny'><?php echo esc_textarea( $meta['event_mapa_score_tiers_override'][0] ?? '' ); ?></textarea>
                         <p class="description">
-                            <strong style="color:#d63638">⚠ Aplikuje sa LEN pre šablóny typu „Hľadanie miest na mape" (pin).</strong> Pre šablóny typu „Označenie rieky" / „Označenie pohoria" je hodnotenie <strong>binárne</strong> (správna feature = <code>max_per_úloha</code> bodov, nesprávna alebo neoznačená = 0) — toto pole je pre také šablóny ignorované.<br><br>
-                            <em>Pre pin režim:</em> Pre každú úlohu sa vypočíta <strong>vzdialenosť hráčovho odhadu od správnej lokácie v km</strong> a nájde sa <em>prvý</em> stupeň kde <code>vzdialenosť ≤ maxKm</code>. Body = <code>max_per_úloha × percent ÷ 100</code>.<br>
+                            Pre každú úlohu sa vypočíta <strong>vzdialenosť hráčovho odhadu od správnej lokácie v km</strong> a nájde sa <em>prvý</em> stupeň kde <code>vzdialenosť ≤ maxKm</code>. Body = <code>max_per_úloha × percent ÷ 100</code>.<br>
                             <strong>Príklad:</strong> <code>[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},{"maxKm":20,"percent":50}]</code> = do 5 km plných 100 % bodov, do 10 km 75 %, do 20 km 50 %, ďalej už nič.<br>
                             <strong>Prázdne</strong> = použije sa default zo šablóny.
                         </p>
                     </td>
                 </tr>
+                <?php else : ?>
+                <tr>
+                    <td colspan="2" style="padding:10px 12px; background:#f0f6fc; border-left:3px solid #2271b1; color:#1d2327; font-size:13px">
+                        ℹ <strong>Šablóna typu „<?php echo esc_html( $tpl_type === 'river' ? 'Označenie rieky' : 'Označenie pohoria' ); ?>"</strong> používa <strong>binárne hodnotenie</strong>: správna feature = <code>max_per_úloha</code> bodov, nesprávna = 0. Stupne podľa vzdialenosti sa neuplatňujú — preto sú skryté.
+                        <input type="hidden" name="event_mapa[score_tiers_override]" value="<?php echo esc_attr( $meta['event_mapa_score_tiers_override'][0] ?? '' ); ?>" />
+                    </td>
+                </tr>
+                <?php endif; ?>
 
                 <tr>
                     <th><label>Pri opakovaní označ správnosť</label></th>

@@ -246,10 +246,15 @@ class Eventkviz_MapQuiz_Editor {
                 <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[rivers]" value="1" <?php checked( ! empty( $overlays['rivers'] ) ); ?> />
                 Rieky (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec)
             </label>
-            <hr style="margin:10px 0; border:none; border-top:1px dashed #ccd0d4">
+        </fieldset>
+
+        <?php // feature_labels checkbox je relevantný iba pre river/mountain quiz typy ?>
+        <fieldset class="ekm-mode" id="ekm-mode-feature-labels" <?php if ( ! in_array( $quiz_type, array( 'river', 'mountain' ), true ) ) echo 'style="display:none"'; ?>
+            style="margin:10px 0; padding:10px; border:1px solid #dcdcde; border-radius:4px; background:#f9f9f9">
+            <legend style="font-weight:600; padding:0 6px">Pomôcka pre hráča (rieky / pohoria)</legend>
             <label style="display:block; padding-top:4px">
                 <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[feature_labels]" value="1" <?php checked( ! empty( $overlays['feature_labels'] ) ); ?> />
-                <strong>Pomôcť hráčovi názvami pri hover</strong> <em style="color:#888">(len pre quiz typy „rieka" / „pohorie")</em>
+                <strong>Zobraziť názvy pri hover myšou</strong>
                 <p class="description" style="margin:4px 0 0 24px">
                     <strong>Vypnuté</strong> (default): hráč nevidí názov rieky/pohoria pri hover — musí ich vedieť rozpoznať podľa polohy. Pre súťažné prostredie.<br>
                     <strong>Zapnuté:</strong> hráč pri prejdení myšou nad riekou/pohorím uvidí jej názov v tooltip. Vhodné pre žiakov / vzdelávacie účely.
