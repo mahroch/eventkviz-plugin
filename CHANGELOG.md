@@ -4,6 +4,10 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Fixed (mapový kvíz — mini-mapa zoom na konkrétnu feature)
+- Mini-mapa pre nesprávnu odpoveď v review fitla celý región (kontinent Európy alebo SR bounding box), takže pri malom štáte (Srbsko, Slovinsko, …) alebo riečke bola feature ledva vidno. Teraz mini-mapa po načítaní fit-ne bounds samotnej feature s paddingom 16px a `maxZoom: 7` — dostatočne blízko aby bolo vidno detail, ale stále s nejakým geo kontextom. Pre pin mode auto-bbox ±1.2° okolo súradnice.
+- ResizeObserver pri zmene kontajnera tiež refit-uje na feature bounds (predtým by re-set-ol pohľad na celý kontinent).
+
 ### Changed (mapový kvíz — area polygon base color zo zelenej na šedú)
 - V area móde (štáty, pohoria, NP, …) mali polygóny default zelený fill, čo v review móde kolidovalo so semantikou: zelená = správna odpoveď, červená = nesprávna, oranžová = vybraté v form móde. Base je teraz **neutrálna šedo-modrá** (`#cfd8dc` fill, `#78909c` border), hover **svetlomodrá** (`#90caf9` fill, `#1565c0` border). Zelená/červená/oranžová sú vyhradené pre stavové signály.
 

@@ -902,6 +902,19 @@
             });
             var b = L.latLngBounds(preset.bounds);
             miniMap.fitBounds(b);
+            // featureBounds = priority view (zoomed na konkrétnu feature/pin)
+            // Set-uje sa po async fetch; do tej doby fit-ujeme región bounds ako fallback.
+            var featureBounds = null;
+            // Pre pin mode vieme zoom-núť hneď (bez fetch) — vytvor mali bbox okolo lat/lon.
+            // ±1.2° zoomu cca na úroveň 7-8 — dostatočne blízko aby bolo vidno kontext mesta,
+            // ale aj nejaké okolie pre orientáciu.
+            if (qt === 'pin') {
+                featureBounds = L.latLngBounds(
+                    [pinLat - 1.2, pinLon - 1.5],
+                    [pinLat + 1.2, pinLon + 1.5]
+                );
+                miniMap.fitBounds(featureBounds, { padding: [12, 12] });
+            }
 
             // 1) Outline regiónu (jemný šedý) — len SK/CZ (kontinentálne regióny
             // nemajú jeden polygónový obrys, vykreslili by sa ako placeholder rectangle).
@@ -949,17 +962,27 @@
                         var style = qt === 'line'
                             ? { color: '#1976d2', weight: 5, opacity: 1 }
                             : { color: '#1b5e20', weight: 2, fillColor: '#43a047', fillOpacity: 0.75 };
-                        L.geoJSON({ type: 'FeatureCollection', features: matching }, {
+                        var fl = L.geoJSON({ type: 'FeatureCollection', features: matching }, {
                             style: style, interactive: false
                         }).addTo(miniMap);
+                        // Zoom na bounds samotnej feature s paddingom — predtým mini-mapa
+                        // fitla celý kontinent a malá feature (napr. Srbsko) bola ledva vidno.
+                        featureBounds = fl.getBounds();
+                        miniMap.fitBounds(featureBounds, { padding: [16, 16], maxZoom: 7 });
                     });
             }
 
-            // ResizeObserver kvôli Elementor stretched layoutu (kontajner môže byť 0×0 pri inite)
+            // ResizeObserver kvôli Elementor stretched layoutu (kontajner môže byť 0×0 pri inite).
+            // Po resize re-fit-uj na priority view — feature bounds ak sú dostupné
+            // (zoomovaný pohľad na konkrétny štát/rieku/pin), inak fallback na región.
             if (typeof ResizeObserver !== 'undefined') {
                 var ro = new ResizeObserver(function () {
                     miniMap.invalidateSize(false);
-                    miniMap.fitBounds(b);
+                    if (featureBounds) {
+                        miniMap.fitBounds(featureBounds, { padding: [16, 16], maxZoom: 7 });
+                    } else {
+                        miniMap.fitBounds(b);
+                    }
                 });
                 ro.observe($el[0]);
             }
