@@ -1809,9 +1809,44 @@ private function render_mapa_tab( $post, $meta ) {
         <script>
         jQuery(function($) {
             var nextIdx = <?php echo count( $quizzes ); ?>;
+
+            // Score tiers visual editor — per fieldset
+            function renderTiers($fs) {
+                var raw = $fs.find('.ek-mapa-tiers-json').val();
+                var tiers = [];
+                try { tiers = JSON.parse(raw) || []; } catch (e) {}
+                if (!Array.isArray(tiers)) tiers = [];
+                var $body = $fs.find('.ek-mapa-tiers-tbody').empty();
+                var $msg = $fs.find('.ek-mapa-tiers-empty');
+                if (tiers.length === 0) { $msg.show(); return; }
+                $msg.hide();
+                tiers.forEach(function(t, idx) {
+                    var km = parseFloat(t.maxKm) || 0;
+                    var pct = parseFloat(t.percent) || 0;
+                    var $tr = $('<tr></tr>').attr('data-idx', idx);
+                    $tr.append('<td>do <input type="number" class="ek-mapa-tier-km small-text" value="' + km + '" min="0" step="0.5" /> km</td>');
+                    $tr.append('<td><input type="number" class="ek-mapa-tier-pct small-text" value="' + pct + '" min="0" max="100" step="1" /> %</td>');
+                    $tr.append('<td><button type="button" class="button-link-delete ek-mapa-tier-del" title="Vymazať stupeň">✕</button></td>');
+                    $body.append($tr);
+                });
+            }
+            function persistTiers($fs) {
+                var tiers = [];
+                $fs.find('.ek-mapa-tiers-tbody tr').each(function(){
+                    var km = parseFloat($(this).find('.ek-mapa-tier-km').val());
+                    var pct = parseFloat($(this).find('.ek-mapa-tier-pct').val());
+                    if (!isNaN(km) && !isNaN(pct)) tiers.push({ maxKm: km, percent: pct });
+                });
+                tiers.sort(function(a,b){ return a.maxKm - b.maxKm; });
+                $fs.find('.ek-mapa-tiers-json').val(tiers.length ? JSON.stringify(tiers) : '');
+            }
+            // Initial render — len existing fieldsets (template <template> sa neparsuje)
+            $('#ek-mapa-quizzes-list .ek-mapa-quiz-fieldset').each(function(){ renderTiers($(this)); });
+
             $('#ek-mapa-add-btn').on('click', function() {
                 var tpl = $('#ek-mapa-quiz-tpl').html().replace(/__INDEX__/g, nextIdx);
-                $('#ek-mapa-quizzes-list').append(tpl);
+                var $appended = $(tpl).appendTo('#ek-mapa-quizzes-list');
+                renderTiers($appended);  // initial empty render
                 nextIdx++;
             });
             $(document).on('click', '.ek-mapa-quiz-remove', function(e) {
@@ -1819,26 +1854,55 @@ private function render_mapa_tab( $post, $meta ) {
                 if (!confirm('Naozaj vymazať tento mapový kvíz a všetky jeho nastavenia? Túto akciu nebude možné vrátiť.')) return;
                 $(this).closest('.ek-mapa-quiz-fieldset').remove();
             });
-            // Email field collapse per row
             $(document).on('change', '.ek-mapa-email-toggle input', function() {
                 $(this).closest('.ek-mapa-email-row').find('.ek-mapa-email-input').toggle($(this).is(':checked'));
             });
-            // Live label preview in legend
             $(document).on('input', '.ek-mapa-quiz-label', function() {
                 var $fs = $(this).closest('.ek-mapa-quiz-fieldset');
-                var v = $(this).val();
-                $fs.find('.ek-mapa-quiz-label-preview').text(v ? '— ' + v : '');
+                $fs.find('.ek-mapa-quiz-label-preview').text($(this).val() ? '— ' + $(this).val() : '');
             });
-            // Auto-fill label from template title when admin picks template + label is empty
             $(document).on('change', '.ek-mapa-quiz-template-select', function() {
                 var $fs = $(this).closest('.ek-mapa-quiz-fieldset');
                 var $labelInput = $fs.find('.ek-mapa-quiz-label');
                 if (!$labelInput.val()) {
                     var title = $(this).find('option:selected').data('title') || '';
-                    if (title) {
-                        $labelInput.val(title).trigger('input');
-                    }
+                    if (title) $labelInput.val(title).trigger('input');
                 }
+            });
+
+            // Tier editor handlers (event delegation aby pokryli aj dynamicky pridané)
+            $(document).on('click', '.ek-mapa-tier-add', function() {
+                var $fs = $(this).closest('.ek-mapa-quiz-fieldset');
+                var raw = $fs.find('.ek-mapa-tiers-json').val();
+                var tiers = [];
+                try { tiers = JSON.parse(raw) || []; } catch (e) {}
+                if (!Array.isArray(tiers)) tiers = [];
+                var next;
+                if (tiers.length === 0) {
+                    next = { maxKm: 5, percent: 100 };  // sane default pre prvý
+                } else {
+                    var last = tiers[tiers.length - 1];
+                    next = {
+                        maxKm: (parseFloat(last.maxKm) || 0) + 10,
+                        percent: Math.max(0, (parseFloat(last.percent) || 100) - 25)
+                    };
+                }
+                tiers.push(next);
+                $fs.find('.ek-mapa-tiers-json').val(JSON.stringify(tiers));
+                renderTiers($fs);
+            });
+            $(document).on('input', '.ek-mapa-tier-km, .ek-mapa-tier-pct', function() {
+                persistTiers($(this).closest('.ek-mapa-quiz-fieldset'));
+            });
+            $(document).on('click', '.ek-mapa-tier-del', function() {
+                var $fs = $(this).closest('.ek-mapa-quiz-fieldset');
+                var idx = $(this).closest('tr').data('idx');
+                var raw = $fs.find('.ek-mapa-tiers-json').val();
+                var tiers = [];
+                try { tiers = JSON.parse(raw) || []; } catch (e) {}
+                tiers.splice(idx, 1);
+                $fs.find('.ek-mapa-tiers-json').val(tiers.length ? JSON.stringify(tiers) : '');
+                renderTiers($fs);
             });
         });
         </script>
@@ -1922,10 +1986,29 @@ private function render_mapa_subquiz_fieldset( $q, $idx, $templates ) {
             </tr>
 
             <tr>
-                <th><label>Stupne hodnotenia <em style="color:#888;font-weight:400">(override, JSON)</em></label></th>
+                <th><label>Stupne hodnotenia <em style="color:#888;font-weight:400">(override)</em></label></th>
                 <td>
-                    <textarea class="large-text" rows="2" name="<?php echo esc_attr( $name_prefix ); ?>[score_tiers_override]" placeholder='[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75}]'><?php echo esc_textarea( $q['score_tiers_override'] ?? '' ); ?></textarea>
-                    <p class="description">⚠ Aplikuje sa LEN pre šablóny typu „Hľadanie miest" (pin). Pre rieku/pohorie binárne. Prázdne = default zo šablóny. <em>(Vizuálny repeater UI — TODO neskôr.)</em></p>
+                    <div class="ek-mapa-tiers-wrap">
+                        <input type="hidden" class="ek-mapa-tiers-json" name="<?php echo esc_attr( $name_prefix ); ?>[score_tiers_override]" value="<?php echo esc_attr( $q['score_tiers_override'] ?? '' ); ?>" />
+                        <table class="widefat striped" style="max-width:420px">
+                            <thead>
+                                <tr>
+                                    <th style="width:130px">Do vzdialenosti</th>
+                                    <th style="width:130px">% z max bodov</th>
+                                    <th style="width:60px"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="ek-mapa-tiers-tbody"></tbody>
+                        </table>
+                        <p class="ek-mapa-tiers-empty" style="margin:6px 0;color:#888;font-style:italic;display:none">Žiadne stupne — prázdne = default zo šablóny.</p>
+                        <p style="margin-top:6px">
+                            <button type="button" class="button button-small ek-mapa-tier-add">+ Pridať stupeň</button>
+                        </p>
+                    </div>
+                    <p class="description">
+                        ⚠ Aplikuje sa LEN pre šablóny typu „Hľadanie miest" (pin). Pre rieku/pohorie binárne.<br>
+                        Príklad: 0–5 km = 100 %, 5–10 km = 75 %. Pri vzdialenosti väčšej než posledný stupeň → 0 bodov.
+                    </p>
                 </td>
             </tr>
 
@@ -2004,6 +2087,29 @@ public static function ek_generate_mapa_slug() {
 }
 
 /**
+ * Validate + normalize tier JSON. Prijíma JSON string z hidden inputu,
+ * vráti čistý JSON (sorted by maxKm asc, percent clamped 0..100) alebo
+ * prázdny string ak input je broken/empty → fallback na template default.
+ */
+public static function sanitize_tiers_json( $raw ) {
+    $raw = trim( $raw );
+    if ( $raw === '' ) return '';
+    $decoded = json_decode( $raw, true );
+    if ( ! is_array( $decoded ) ) return '';
+    $norm = array();
+    foreach ( $decoded as $t ) {
+        if ( ! is_array( $t ) || ! isset( $t['maxKm'], $t['percent'] ) ) continue;
+        $norm[] = array(
+            'maxKm'   => max( 0, (float) $t['maxKm'] ),
+            'percent' => max( 0, min( 100, (float) $t['percent'] ) ),
+        );
+    }
+    if ( empty( $norm ) ) return '';
+    usort( $norm, function( $a, $b ) { return $a['maxKm'] <=> $b['maxKm']; } );
+    return wp_json_encode( $norm );
+}
+
+/**
  * Save mapa multi-quiz repeater data ako JSON array do event_mapa_quizzes.
  * Pre každý sub-kvíz vygeneruje slug ak chýba a sanitizuje fields.
  * Auto-prefill label z template title ak prázdne.
@@ -2035,7 +2141,7 @@ private function save_mapa_quizzes( $post_id ) {
             'show_entry_form'                 => ! empty( $q['show_entry_form'] ),
             'pocet_otazok_v_sete'             => max( 1, (int) ( $q['pocet_otazok_v_sete'] ?? 10 ) ),
             'max_points_override'             => sanitize_text_field( (string) ( $q['max_points_override'] ?? '' ) ),
-            'score_tiers_override'            => trim( (string) ( $q['score_tiers_override'] ?? '' ) ),
+            'score_tiers_override'            => self::sanitize_tiers_json( (string) ( $q['score_tiers_override'] ?? '' ) ),
             'mark_correctness_on_retry'       => ! empty( $q['mark_correctness_on_retry'] ),
             'new_questions_on_retry'          => ! empty( $q['new_questions_on_retry'] ),
             'zobraz_spravne_odpovede'         => ! empty( $q['zobraz_spravne_odpovede'] ),
