@@ -4,6 +4,13 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Added (mapový kvíz — 4 mapové šablóny v novom multi-region móde)
+- **Pohoria SR** (migrované z legacy 'Pohoria') — quiz_type `area`, dataset `sk-mountains`, default pool 5 pohorí (VT, NT, MF, VF, MK).
+- **Rieky SR** (migrované z legacy 'Rieky') — quiz_type `line`, dataset `sk-rivers`, default pool 8 klasických riek (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec).
+- **Štáty Európy** (nová) — quiz_type `area`, dataset `europe-countries`, default pool 25 najznámejších európskych štátov (admin si môže doklikávať z 43 dostupných).
+- **Rieky Európy** (nová) — quiz_type `line`, dataset `europe-rivers`, default pool 13 top európskych riek (Dunaj, Rýn, Seina, Loira, Volga, Don, Visla, Odra, Labe, Temža, Vltava, Pád, Ebro).
+- Migration CLI script `tools/migrate-and-seed-multiregion.php` (idempotentný, opakovateľné spustenie).
+
 ### Changed (mapový kvíz — multi-region architektúra: SR / Európa / Svet)
 - **Centrálny dataset registry** `Eventkviz_MapQuiz_Datasets` (`admin/class-eventkviz-mapquiz-datasets.php`) — pridanie nového geo datasetu (železnice, cyklotrasy, sopky, ...) je teraz iba pridanie bundle súboru do `public/data/regions/` + jedného entry do registry array. Žiadne zmeny v editor/form/eval kóde.
 - **Generic quiz typy:** `mountain` → `area` (označenie územia / oblasti — pohorie, štát, národný park, región), `river` → `line` (čiarový objekt — rieka, železnica, cyklotrasa). Pin mode bez zmeny. Dropdown v šablóne má nové labely.
