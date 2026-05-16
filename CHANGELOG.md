@@ -8,6 +8,9 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Fixed (mapový kvíz — underline na zoom +/- tlačidlách)
+- Theme CSS aplikoval `text-decoration: underline` na `<a>` tagy v contenti, čo postihlo aj Leaflet `+` / `–` zoom ikony. Pridaný `text-decoration: none !important` v hover aj default state.
+
 ### Changed (mapový kvíz — výraznejšie zoom controls aj pre mini-mapy)
 - Default biele Leaflet zoom `+`/`–` tlačidlá nad svetlým fillom mapy prakticky zanikali. Plugin už mal dark styling pre hlavnú mapu — teraz rovnaký tmavomodrý štýl aj pre mini-mapy v review móde (menšie 26px vs hlavná mapa 32px). Pridaný subtle box-shadow + disabled state (jemne tlmené keď je dosiahnutý max/min zoom).
 

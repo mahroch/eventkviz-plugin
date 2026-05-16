@@ -152,11 +152,13 @@
     border-color: #1a252f;
     font-weight: 700;
     box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    text-decoration: none !important;
 }
 .ek-mapa-map .leaflet-control-zoom a:hover,
 .ek-mapa-mini .leaflet-control-zoom a:hover {
     background: #34495e;
     color: #fff !important;
+    text-decoration: none !important;
 }
 /* Hlavná mapa — väčšie tlačidlá (32px, dobre viditeľné na desktope) */
 .ek-mapa-map .leaflet-control-zoom a {
