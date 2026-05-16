@@ -11,7 +11,7 @@ class Eventkviz_Event_Links_Admin {
         'movies'    => array( 'label' => 'Filmový kvíz',     'slug' => 'merdfghh' ),
         'knowledge' => array( 'label' => 'Vedomostný kvíz',  'slug' => 'kwersdfzx' ),
         'sudoku'    => array( 'label' => 'Sudoku kvíz',      'slug' => 'sweertydfd' ),
-        'mapa'      => array( 'label' => 'Mapový kvíz',      'slug' => 'mapa-quiz' ),
+        // mapa: multi-quiz, linky sa generujú dynamicky per sub-kvíz (viď nižšie v render_metabox)
     );
 
     public static function init() {
@@ -110,6 +110,21 @@ class Eventkviz_Event_Links_Admin {
                 home_url( '/' . $info['slug'] . '/' )
             );
             self::render_link( $url, $info['label'] );
+        }
+        // Multi-mapa: pre každý sub-kvíz vlastný link s mq slugom
+        $mapa_quizzes_json = get_post_meta( $post->ID, 'event_mapa_quizzes', true );
+        $mapa_quizzes      = is_string( $mapa_quizzes_json ) && $mapa_quizzes_json !== '' ? json_decode( $mapa_quizzes_json, true ) : array();
+        if ( is_array( $mapa_quizzes ) && ! empty( $mapa_quizzes ) ) {
+            foreach ( $mapa_quizzes as $sq ) {
+                $slug  = isset( $sq['slug'] ) ? $sq['slug'] : '';
+                $label = isset( $sq['label'] ) ? $sq['label'] : 'Mapový kvíz';
+                if ( $slug === '' ) continue;
+                $url = add_query_arg(
+                    array( 'akcia' => $akcia, 'mq' => $slug, 'team' => 'TEAM', 'user' => 'USER' ),
+                    home_url( '/mapa-quiz/' )
+                );
+                self::render_link( $url, 'Mapa: ' . $label );
+            }
         }
         echo '</div>';
 

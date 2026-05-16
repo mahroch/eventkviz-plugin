@@ -115,7 +115,7 @@ class Eventkviz_OneLink_Quiz_Class extends Eventkviz_Quiz_Class{
                     'movies'    => array( 'merdfghh',   $this->cAkcia->movies_settings['movies_quiz_active'] ?? false ),
                     'knowledge' => array( 'kwersdfzx',  $this->cAkcia->knowledge_settings['knowledge_quiz_active'] ?? false ),
                     'sudoku'    => array( 'sweertydfd', $this->cAkcia->sudoku_settings['sudoku_quiz_active'] ?? false ),
-                    'mapa'      => array( 'mapa-quiz',  $this->cAkcia->mapa_settings['mapa_quiz_active'] ?? false ),
+                    // Multi-mapa: žiadny single mapa entry; mapa karty sa generujú per sub-kvíz nižšie.
                 );
                 if ( isset( $type_to_slug[ $value['type'] ] ) && $type_to_slug[ $value['type'] ][1] === true ) {
                     $quiz_slug = $type_to_slug[ $value['type'] ][0];
@@ -313,9 +313,7 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             if ($this->cAkcia->sudoku_settings['sudoku_quiz_active']) {
                 echo 'const link4 = "' . $host_url . '/sweertydfd/?team="+encodeURIComponent(team)+"&user="+encodeURIComponent(user)+"&akcia="+encodeURIComponent(akcia);';
             }
-            if (!empty($this->cAkcia->mapa_settings['mapa_quiz_active'])) {
-                echo 'const link5 = "' . $host_url . '/mapa-quiz/?team="+encodeURIComponent(team)+"&user="+encodeURIComponent(user)+"&akcia="+encodeURIComponent(akcia);';
-            }
+            // Multi-mapa: žiadny single link5; pre každý sub-kvíz samostatná karta nižšie.
 
             echo '
                 if(singleQuiz){
@@ -323,7 +321,6 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                     if(singleQuiz==="movies" && typeof link2!=="undefined"){window.location.href=link2;return;}
                     if(singleQuiz==="knowledge" && typeof link3!=="undefined"){window.location.href=link3;return;}
                     if(singleQuiz==="sudoku" && typeof link4!=="undefined"){window.location.href=link4;return;}
-                    if(singleQuiz==="mapa" && typeof link5!=="undefined"){window.location.href=link5;return;}
                 }
 
                 const out=document.getElementById("output");
@@ -341,8 +338,14 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             if ($this->cAkcia->sudoku_settings['sudoku_quiz_active']) {
                 echo 'if(!singleQuiz||singleQuiz==="sudoku"){out.innerHTML+=`<a href="${link4}" class="ek-quiz-card ek-quiz-sudoku" target="_blank"><span class="ek-quiz-icon">🔢</span><span class="ek-quiz-label">Sudoku kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
             }
-            if (!empty($this->cAkcia->mapa_settings['mapa_quiz_active'])) {
-                echo 'if(!singleQuiz||singleQuiz==="mapa"){out.innerHTML+=`<a href="${link5}" class="ek-quiz-card ek-quiz-mapa" target="_blank"><span class="ek-quiz-icon">🗺️</span><span class="ek-quiz-label">Mapový kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
+            // Multi-mapa: pre každý sub-kvíz jedna karta s vlastným mq slug + admin label
+            if ( ! empty( $this->cAkcia->mapa_quizzes ) && is_array( $this->cAkcia->mapa_quizzes ) ) {
+                foreach ( $this->cAkcia->mapa_quizzes as $sq ) {
+                    $slug  = isset( $sq['slug'] ) ? sanitize_key( $sq['slug'] ) : '';
+                    $label = isset( $sq['label'] ) ? (string) $sq['label'] : 'Mapový kvíz';
+                    if ( $slug === '' ) continue;
+                    echo 'if(!singleQuiz){var mqLink="' . $host_url . '/mapa-quiz/?akcia="+encodeURIComponent(akcia)+"&mq=' . esc_js( $slug ) . '&team="+encodeURIComponent(team)+"&user="+encodeURIComponent(user); out.innerHTML+=`<a href="${mqLink}" class="ek-quiz-card ek-quiz-mapa" target="_blank"><span class="ek-quiz-icon">🗺️</span><span class="ek-quiz-label">' . esc_js( $label ) . '</span><span class="ek-quiz-arrow">→</span></a>`;}';
+                }
             }
 
             echo '}

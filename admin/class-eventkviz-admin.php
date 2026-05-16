@@ -437,8 +437,9 @@ public function save_event_meta( $post_id ) {
         }
     }
 
-    // === OSTATNÉ TABS (music, movies, knowledge, sudoku, mapa) ===
-    $quiz_types = ['music', 'movies', 'knowledge', 'sudoku', 'mapa'];
+    // === OSTATNÉ TABS (music, movies, knowledge, sudoku) ===
+    // Pozn.: mapa je už multi-quiz (event_mapa_quizzes JSON array) — savne sa nižšie.
+    $quiz_types = ['music', 'movies', 'knowledge', 'sudoku'];
     foreach ( $quiz_types as $type ) {
         if ( isset( $_POST['event_' . $type] ) && is_array( $_POST['event_' . $type] ) ) {
             foreach ( $_POST['event_' . $type] as $key => $value ) {
@@ -447,6 +448,9 @@ public function save_event_meta( $post_id ) {
             }
         }
     }
+
+    // === MAPA — multi-quiz JSON array ===
+    $this->save_mapa_quizzes( $post_id );
 
     // === ŠPECIÁLNA LOGIKA PRE VŠETKY KVÍZ TABS: Vymazanie opačnej hodnoty pri splnení kvízu ===
     foreach ( $quiz_types as $type ) {
@@ -478,7 +482,7 @@ public function save_event_meta( $post_id ) {
         'movies'    => ['movies_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'mark_correctness_on_retry', 'new_questions_on_retry'],
         'knowledge' => ['knowledge_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'mark_correctness_on_retry', 'new_questions_on_retry'],
         'sudoku'    => ['sudoku_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'new_questions_on_retry'],
-        'mapa'      => ['mapa_quiz_active', 'show_entry_form', 'poslat_vysledok_usera_mailom', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede', 'mark_correctness_on_retry', 'new_questions_on_retry'],
+        // mapa: nepoužíva flat event_mapa_* postmeta, ale event_mapa_quizzes JSON array
     ];
 
     foreach ( $quiz_checkbox_keys as $type => $keys ) {
@@ -1764,9 +1768,13 @@ public function delete_event_pages( $post_id ) {
  * Spája event s globálnym mapquiz_template + per-event override-y.
  */
 private function render_mapa_tab( $post, $meta ) {
-    $mapa_active = isset( $meta['event_mapa_mapa_quiz_active'][0] ) ? $meta['event_mapa_mapa_quiz_active'][0] : '0';
+    // Multi-mapa: každý event môže mať N mapových kvízov. Storage v postmeta
+    // event_mapa_quizzes (JSON array). Bez backwards compat (user povolil
+    // clean rewrite, žiadne live mapa kvízy).
+    $quizzes_json = $meta['event_mapa_quizzes'][0] ?? '';
+    $quizzes = is_string( $quizzes_json ) && $quizzes_json !== '' ? json_decode( $quizzes_json, true ) : array();
+    if ( ! is_array( $quizzes ) ) $quizzes = array();
 
-    // Načítaj všetky mapquiz_template ako dropdown options
     $templates = get_posts( array(
         'post_type'      => 'mapquiz_template',
         'posts_per_page' => -1,
@@ -1775,196 +1783,281 @@ private function render_mapa_tab( $post, $meta ) {
         'post_status'    => 'publish',
     ) );
 
-    $selected_template_id = isset( $meta['event_mapa_template_id'][0] ) ? (int) $meta['event_mapa_template_id'][0] : 0;
-
     ?>
     <div id="tab-mapa" class="tab-panel">
-        <h3>Mapový kvíz nastavenia</h3>
-        <table class="form-table" role="presentation">
+        <h3>Mapové kvízy</h3>
+        <p class="description">
+            Pre tento event môžeš pridať <strong>viacero mapových kvízov</strong> (napr. „Hrady SR" + „Rieky" + „Pohoria"). Každý sub-kvíz má vlastný hub link a vlastné nastavenia.
+        </p>
 
-            <tr>
-                <th><label>Aktívny Mapový kvíz</label></th>
-                <td>
-                    <input type="checkbox" id="mapa_quiz_active_cb" name="event_mapa[mapa_quiz_active]" value="1" <?php checked( $mapa_active, '1' ); ?> />
-                    <p class="description">true/false — či je mapový kvíz aktívny pre tento event.</p>
-                </td>
-            </tr>
+        <?php if ( empty( $templates ) ) : ?>
+            <p style="color:#a00"><strong>Žiadne mapové šablóny zatiaľ neexistujú.</strong> Vytvor aspoň jednu v <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mapquiz_template' ) ); ?>">EventKviz → Mapové šablóny</a>.</p>
+        <?php else : ?>
 
-            <tbody id="mapa_fields_container" style="<?php echo $mapa_active === '1' ? 'display: table-row-group;' : 'display: none;'; ?>">
+        <div id="ek-mapa-quizzes-list">
+            <?php foreach ( $quizzes as $idx => $q ) : ?>
+                <?php $this->render_mapa_subquiz_fieldset( $q, $idx, $templates ); ?>
+            <?php endforeach; ?>
+        </div>
 
-                <tr>
-                    <th><label>Šablóna mapového kvízu</label></th>
-                    <td>
-                        <?php if ( empty( $templates ) ) : ?>
-                            <p style="color:#a00"><strong>Žiadne šablóny zatiaľ neexistujú.</strong> Vytvor aspoň jednu v <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mapquiz_template' ) ); ?>">EventKviz výsledky → Všetky mapové kvízy → Pridať</a>.</p>
-                        <?php else : ?>
-                            <select name="event_mapa[template_id]">
-                                <option value="0">— Vyber šablónu —</option>
-                                <?php foreach ( $templates as $t ) : ?>
-                                    <option value="<?php echo esc_attr( $t->ID ); ?>" <?php selected( $selected_template_id, $t->ID ); ?>>
-                                        <?php echo esc_html( $t->post_title ); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                            <p class="description">
-                                Vyber jednu z preddefinovaných šablón (napr. „Hrady SR", „Elektrárne EU"). Šablóny manažuj v <a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mapquiz_template' ) ); ?>">Všetky mapové kvízy</a>.
-                            </p>
-                        <?php endif; ?>
-                    </td>
-                </tr>
+        <p>
+            <button type="button" class="button button-secondary" id="ek-mapa-add-btn">➕ Pridať mapový kvíz</button>
+        </p>
 
-                <tr>
-                    <th><label>Vstup: zobraziť výber tímu / ísť rovno na mapu</label></th>
-                    <td>
-                        <input type="checkbox" name="event_mapa[show_entry_form]" value="1" <?php checked( $meta['event_mapa_show_entry_form'][0] ?? '1', '1' ); ?> />
-                        <p class="description">
-                            <strong>Zapnuté:</strong> Ak hráč príde na URL kvízu bez vyplneného tímu, najprv sa mu zobrazí formulár na výber tímu. Použi keď chceš poslať jeden zdieľaný link všetkým hráčom.<br>
-                            <strong>Vypnuté:</strong> Hráč musí prísť s <code>team=</code> parametrom v URL. Žiadny vstupný formulár.<br>
-                            ⚠️ <em>Funguje len v kombinácii s „Výber tímu z preddefinovaného zoznamu" v General tabe.</em>
-                        </p>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th><label>Počet otázok v sete</label></th>
-                    <td>
-                        <input type="number" name="event_mapa[pocet_otazok_v_sete]" value="<?php echo esc_attr( $meta['event_mapa_pocet_otazok_v_sete'][0] ?? '10' ); ?>" min="1" max="100" class="small-text" />
-                        <p class="description">Koľko pinov dostane hráč v jednom kole (vyberú sa náhodne z pinov v šablóne).</p>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th><label>Maximálne body za celý kvíz <em style="color:#888;font-weight:400">(override)</em></label></th>
-                    <td>
-                        <input type="number" name="event_mapa[max_points_override]" value="<?php echo esc_attr( $meta['event_mapa_max_points_override'][0] ?? '' ); ?>" min="0" max="9999" class="small-text" placeholder="prázdne = default zo šablóny" />
-                        <p class="description">
-                            Celkový bodový strop ktorý hráč môže získať za <strong>všetky úlohy dohromady</strong>. Body sa rozdelia rovnomerne medzi otázky:<br>
-                            <code>max_per_úloha = max_body / počet_otázok_v_sete</code> (napr. 100 b / 10 úloh = 10 b za úlohu).<br>
-                            <strong>Prázdne</strong> = použije sa hodnota zadaná v mapovej šablóne (default 100).
-                        </p>
-                    </td>
-                </tr>
-
-                <?php
-                // Score tiers má zmysel iba pre quiz_type=pin. Zistíme typ aktuálne
-                // vybranej šablóny a podľa toho pole zobrazíme alebo skryjeme.
-                $tpl_id   = isset( $meta['event_mapa_template_id'][0] ) ? (int) $meta['event_mapa_template_id'][0] : 0;
-                $tpl_type = $tpl_id > 0 ? get_post_meta( $tpl_id, '_mapquiz_quiz_type', true ) : '';
-                if ( $tpl_type === '' ) $tpl_type = 'pin';
-                if ( $tpl_type === 'pin' ) :
-                ?>
-                <tr>
-                    <th><label>Stupne hodnotenia podľa vzdialenosti <em style="color:#888;font-weight:400">(override, JSON)</em></label></th>
-                    <td>
-                        <textarea name="event_mapa[score_tiers_override]" rows="3" class="large-text" placeholder='[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},...]  — prázdne = default zo šablóny'><?php echo esc_textarea( $meta['event_mapa_score_tiers_override'][0] ?? '' ); ?></textarea>
-                        <p class="description">
-                            Pre každú úlohu sa vypočíta <strong>vzdialenosť hráčovho odhadu od správnej lokácie v km</strong> a nájde sa <em>prvý</em> stupeň kde <code>vzdialenosť ≤ maxKm</code>. Body = <code>max_per_úloha × percent ÷ 100</code>.<br>
-                            <strong>Príklad:</strong> <code>[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},{"maxKm":20,"percent":50}]</code> = do 5 km plných 100 % bodov, do 10 km 75 %, do 20 km 50 %, ďalej už nič.<br>
-                            <strong>Prázdne</strong> = použije sa default zo šablóny.
-                        </p>
-                    </td>
-                </tr>
-                <?php else : ?>
-                <tr>
-                    <td colspan="2" style="padding:10px 12px; background:#f0f6fc; border-left:3px solid #2271b1; color:#1d2327; font-size:13px">
-                        ℹ <strong>Šablóna typu „<?php echo esc_html( $tpl_type === 'river' ? 'Označenie rieky' : 'Označenie pohoria' ); ?>"</strong> používa <strong>binárne hodnotenie</strong>: správna feature = <code>max_per_úloha</code> bodov, nesprávna = 0. Stupne podľa vzdialenosti sa neuplatňujú — preto sú skryté.
-                        <input type="hidden" name="event_mapa[score_tiers_override]" value="<?php echo esc_attr( $meta['event_mapa_score_tiers_override'][0] ?? '' ); ?>" />
-                    </td>
-                </tr>
-                <?php endif; ?>
-
-                <tr>
-                    <th><label>Pri opakovaní označ správnosť</label></th>
-                    <td>
-                        <input type="checkbox" name="event_mapa[mark_correctness_on_retry]" value="1" <?php checked( $meta['event_mapa_mark_correctness_on_retry'][0] ?? '0', '1' ); ?> />
-                        <p class="description">
-                            <strong>Zapnuté:</strong> Po neúspešnom kvíze sa pri opakovaní na mape zobrazia minulé piny hráča s farebným označením (zelená = v tieri, červená = mimo).<br>
-                            <strong>Vypnuté:</strong> Hráč začína s prázdnou mapou.<br>
-                            <em>Nepoužije sa ak je súčasne zapnuté „nový set otázok pri opakovaní".</em>
-                        </p>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th><label>Pri opakovaní vygeneruj nový set otázok</label></th>
-                    <td>
-                        <input type="checkbox" name="event_mapa[new_questions_on_retry]" value="1" <?php checked( $meta['event_mapa_new_questions_on_retry'][0] ?? '0', '1' ); ?> />
-                        <p class="description">
-                            <strong>Zapnuté:</strong> Pri každom opakovaní hráč dostane <em>nový</em> náhodný výber pinov zo šablóny.<br>
-                            <strong>Vypnuté (odporúčané):</strong> Pri opakovaní rovnaký set pinov ako prvýkrát.
-                        </p>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th><label>Odhaliť správne odpovede</label></th>
-                    <td>
-                        <input type="checkbox" name="event_mapa[zobraz_spravne_odpovede]" value="1" <?php checked( $meta['event_mapa_zobraz_spravne_odpovede'][0] ?? '0', '1' ); ?> />
-                        <p class="description">
-                            <strong>Zapnuté:</strong> Pri vyhodnotení hráč pri každom pine vidí kde bola správna lokácia (zelený pin) a kde klikol on (červený pin).<br>
-                            <strong>Vypnuté:</strong> Správna lokácia sa neukáže (len info, či bol v tieri alebo nie).<br>
-                            <em>Nezávislé od toggle nižšie.</em>
-                        </p>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th><label>Hodnotenie hráčových odpovedí (správne/nesprávne + body)</label></th>
-                    <td>
-                        <input type="checkbox" name="event_mapa[zobraz_spravne_uhadnute_odpovede]" value="1" <?php checked( $meta['event_mapa_zobraz_spravne_uhadnute_odpovede'][0] ?? '1', '1' ); ?> />
-                        <p class="description">
-                            <strong>Zapnuté:</strong> Po odoslaní hráč pri každom pine vidí vzdialenosť od správnej lokácie a koľko bodov získal.<br>
-                            <strong>Vypnuté:</strong> Hráč vidí len celkové bodové hodnotenie.<br>
-                            <em>Nezávislé od toggle vyššie.</em>
-                        </p>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th><label>Počet pokusov</label></th>
-                    <td>
-                        <input type="number" name="event_mapa[pocet_pokusov]" value="<?php echo esc_attr( $meta['event_mapa_pocet_pokusov'][0] ?? '10' ); ?>" min="1" class="small-text" />
-                        <p class="description">Maximálny počet pokusov hráča v tomto kvíze.</p>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th><label>Min. body na postup</label></th>
-                    <td>
-                        <input type="number" name="event_mapa[min_body_na_postup]" value="<?php echo esc_attr( $meta['event_mapa_min_body_na_postup'][0] ?? '0' ); ?>" min="0" class="small-text" />
-                        <p class="description">Ak hráč nedosiahne tento prah, môže opakovať (ak má pokusy). 0 = bez prahu.</p>
-                    </td>
-                </tr>
-
-                <tr>
-                    <th><label>Poslať výsledok mailom</label></th>
-                    <td>
-                        <input type="checkbox" name="event_mapa[poslat_vysledok_usera_mailom]" value="1" <?php checked( $meta['event_mapa_poslat_vysledok_usera_mailom'][0] ?? '0', '1' ); ?> />
-                        <p class="description">
-                            true/false — možnosť poslať aktuálny výsledok používateľa po odoslaní na zadaný email.
-                        </p>
-
-                        <div id="admin_mail_container_mapa" style="margin-top: 10px; <?php echo ( $meta['event_mapa_poslat_vysledok_usera_mailom'][0] ?? '0' ) === '1' ? 'display: block;' : 'display: none;'; ?>">
-                            <label><strong>Admin email pre výsledky:</strong></label><br>
-                            <input type="email" name="event_mapa[admin_mail]" value="<?php echo esc_attr( $meta['event_mapa_admin_mail'][0] ?? 'mahroch@gmail.com' ); ?>" class="regular-text" />
-                        </div>
-                    </td>
-                </tr>
-
-            </tbody>
-        </table>
+        <template id="ek-mapa-quiz-tpl"><?php $this->render_mapa_subquiz_fieldset( array(), '__INDEX__', $templates ); ?></template>
 
         <script>
         jQuery(function($) {
-            $('#mapa_quiz_active_cb').on('change', function() {
-                $('#mapa_fields_container').toggle( $(this).is(':checked') );
+            var nextIdx = <?php echo count( $quizzes ); ?>;
+            $('#ek-mapa-add-btn').on('click', function() {
+                var tpl = $('#ek-mapa-quiz-tpl').html().replace(/__INDEX__/g, nextIdx);
+                $('#ek-mapa-quizzes-list').append(tpl);
+                nextIdx++;
             });
-            $('input[name="event_mapa[poslat_vysledok_usera_mailom]"]').on('change', function() {
-                $('#admin_mail_container_mapa').toggle( $(this).is(':checked') );
+            $(document).on('click', '.ek-mapa-quiz-remove', function(e) {
+                e.preventDefault();
+                if (!confirm('Naozaj vymazať tento mapový kvíz a všetky jeho nastavenia? Túto akciu nebude možné vrátiť.')) return;
+                $(this).closest('.ek-mapa-quiz-fieldset').remove();
+            });
+            // Email field collapse per row
+            $(document).on('change', '.ek-mapa-email-toggle input', function() {
+                $(this).closest('.ek-mapa-email-row').find('.ek-mapa-email-input').toggle($(this).is(':checked'));
+            });
+            // Live label preview in legend
+            $(document).on('input', '.ek-mapa-quiz-label', function() {
+                var $fs = $(this).closest('.ek-mapa-quiz-fieldset');
+                var v = $(this).val();
+                $fs.find('.ek-mapa-quiz-label-preview').text(v ? '— ' + v : '');
+            });
+            // Auto-fill label from template title when admin picks template + label is empty
+            $(document).on('change', '.ek-mapa-quiz-template-select', function() {
+                var $fs = $(this).closest('.ek-mapa-quiz-fieldset');
+                var $labelInput = $fs.find('.ek-mapa-quiz-label');
+                if (!$labelInput.val()) {
+                    var title = $(this).find('option:selected').data('title') || '';
+                    if (title) {
+                        $labelInput.val(title).trigger('input');
+                    }
+                }
             });
         });
         </script>
+
+        <style>
+            .ek-mapa-quiz-fieldset { background:#fff; border:1px solid #ccd0d4; border-radius:6px; padding:14px 18px; margin:12px 0; }
+            .ek-mapa-quiz-fieldset legend { font-weight:600; padding:0 8px; font-size:15px; }
+            .ek-mapa-quiz-label-preview { color:#666; font-weight:400; font-style:italic; }
+            .ek-mapa-quiz-fieldset .form-table th { padding:10px 10px 10px 0; width:240px; }
+            .ek-mapa-quiz-fieldset .form-table td { padding:8px 10px; }
+            .ek-mapa-quiz-remove { color:#d63638 !important; margin-top:8px !important; }
+        </style>
+
+        <?php endif; ?>
     </div>
     <?php
 }
+
+/**
+ * Renderuje jeden sub-kvíz fieldset (admin repeater item).
+ *
+ * @param array $q       Sub-kvíz data (alebo prázdne pre nový).
+ * @param mixed $idx     Index v poli; pre <template> placeholder se používa string '__INDEX__'.
+ * @param array $templates Pole mapquiz_template post objektov.
+ */
+private function render_mapa_subquiz_fieldset( $q, $idx, $templates ) {
+    $name_prefix = 'event_mapa_quizzes[' . $idx . ']';
+    $label       = $q['label'] ?? '';
+    $template_id = (int) ( $q['template_id'] ?? 0 );
+    ?>
+    <fieldset class="ek-mapa-quiz-fieldset">
+        <legend>Mapový kvíz <span class="ek-mapa-quiz-label-preview"><?php echo $label ? '— ' . esc_html( $label ) : ''; ?></span></legend>
+
+        <input type="hidden" name="<?php echo esc_attr( $name_prefix ); ?>[slug]" value="<?php echo esc_attr( $q['slug'] ?? '' ); ?>" />
+
+        <table class="form-table" role="presentation">
+            <tr>
+                <th><label>Názov pre hráča</label></th>
+                <td>
+                    <input type="text" class="regular-text ek-mapa-quiz-label" name="<?php echo esc_attr( $name_prefix ); ?>[label]" value="<?php echo esc_attr( $label ); ?>" placeholder="napr. Slovenské hrady" />
+                    <p class="description">Zobrazí sa hráčovi v hub karte. Ak prázdne, predvyplní sa z názvu šablóny.</p>
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Šablóna</label></th>
+                <td>
+                    <select class="ek-mapa-quiz-template-select" name="<?php echo esc_attr( $name_prefix ); ?>[template_id]">
+                        <option value="0">— Vyber šablónu —</option>
+                        <?php foreach ( $templates as $t ) : ?>
+                            <option value="<?php echo esc_attr( $t->ID ); ?>" data-title="<?php echo esc_attr( $t->post_title ); ?>" <?php selected( $template_id, $t->ID ); ?>>
+                                <?php echo esc_html( $t->post_title ); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Počet otázok v sete</label></th>
+                <td>
+                    <input type="number" class="small-text" name="<?php echo esc_attr( $name_prefix ); ?>[pocet_otazok_v_sete]" value="<?php echo esc_attr( $q['pocet_otazok_v_sete'] ?? 10 ); ?>" min="1" max="100" />
+                    <p class="description">Koľko otázok dostane hráč v jednom kole (vyberú sa náhodne zo šablóny).</p>
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Vstup: zobraziť výber tímu</label></th>
+                <td>
+                    <input type="checkbox" name="<?php echo esc_attr( $name_prefix ); ?>[show_entry_form]" value="1" <?php checked( ! empty( $q['show_entry_form'] ) ); ?> />
+                    <p class="description">Zapnuté: hráč bez tímu v URL uvidí výber tímu. Funguje s „Výber tímu z preddefinovaného zoznamu" v General tabe.</p>
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Max body za celý kvíz <em style="color:#888;font-weight:400">(override)</em></label></th>
+                <td>
+                    <input type="number" class="small-text" name="<?php echo esc_attr( $name_prefix ); ?>[max_points_override]" value="<?php echo esc_attr( $q['max_points_override'] ?? '' ); ?>" min="0" max="9999" placeholder="prázdne = default zo šablóny" />
+                    <p class="description"><code>max_per_úloha = max_body / počet_otázok</code>. Prázdne = default zo šablóny.</p>
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Stupne hodnotenia <em style="color:#888;font-weight:400">(override, JSON)</em></label></th>
+                <td>
+                    <textarea class="large-text" rows="2" name="<?php echo esc_attr( $name_prefix ); ?>[score_tiers_override]" placeholder='[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75}]'><?php echo esc_textarea( $q['score_tiers_override'] ?? '' ); ?></textarea>
+                    <p class="description">⚠ Aplikuje sa LEN pre šablóny typu „Hľadanie miest" (pin). Pre rieku/pohorie binárne. Prázdne = default zo šablóny. <em>(Vizuálny repeater UI — TODO neskôr.)</em></p>
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Pri opakovaní označ správnosť</label></th>
+                <td>
+                    <input type="checkbox" name="<?php echo esc_attr( $name_prefix ); ?>[mark_correctness_on_retry]" value="1" <?php checked( ! empty( $q['mark_correctness_on_retry'] ) ); ?> />
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Pri opakovaní nový set</label></th>
+                <td>
+                    <input type="checkbox" name="<?php echo esc_attr( $name_prefix ); ?>[new_questions_on_retry]" value="1" <?php checked( ! empty( $q['new_questions_on_retry'] ) ); ?> />
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Odhaliť správne odpovede</label></th>
+                <td>
+                    <input type="checkbox" name="<?php echo esc_attr( $name_prefix ); ?>[zobraz_spravne_odpovede]" value="1" <?php checked( ! empty( $q['zobraz_spravne_odpovede'] ) ); ?> />
+                    <p class="description">Zapnuté: hráč pri vyhodnotení vidí mini-mapu so správnou lokáciou pri nesprávnych odpovediach.</p>
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Hodnotenie hráčových odpovedí</label></th>
+                <td>
+                    <input type="checkbox" name="<?php echo esc_attr( $name_prefix ); ?>[zobraz_spravne_uhadnute_odpovede]" value="1" <?php checked( ! empty( $q['zobraz_spravne_uhadnute_odpovede'] ), true ); ?> />
+                    <p class="description">Zapnuté: hráč vidí per-úloha hodnotenie (správne/nesprávne + body).</p>
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Počet pokusov</label></th>
+                <td>
+                    <input type="number" class="small-text" name="<?php echo esc_attr( $name_prefix ); ?>[pocet_pokusov]" value="<?php echo esc_attr( $q['pocet_pokusov'] ?? 10 ); ?>" min="1" />
+                </td>
+            </tr>
+
+            <tr>
+                <th><label>Min. body na postup</label></th>
+                <td>
+                    <input type="number" class="small-text" name="<?php echo esc_attr( $name_prefix ); ?>[min_body_na_postup]" value="<?php echo esc_attr( $q['min_body_na_postup'] ?? 0 ); ?>" min="0" />
+                    <p class="description">Ak hráč nedosiahne tento prah, môže opakovať. 0 = bez prahu.</p>
+                </td>
+            </tr>
+
+            <tr class="ek-mapa-email-row">
+                <th><label>Poslať výsledok mailom</label></th>
+                <td>
+                    <span class="ek-mapa-email-toggle">
+                        <input type="checkbox" name="<?php echo esc_attr( $name_prefix ); ?>[poslat_vysledok_usera_mailom]" value="1" <?php checked( ! empty( $q['poslat_vysledok_usera_mailom'] ) ); ?> />
+                    </span>
+                    <span class="ek-mapa-email-input" style="margin-left:10px; <?php echo ! empty( $q['poslat_vysledok_usera_mailom'] ) ? '' : 'display:none;'; ?>">
+                        <input type="email" class="regular-text" name="<?php echo esc_attr( $name_prefix ); ?>[admin_mail]" value="<?php echo esc_attr( $q['admin_mail'] ?? '' ); ?>" placeholder="admin@example.com" />
+                    </span>
+                </td>
+            </tr>
+
+        </table>
+
+        <p style="text-align:right">
+            <button type="button" class="button button-link-delete ek-mapa-quiz-remove">🗑️ Vymazať tento mapový kvíz</button>
+        </p>
+    </fieldset>
+    <?php
+}
+
+/**
+ * Helper: vygeneruje krátky obfuscated slug pre nový sub-kvíz (6 hex chars).
+ * Hub link bude /mapa-quiz/?akcia=X&mq=<slug>; admin neuvidí slug v UI.
+ */
+public static function ek_generate_mapa_slug() {
+    return substr( bin2hex( random_bytes( 4 ) ), 0, 6 );
+}
+
+/**
+ * Save mapa multi-quiz repeater data ako JSON array do event_mapa_quizzes.
+ * Pre každý sub-kvíz vygeneruje slug ak chýba a sanitizuje fields.
+ * Auto-prefill label z template title ak prázdne.
+ */
+private function save_mapa_quizzes( $post_id ) {
+    $raw = isset( $_POST['event_mapa_quizzes'] ) && is_array( $_POST['event_mapa_quizzes'] ) ? wp_unslash( $_POST['event_mapa_quizzes'] ) : array();
+    $clean = array();
+    foreach ( $raw as $q ) {
+        if ( ! is_array( $q ) ) continue;
+        $template_id = (int) ( $q['template_id'] ?? 0 );
+        if ( $template_id <= 0 ) continue; // skip incomplete (no template selected)
+
+        $slug = isset( $q['slug'] ) ? sanitize_key( $q['slug'] ) : '';
+        if ( $slug === '' ) {
+            $slug = self::ek_generate_mapa_slug();
+        }
+
+        $label = sanitize_text_field( (string) ( $q['label'] ?? '' ) );
+        if ( $label === '' ) {
+            // Auto-prefill z template title
+            $tpl = get_post( $template_id );
+            if ( $tpl ) $label = $tpl->post_title;
+        }
+
+        $clean[] = array(
+            'slug'                            => $slug,
+            'label'                           => $label,
+            'template_id'                     => $template_id,
+            'show_entry_form'                 => ! empty( $q['show_entry_form'] ),
+            'pocet_otazok_v_sete'             => max( 1, (int) ( $q['pocet_otazok_v_sete'] ?? 10 ) ),
+            'max_points_override'             => sanitize_text_field( (string) ( $q['max_points_override'] ?? '' ) ),
+            'score_tiers_override'            => trim( (string) ( $q['score_tiers_override'] ?? '' ) ),
+            'mark_correctness_on_retry'       => ! empty( $q['mark_correctness_on_retry'] ),
+            'new_questions_on_retry'          => ! empty( $q['new_questions_on_retry'] ),
+            'zobraz_spravne_odpovede'         => ! empty( $q['zobraz_spravne_odpovede'] ),
+            'zobraz_spravne_uhadnute_odpovede' => ! empty( $q['zobraz_spravne_uhadnute_odpovede'] ),
+            'pocet_pokusov'                   => max( 1, (int) ( $q['pocet_pokusov'] ?? 10 ) ),
+            'min_body_na_postup'              => max( 0, (int) ( $q['min_body_na_postup'] ?? 0 ) ),
+            'poslat_vysledok_usera_mailom'    => ! empty( $q['poslat_vysledok_usera_mailom'] ),
+            'admin_mail'                      => sanitize_email( (string) ( $q['admin_mail'] ?? '' ) ),
+        );
+    }
+
+    update_post_meta( $post_id, 'event_mapa_quizzes', wp_json_encode( $clean, JSON_UNESCAPED_UNICODE ) );
+
+    // Delete legacy single-mapa postmeta (clean break — žiadne live mapa kvízy)
+    $legacy_keys = array( 'template_id', 'show_entry_form', 'pocet_otazok_v_sete',
+        'max_points_override', 'score_tiers_override', 'mark_correctness_on_retry',
+        'new_questions_on_retry', 'zobraz_spravne_odpovede', 'zobraz_spravne_uhadnute_odpovede',
+        'pocet_pokusov', 'min_body_na_postup', 'poslat_vysledok_usera_mailom',
+        'admin_mail', 'mapa_quiz_active' );
+    foreach ( $legacy_keys as $k ) {
+        delete_post_meta( $post_id, 'event_mapa_' . $k );
+    }
+}
+
 }

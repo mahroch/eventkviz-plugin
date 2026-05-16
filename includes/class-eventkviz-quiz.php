@@ -94,12 +94,12 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 		$this->all_quizes_settings['final_place_pocet_pokusov'] = isset( $all_meta['event_general_final_place_pocet_pokusov'][0] ) ? (int) $all_meta['event_general_final_place_pocet_pokusov'][0] : 3;
 
         // === KVÍZ SPECIFICKÉ SETTINGS ===
+        // Pozn.: mapa už nie je v tomto poli (multi-quiz, loadne sa nižšie z JSON array).
         $quiz_types = array(
             'music'     => 'music_settings',
             'movies'    => 'movies_settings',
             'knowledge' => 'knowledge_settings',
             'sudoku'    => 'sudoku_settings',
-            'mapa'      => 'mapa_settings',
         );
 
         foreach ( $quiz_types as $type => $property ) {
@@ -206,7 +206,197 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
     $this->cAkcia->movies_settings    = $this->movies_settings ?? array();
     $this->cAkcia->knowledge_settings = $this->knowledge_settings ?? array();
     $this->cAkcia->sudoku_settings    = $this->sudoku_settings ?? array();
-    $this->cAkcia->mapa_settings      = $this->mapa_settings ?? array();
+    // Multi-mapa: pole sub-kvízov. Form/eval class si vyberá konkrétny podľa mq slug.
+    $mapa_quizzes_json = isset( $all_meta['event_mapa_quizzes'][0] ) ? $all_meta['event_mapa_quizzes'][0] : '';
+    $mapa_quizzes = is_string( $mapa_quizzes_json ) && $mapa_quizzes_json !== '' ? json_decode( $mapa_quizzes_json, true ) : array();
+    $this->cAkcia->mapa_quizzes = is_array( $mapa_quizzes ) ? $mapa_quizzes : array();
+}
+
+/**
+ * Helper: nájdi konkrétny mapa sub-kvíz podľa slug. Volá form/eval class
+ * po loadnutí event settings + parse `?mq=` parametra.
+ *
+ * @param string $mq_slug
+ * @return array|null Sub-kvíz settings alebo null ak slug nenájdený.
+ */
+public function find_mapa_sub_quiz( $mq_slug ) {
+    if ( empty( $this->cAkcia->mapa_quizzes ) || ! is_array( $this->cAkcia->mapa_quizzes ) ) return null;
+    $mq_slug = sanitize_key( $mq_slug );
+    if ( $mq_slug === '' ) return null;
+    foreach ( $this->cAkcia->mapa_quizzes as $q ) {
+        if ( isset( $q['slug'] ) && $q['slug'] === $mq_slug ) return $q;
+    }
+    return null;
+}
+
+// ============================================================
+// MULTI-MAPA helpers — tries/storage scoping per sub-kvíz
+// question_set sa ukladá ako JSON {"mq":"<slug>","pins":[...]}.
+// SQL filter cez LIKE '%"mq":"<slug>"%' aby sa per-sub-kvíz oddelilo.
+// ============================================================
+
+protected function _mapa_set_payload( $mq_slug, $pin_ids ) {
+    return wp_json_encode( array( 'mq' => $mq_slug, 'pins' => $pin_ids ) );
+}
+
+protected function _mapa_like_pattern( $mq_slug ) {
+    global $wpdb;
+    // LIKE pattern matchne JSON kde "mq":"<slug>"
+    return '%' . $wpdb->esc_like( '"mq":"' . sanitize_key( $mq_slug ) . '"' ) . '%';
+}
+
+/**
+ * Tries check per sub-kvíz. Returns true ak má hráč ešte pokusy, false inak.
+ * Pri exhausted nastaví global $pocet_pokusov_reached = true.
+ */
+public function mapa_check_tries( $user_code, $akcia_code, $team_code, $mq_slug, $sub_quiz ) {
+    global $wpdb, $pocet_pokusov_reached;
+    $pocet = isset( $sub_quiz['pocet_pokusov'] ) ? (int) $sub_quiz['pocet_pokusov'] : 0;
+    if ( empty( $user_code ) && empty( $team_code ) ) return true;
+
+    $table = $wpdb->prefix . 'jet_cct_results';
+    $like  = $this->_mapa_like_pattern( $mq_slug );
+    $is_gc_user = is_string( $user_code ) && strpos( $user_code, 'gc_' ) === 0;
+
+    if ( ( ! empty( $this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] ) || $is_gc_user ) && ! empty( $user_code ) ) {
+        $rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT _ID FROM {$table} WHERE user = %s AND akcia = %s AND quiz_type = %s AND question_set LIKE %s",
+            $this->standardize( $user_code ), $akcia_code, 'mapa', $like
+        ) );
+    } elseif ( empty( $this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] ) && ! empty( $this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] ) && ! empty( $team_code ) ) {
+        $rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT _ID FROM {$table} WHERE team = %s AND akcia = %s AND quiz_type = %s AND question_set LIKE %s",
+            $this->standardize( $team_code ), $akcia_code, 'mapa', $like
+        ) );
+    } else {
+        $rows = array();
+    }
+
+    $entries = count( $rows );
+    if ( $entries >= $pocet + 1 ) {
+        echo 'Limit of tries for this quiz was reached (Allowed:' . esc_html( $pocet ) . '). ';
+        $pocet_pokusov_reached = true;
+        return false;
+    }
+    $this->zostava_pocet_pokusov = $pocet + 1 - $entries;
+    return true;
+}
+
+/**
+ * Load stored question_set pre tento sub-kvíz. Sets $this->questions_set
+ * (pole pin IDs) ak existuje, inak ''.
+ */
+public function mapa_check_set_exists( $akcia_code, $user_code, $team_code, $mq_slug ) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'jet_cct_results';
+    $like  = $this->_mapa_like_pattern( $mq_slug );
+
+    if ( ! empty( $user_code ) ) {
+        $rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT question_set FROM {$table} WHERE user = %s AND akcia = %s AND quiz_type = %s AND question_set LIKE %s",
+            $this->standardize( $user_code ), $akcia_code, 'mapa', $like
+        ) );
+    } elseif ( ! empty( $team_code ) ) {
+        $rows = $wpdb->get_results( $wpdb->prepare(
+            "SELECT question_set FROM {$table} WHERE team = %s AND akcia = %s AND quiz_type = %s AND question_set LIKE %s",
+            $this->standardize( $team_code ), $akcia_code, 'mapa', $like
+        ) );
+    } else {
+        $rows = array();
+    }
+
+    if ( ! empty( $rows[0]->question_set ) ) {
+        $payload = json_decode( $rows[0]->question_set, true );
+        if ( is_array( $payload ) && isset( $payload['pins'] ) ) {
+            $this->questions_set = $payload['pins'];
+            return is_array( $this->questions_set );
+        }
+    }
+    $this->questions_set = '';
+    return false;
+}
+
+/**
+ * Write/update question_set pre tento sub-kvíz. Vyhľadá existing row
+ * (cez mq LIKE filter) — ak existuje UPDATE, inak INSERT.
+ *
+ * @param string $pin_ids_json JSON array pin IDs (output z wp_json_encode).
+ */
+public function mapa_write_set_to_db( $pin_ids_json, $akcia_code, $user_code, $team_code, $mq_slug ) {
+    global $wpdb;
+    $pin_ids = json_decode( $pin_ids_json, true );
+    if ( ! is_array( $pin_ids ) ) $pin_ids = array();
+    $payload = $this->_mapa_set_payload( $mq_slug, $pin_ids );
+
+    $table = $wpdb->prefix . 'jet_cct_results';
+    $like  = $this->_mapa_like_pattern( $mq_slug );
+
+    // Existing row?
+    if ( ! empty( $user_code ) ) {
+        $existing = $wpdb->get_var( $wpdb->prepare(
+            "SELECT _ID FROM {$table} WHERE user = %s AND akcia = %s AND quiz_type = %s AND question_set LIKE %s ORDER BY _ID DESC LIMIT 1",
+            $this->standardize( $user_code ), $akcia_code, 'mapa', $like
+        ) );
+    } else {
+        $existing = null;
+    }
+
+    if ( $existing ) {
+        $wpdb->update( $table, array( 'question_set' => $payload ), array( '_ID' => (int) $existing ) );
+    } else {
+        $wpdb->insert( $table, array(
+            'team' => $this->standardize( $team_code ),
+            'user' => $this->standardize( $user_code ),
+            'points' => 0,
+            'question_set' => $payload,
+            'akcia' => $akcia_code,
+            'quiz_type' => 'mapa',
+        ) );
+    }
+}
+
+/**
+ * Write eval result row pre tento sub-kvíz. INSERT (new row per submit
+ * — rovnaký pattern ako iné kvízy v jet_cct_results).
+ */
+public function mapa_write_results_to_db( $user_code, $team_code, $akcia_code, $gained_credits, $pin_ids_json, $mq_slug ) {
+    global $wpdb, $pocet_pokusov_reached;
+    if ( $pocet_pokusov_reached === true ) return;
+
+    $pin_ids = json_decode( $pin_ids_json, true );
+    if ( ! is_array( $pin_ids ) ) $pin_ids = array();
+    $payload = $this->_mapa_set_payload( $mq_slug, $pin_ids );
+
+    $wpdb->insert( $wpdb->prefix . 'jet_cct_results', array(
+        'team' => $this->standardize( $team_code ),
+        'user' => $this->standardize( $user_code ),
+        'points' => (int) $gained_credits,
+        'question_set' => $payload,
+        'akcia' => $akcia_code,
+        'quiz_type' => 'mapa',
+    ) );
+}
+
+/**
+ * Reset (DELETE) všetkých záznamov pre konkrétny sub-kvíz daného hráča/team.
+ * Volá sa pri ?reset=1 + admin permission.
+ */
+public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $mq_slug ) {
+    global $wpdb;
+    $table = $wpdb->prefix . 'jet_cct_results';
+    $like  = $this->_mapa_like_pattern( $mq_slug );
+    if ( ! empty( $user_code ) ) {
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$table} WHERE user = %s AND akcia = %s AND quiz_type = %s AND question_set LIKE %s",
+            $this->standardize( $user_code ), $akcia_code, 'mapa', $like
+        ) );
+    }
+    if ( ! empty( $team_code ) && $team_code !== 'none' ) {
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$table} WHERE team = %s AND akcia = %s AND quiz_type = %s AND question_set LIKE %s",
+            $this->standardize( $team_code ), $akcia_code, 'mapa', $like
+        ) );
+    }
 }
 
 	public function show_total_credits_gained($gained_credits='', $user='', $team=''){
@@ -314,7 +504,11 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 				//$this->sudoku_quiz_settings($akcia_code);
 				$pocet_pokusov = $this->cAkcia->sudoku_settings['pocet_pokusov'];
 			}elseif($place == 'mapa'){
-				$pocet_pokusov = $this->cAkcia->mapa_settings['pocet_pokusov'];
+				// Multi-mapa: pocet_pokusov je per sub-kvíz. Form/eval class nastaví
+				// $this->_current_mapa_sub_quiz pred volaním check_number_of_tries.
+				$pocet_pokusov = isset($this->_current_mapa_sub_quiz['pocet_pokusov'])
+					? (int) $this->_current_mapa_sub_quiz['pocet_pokusov']
+					: 0;
 			}elseif($place == 'final'){
 				$pocet_pokusov = $this->cAkcia->all_quizes_settings['final_place_pocet_pokusov'];
 			}else {
@@ -433,9 +627,13 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 	 */
 	public function render_tries_remaining_banner($quiz_type){
 		if ( ! isset($this->zostava_pocet_pokusov)) return;
-		$pocet = isset($this->cAkcia->{$quiz_type . '_settings'}['pocet_pokusov'])
-			? (int) $this->cAkcia->{$quiz_type . '_settings'}['pocet_pokusov']
-			: 0;
+		if ( $quiz_type === 'mapa' ) {
+			$pocet = isset($this->_current_mapa_sub_quiz['pocet_pokusov']) ? (int) $this->_current_mapa_sub_quiz['pocet_pokusov'] : 0;
+		} else {
+			$pocet = isset($this->cAkcia->{$quiz_type . '_settings'}['pocet_pokusov'])
+				? (int) $this->cAkcia->{$quiz_type . '_settings'}['pocet_pokusov']
+				: 0;
+		}
 
 		// check_number_of_tries returns pocet+1-entries (the +1 accounts for an
 		// extra form-init row written before the first eval submit). Cap the
@@ -704,8 +902,9 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 			$show = $this->cAkcia->sudoku_settings['zobraz_spravne_odpovede'];
 			$show_jeho = $this->cAkcia->sudoku_settings['zobraz_spravne_uhadnute_odpovede'];
 		} elseif($quiz_type == 'mapa'){
-			$show = $this->cAkcia->mapa_settings['zobraz_spravne_odpovede'];
-			$show_jeho = $this->cAkcia->mapa_settings['zobraz_spravne_uhadnute_odpovede'];
+			// Multi-mapa: per sub-kvíz
+			$show      = ! empty( $this->_current_mapa_sub_quiz['zobraz_spravne_odpovede'] );
+			$show_jeho = ! empty( $this->_current_mapa_sub_quiz['zobraz_spravne_uhadnute_odpovede'] );
 		} else {
 			$show = true;
 			$show_jeho = true;
@@ -860,9 +1059,9 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 			$title = 'Sudoku quiz';
 			$email = $this->cAkcia->sudoku_settings['admin_mail'];
 		} elseif($quiz_type == 'mapa') {
-			$send_email = $this->cAkcia->mapa_settings['poslat_vysledok_usera_mailom'];
-			$title = 'Mapa quiz';
-			$email = $this->cAkcia->mapa_settings['admin_mail'];
+			$send_email = ! empty( $this->_current_mapa_sub_quiz['poslat_vysledok_usera_mailom'] );
+			$title      = 'Mapa quiz' . ( ! empty( $this->_current_mapa_sub_quiz['label'] ) ? ' — ' . $this->_current_mapa_sub_quiz['label'] : '' );
+			$email      = isset( $this->_current_mapa_sub_quiz['admin_mail'] ) ? $this->_current_mapa_sub_quiz['admin_mail'] : '';
 		} else {
 			$send_email = $this->cAkcia->all_quizes_settings['poslat_vysledok_usera_mailom'];
 			$title = 'PLace: ' . $quiz_type;

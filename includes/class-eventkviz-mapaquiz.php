@@ -38,27 +38,29 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
 
         $team_code = $this->set_team_code( $user_code, $akcia_code );
 
-        // ?reset=1 — DELETE všetky uložené záznamy pre tohto hráča/team v tomto evente
-        // (aj question_set aj eval výsledky). Po reset sa otvorí čistý form. Vyžaduje
-        // logged-in admin (manage_options) aby si hráči nemohli mazať vlastné submity.
-        // Notice sa zobrazí v hlavičke kvízu.
+        // ── Multi-mapa routing: requires ?mq=<slug> URL param ────────────
+        $mq_slug = isset( $_GET['mq'] ) ? sanitize_key( $_GET['mq'] ) : '';
+        if ( $mq_slug === '' ) {
+            echo '<p class="ek-quiz-error">Chýba parameter <code>mq</code> (identifikátor mapového kvízu) v URL. Kontaktuj administrátora pre správny link.</p>';
+            return;
+        }
+        $sub_quiz = $this->find_mapa_sub_quiz( $mq_slug );
+        if ( ! $sub_quiz ) {
+            echo '<p class="ek-quiz-error">Mapový kvíz s týmto identifikátorom neexistuje pre tento event.</p>';
+            return;
+        }
+        // Cache pre parent helpers (check_number_of_tries, show_answer, render_tries_banner)
+        $this->_current_mapa_sub_quiz = $sub_quiz;
+
+        // ── ?reset=1 — DELETE záznamy pre tento sub-kvíz IBA (filter cez mq slug v question_set JSON)
         $just_reset = false;
         if ( ! empty( $_GET['reset'] ) && current_user_can( 'manage_options' ) ) {
-            global $wpdb;
-            $table = $wpdb->prefix . 'jet_cct_results';
-            $where_user = $this->standardize( $user_code );
-            $where_team = $this->standardize( $team_code );
-            if ( ! empty( $where_user ) ) {
-                $wpdb->delete( $table, array( 'user' => $where_user, 'akcia' => $akcia_code, 'quiz_type' => 'mapa' ) );
-            }
-            if ( ! empty( $where_team ) && $where_team !== 'none' ) {
-                $wpdb->delete( $table, array( 'team' => $where_team, 'akcia' => $akcia_code, 'quiz_type' => 'mapa' ) );
-            }
+            $this->mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $mq_slug );
             $just_reset = true;
         }
 
-        // Show entry form if needed (mirror pattern from other quizes)
-        if ( ! empty( $this->cAkcia->mapa_settings['show_entry_form'] ) ) {
+        // Show entry form if needed
+        if ( ! empty( $sub_quiz['show_entry_form'] ) ) {
             if ( ! empty( $this->cAkcia->all_quizes_settings['select_from_teams_array'] ) && empty( $team_code ) ) {
                 require_once( plugin_dir_path( __FILE__ ) . 'class-eventkviz-links.php' );
                 $this->cForm = New Eventkviz_AllLinks_Quiz_Class;
@@ -68,12 +70,13 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
             }
         }
 
-        $check_result = $this->check_number_of_tries( $user_code, $akcia_code, 'mapa', $team_code );
+        // Tries check — multi-mapa aware (per sub-kvíz cez question_set LIKE filter)
+        $check_result = $this->mapa_check_tries( $user_code, $akcia_code, $team_code, $mq_slug, $sub_quiz );
         if ( $check_result !== true ) return;
 
-        $template_id = isset( $this->cAkcia->mapa_settings['template_id'] ) ? (int) $this->cAkcia->mapa_settings['template_id'] : 0;
+        $template_id = (int) $sub_quiz['template_id'];
         if ( $template_id <= 0 ) {
-            echo '<p class="ek-quiz-error">Pre tento event nie je nastavená šablóna mapového kvízu. Otvor admin → event → tab Mapa.</p>';
+            echo '<p class="ek-quiz-error">Sub-kvíz nemá nastavenú šablónu.</p>';
             return;
         }
 
@@ -134,11 +137,11 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         }
 
         // Determine which pins to use (reuse from prior session or generate new)
-        $question_set_exists = $this->check_if_questions_set_exists( $akcia_code, 'mapa', $user_code, $team_code );
-        $regenerate_on_retry = ! empty( $this->cAkcia->mapa_settings['new_questions_on_retry'] );
+        $question_set_exists = $this->mapa_check_set_exists( $akcia_code, $user_code, $team_code, $mq_slug );
+        $regenerate_on_retry = ! empty( $sub_quiz['new_questions_on_retry'] );
         $treat_as_new        = ! $question_set_exists || $regenerate_on_retry;
 
-        $count_in_set = isset( $this->cAkcia->mapa_settings['pocet_otazok_v_sete'] ) ? max( 1, (int) $this->cAkcia->mapa_settings['pocet_otazok_v_sete'] ) : 10;
+        $count_in_set = isset( $sub_quiz['pocet_otazok_v_sete'] ) ? max( 1, (int) $sub_quiz['pocet_otazok_v_sete'] ) : 10;
         $count_in_set = min( $count_in_set, count( $all_pins ) );
 
         if ( ! $treat_as_new ) {
@@ -279,6 +282,7 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         echo '<input type="hidden" name="team" value="' . esc_attr( $team_code ) . '">';
         echo '<input type="hidden" name="user" value="' . esc_attr( $user_code ) . '">';
         echo '<input type="hidden" name="akcia" value="' . esc_attr( $akcia_code ) . '">';
+        echo '<input type="hidden" name="mq" value="' . esc_attr( $mq_slug ) . '">';
         echo '<input type="hidden" name="set" value="' . esc_attr( $serialized_set ) . '">';
         echo '<input type="hidden" name="set_sig" value="' . esc_attr( $this->sign_question_set( $serialized_set, $akcia_code ) ) . '">';
 
@@ -299,23 +303,27 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         // Persist question set for retry reuse. Aj keď question_set_exists ale obsah je
         // mismatch (admin zmenil quiz_type alebo pool), prepíšeme aktuálnym setom cez UPDATE.
         if ( ! $question_set_exists ) {
-            $this->write_question_set_to_db( $serialized_set, $akcia_code, 'mapa', $user_code, $team_code );
+            $this->mapa_write_set_to_db( $serialized_set, $akcia_code, $user_code, $team_code, $mq_slug );
         } elseif ( $treat_as_new ) {
             // Stored set was stale → rewrite. write_question_set_to_db sa volá v UPDATE móde
             // ak existing row → update, inak insert. Funguje rovnako pre obidva prípady.
-            $this->write_question_set_to_db( $serialized_set, $akcia_code, 'mapa', $user_code, $team_code );
+            $this->mapa_write_set_to_db( $serialized_set, $akcia_code, $user_code, $team_code, $mq_slug );
         }
     }
 }
 
 
 /**
- * Eval shortcode for map quiz. Reads POST submission (lat/lon per task),
- * loads template pins (server-side authoritative coords), computes haversine
- * distance per task, applies tier scoring, writes results, renders review map.
+ * Multi-mapa helpers — pridáné do parent class via trait alebo bezposredne.
+ * Zatiaľ duplikujem v oboch (form + eval) ako static methods cez include.
+ * Lepšie: vytvoriť trait `Eventkviz_MapaTrait` — TODO refactor.
  *
- * Shortcode: [eval_mapa_quiz_dynamic]
+ * Pre teraz: pridám helpers na koniec MapaForm class (instance methods),
+ * MapaEval ich tiež môže volať (lebo extend rovnaký parent), len musí mať
+ * vlastné helpers. Aby som neduplikoval, dajme do Eventkviz_Quiz_Class
+ * (parent) — tam ich už majú obe classes k dispozícii.
  */
+
 class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
 
     public function __construct() {
@@ -384,12 +392,25 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
             return;
         }
 
-        // Tries check (also writes nothing if exhausted via $pocet_pokusov_reached)
-        $check_result = $this->check_number_of_tries( $user, $akcia, 'mapa', $team );
+        // Multi-mapa: read mq slug z POST (form ho sem posiela cez hidden input)
+        $mq_slug = isset( $_POST['mq'] ) ? sanitize_key( wp_unslash( $_POST['mq'] ) ) : '';
+        if ( $mq_slug === '' ) {
+            echo '<p class="ek-quiz-error">Chýba parameter mq.</p>';
+            return;
+        }
+        $sub_quiz = $this->find_mapa_sub_quiz( $mq_slug );
+        if ( ! $sub_quiz ) {
+            echo '<p class="ek-quiz-error">Mapový kvíz s týmto identifikátorom neexistuje.</p>';
+            return;
+        }
+        $this->_current_mapa_sub_quiz = $sub_quiz;
+
+        // Tries check per sub-kvíz
+        $check_result = $this->mapa_check_tries( $user, $akcia, $team, $mq_slug, $sub_quiz );
         if ( $check_result !== true ) return;
 
         // Load template pins from server side (authoritative source of correct coords)
-        $template_id = isset( $this->cAkcia->mapa_settings['template_id'] ) ? (int) $this->cAkcia->mapa_settings['template_id'] : 0;
+        $template_id = (int) $sub_quiz['template_id'];
         $template    = $template_id > 0 ? get_post( $template_id ) : null;
         if ( ! $template || $template->post_type !== 'mapquiz_template' ) {
             echo '<p class="ek-quiz-error">Šablóna mapového kvízu nenájdená.</p>';
@@ -418,13 +439,13 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
             }
         }
 
-        // Resolve scoring config (per-event override → template default)
-        $max_points_override   = isset( $this->cAkcia->mapa_settings['max_points_override'] ) ? trim( (string) $this->cAkcia->mapa_settings['max_points_override'] ) : '';
+        // Resolve scoring config (per-sub-kvíz override → template default)
+        $max_points_override   = isset( $sub_quiz['max_points_override'] ) ? trim( (string) $sub_quiz['max_points_override'] ) : '';
         $max_points_template   = (int) get_post_meta( $template_id, '_mapquiz_max_points', true );
         $max_points            = $max_points_override !== '' ? (int) $max_points_override : $max_points_template;
         if ( $max_points <= 0 ) $max_points = 100;
 
-        $tiers_override_json = isset( $this->cAkcia->mapa_settings['score_tiers_override'] ) ? trim( (string) $this->cAkcia->mapa_settings['score_tiers_override'] ) : '';
+        $tiers_override_json = isset( $sub_quiz['score_tiers_override'] ) ? trim( (string) $sub_quiz['score_tiers_override'] ) : '';
         $tiers_template_json = (string) get_post_meta( $template_id, '_mapquiz_score_tiers', true );
         $tiers_json          = $tiers_override_json !== '' ? $tiers_override_json : $tiers_template_json;
         $tiers               = is_string( $tiers_json ) ? json_decode( $tiers_json, true ) : array();
@@ -581,7 +602,7 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
             // („zobraz_spravne_odpovede") ON a odpoveď nie je perfektná:
             //   - feature mode (river/mountain): wrong/missing → mini-mapa s feature
             //   - pin mode: not top-tier (points < max_per_task) → mini-mapa s pin
-            $show_correct_answers = ! empty( $this->cAkcia->mapa_settings['zobraz_spravne_odpovede'] );
+            $show_correct_answers = ! empty( $sub_quiz['zobraz_spravne_odpovede'] );
             $needs_mini_map = false;
             if ( $show_correct_answers ) {
                 if ( $quiz_type === 'pin' ) {
@@ -637,7 +658,8 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
         $this->show_total_credits_gained( $gained_credits, $user, $team );
 
         // Write results to DB (insert — new row per submit, like other quizzes)
-        $this->write_results_to_db( $user, $team, $akcia, $gained_credits, $serialized_set, 'mapa', 'insert' );
+        // Write eval result row per sub-kvíz (JSON payload obsahuje mq slug)
+        $this->mapa_write_results_to_db( $user, $team, $akcia, $gained_credits, $serialized_set, $mq_slug );
 
         $this->send_results_by_email( $user, $team, $akcia, $gained_credits, 'mapa' );
 
@@ -668,17 +690,17 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
             echo '<div style="font-size:14px;margin-top:4px;color:#1b3a23;">Všetky odpovede správne.</div>';
             echo '</div>';
         } elseif ( empty( $pocet_pokusov_reached ) ) {
-            $pocet_pokusov = isset( $this->cAkcia->mapa_settings['pocet_pokusov'] ) ? (int) $this->cAkcia->mapa_settings['pocet_pokusov'] : 0;
+            $pocet_pokusov = isset( $sub_quiz['pocet_pokusov'] ) ? (int) $sub_quiz['pocet_pokusov'] : 0;
             // Mirror logic from other quizzes: remaining = pocet - entries_so_far
             // (we just inserted one row; check_number_of_tries above returned true but
             //  we don't have direct entry count here — use $this->zostava_pocet_pokusov - 1
             //  since this submit consumed one try.)
             $remaining = isset( $this->zostava_pocet_pokusov ) ? max( 0, (int) $this->zostava_pocet_pokusov - 1 ) : 0;
             if ( $remaining > 0 ) {
-                $mark_on_retry      = ! empty( $this->cAkcia->mapa_settings['mark_correctness_on_retry'] );
-                $new_set_on_retry   = ! empty( $this->cAkcia->mapa_settings['new_questions_on_retry'] );
+                $mark_on_retry      = ! empty( $sub_quiz['mark_correctness_on_retry'] );
+                $new_set_on_retry   = ! empty( $sub_quiz['new_questions_on_retry'] );
                 $retry_state        = ( $mark_on_retry && ! $new_set_on_retry ) ? $previous_state : array();
-                $retry_url          = $this->build_retry_url( $team, $user, $akcia, '/mapa-quiz/' );
+                $retry_url          = add_query_arg( 'mq', $mq_slug, $this->build_retry_url( $team, $user, $akcia, '/mapa-quiz/' ) );
                 $label              = 'Opakovať kvíz (zostáva ' . $remaining . ' ' . Eventkviz_Quiz_Class::_n_pokus_label( $remaining ) . ')';
                 echo '<div style="margin-top:30px;text-align:center;">';
                 $this->render_retry_button( $retry_url, $label, $retry_state );
