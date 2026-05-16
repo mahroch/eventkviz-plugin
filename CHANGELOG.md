@@ -8,6 +8,9 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Fixed (mapový kvíz — chýbal language switcher na desktope)
+- `eventkviz_is_eventkviz_page()` (detektor stránok ktoré dostanú floating jazykový prepínač + `eventkviz-page` body class) mal hardcoded zoznam shortcodov, ale mapquiz shortcody `mapa_form_dynamic` + `eval_mapa_quiz_dynamic` v ňom chýbali. Mapquiz stránky nedostávali language switcher renderovaný v `wp_footer`. Doplnené.
+
 ### Changed (mapový kvíz — sidebar a eval review čistejšie pre PIN mode)
 - Form mode sidebar pre PIN mode už nezobrazuje `description` — bol to spoiler (popis lokality prezrádzal čo hľadať). Zachovaný `hint` (krátka indícia) + `photo` (môže byť súčasťou úlohy „nájdi miesto na obrázku").
 - Eval review pre PIN mode: odstránený nadbytočný „🎯 Správna lokalita: <názov>" textový blok — názov je už v hlavičke úlohy aj v sidebare. Zachovaný popis + foto ako vzdelávací box.

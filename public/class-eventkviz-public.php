@@ -269,6 +269,7 @@ function eventkviz_is_eventkviz_page() {
 		'movies_form_dynamic', 'eval_movies_quiz_dynamic',
 		'knowledge_form_dynamic', 'eval_knowledge_quiz_dynamic',
 		'sudoku_form_dynamic', 'eval_sudoku_quiz_dynamic',
+		'mapa_form_dynamic', 'eval_mapa_quiz_dynamic',
 		'show_final_page', 'show_seed_page', 'statistika',
 	);
 	foreach ( $shortcodes as $sc ) {
