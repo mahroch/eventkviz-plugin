@@ -67,6 +67,23 @@ class Eventkviz_MapQuiz_Datasets {
                 'singular' => 'rieku',
                 'style'    => array( 'color' => '#3aa6f0', 'weight' => 3 ),
             ),
+            'europe-mountains' => array(
+                'label'    => 'Pohoria Európy',
+                'region'   => 'europe',
+                'file'     => 'europe-mountains.geojson',
+                'geometry' => 'polygon',
+                'singular' => 'pohorie',
+            ),
+
+            // ===== World =====
+            'world-rivers' => array(
+                'label'    => 'Top rieky sveta',
+                'region'   => 'world',
+                'file'     => 'world-rivers.geojson',
+                'geometry' => 'line',
+                'singular' => 'rieku',
+                'style'    => array( 'color' => '#3aa6f0', 'weight' => 3 ),
+            ),
 
             // ===== Future examples (commented out) — easy to add: =====
             // 'sk-national-parks'   => [polygon, slovakia, 'Národné parky SR']

@@ -8,6 +8,18 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Added (mapový kvíz — 4 nové šablóny + scoring info box)
+- **Pohoria Európy** (area, 12 pohorí z Natural Earth: Alpy, Karpaty, Pyreneje, Tatry, Sudety, Vogézy, Balkán, Dinárske vrchy, Kavkaz, Malý Kaukaz, Ural, Južné Karpaty)
+- **Top rieky sveta** (line, 17 riek z NE: Amazonka, Níl, Jang-c’-ťiang, Mississippi, Jenisej, Ob, Lena, Mekong, Volga, Dunaj, Ganga, Niger, Kongo, Paraná, Amur, Mackenzie, Žltá rieka)
+- **Top vrcholy sveta** (pin, 15 vrcholov: Everest, K2, Kančendžonga, Aconcagua, Denali, Kilimandžáro, Elbrus, Vinson, Puncak Jaya, Mont Blanc, Matterhorn, Fudži, Mt. Kenya, Mt. Cook, Pico de Orizaba) — Wikipedia fotky.
+- **Sopky sveta** (pin, 15 sopiek: Vezuv, Etna, Stromboli, Fudži, Krakatoa, Mt. St. Helens, Kīlauea, Mauna Loa, Yellowstone, Popocatépetl, Eyjafjallajökull, Pinatubo, Cotopaxi, Erebus, Tambora) — Wikipedia fotky.
+- World pin templates používajú **world-scale score tiers** (200/500/1000/2000 km) namiesto SR defaults (5/10/20/40 km) — pri svetových vzdialenostiach by tradičné tiers znamenali vždy 0 b.
+- Fetch scripty: `tools/fetch-europe-mountains.py` (z Natural Earth `ne_10m_geography_regions_polys`), `tools/fetch-world-rivers.py` (z NE `ne_10m_rivers_lake_centerlines`).
+- Seed scripty: `tools/seed-world-peaks.php`, `tools/seed-world-volcanoes.php`, `tools/seed-eu-mountains-world-rivers.php` — všetky idempotentné.
+
+### Added (mapový kvíz — info box „Ako sa kvíz vyhodnocuje" v evale)
+- Pred sumarizáciou bodov sa zobrazí vysvetlovací box: max body, počet úloh, rozdelenie, scoring metóda. Pre `pin` mode vypíše tiers s presnými percentami + bodmi (napr. „0–5 km = 100 % = 20 b"). Pre `area`/`line` upozornenie že hodnotenie je binárne. Pomáha hráčovi pochopiť výpočet skóre.
+
 ### Fixed (mapový kvíz — chýbal language switcher na desktope)
 - `eventkviz_is_eventkviz_page()` (detektor stránok ktoré dostanú floating jazykový prepínač + `eventkviz-page` body class) mal hardcoded zoznam shortcodov, ale mapquiz shortcody `mapa_form_dynamic` + `eval_mapa_quiz_dynamic` v ňom chýbali. Mapquiz stránky nedostávali language switcher renderovaný v `wp_footer`. Doplnené.
 

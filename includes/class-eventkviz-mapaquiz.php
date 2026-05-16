@@ -643,6 +643,32 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
         }
         echo '</div>'; // .ek-mapa-eval-list
 
+        // Info box „Ako sa kvíz vyhodnocuje" — vysvetlí scoring (max body,
+        // rozdelenie per úloha, metodológia podľa quiz_type). Pomáha hráčovi
+        // porozumieť ako sa dopracoval k výslednému počtu bodov.
+        $max_per_task_disp = $task_count > 0 ? round( $max_per_task, 1 ) : 0;
+        echo '<div class="ek-mapa-scoring-info" style="margin:18px auto;max-width:720px;padding:14px 18px;background:#eef4fa;border-left:3px solid #2271b1;border-radius:0 6px 6px 0;color:#1d2327;font-size:14px;line-height:1.5">';
+        echo '<div style="font-weight:700;margin-bottom:6px">ℹ Ako sa kvíz vyhodnocuje</div>';
+        echo '<div>Maximálny počet bodov: <strong>' . esc_html( $max_points ) . '</strong> · rozdelených na <strong>' . esc_html( $task_count ) . '</strong> úlo' . ( $task_count === 1 ? 'hu' : ( $task_count >= 2 && $task_count <= 4 ? 'hy' : 'h' ) ) . ' (max <strong>' . esc_html( $max_per_task_disp ) . '</strong> b za úlohu).</div>';
+        if ( $quiz_type === 'pin' ) {
+            echo '<div style="margin-top:6px">Hodnotenie <strong>pin</strong> kvízu: body sa počítajú podľa <strong>vzdialenosti</strong> od správneho miesta:</div>';
+            echo '<ul style="margin:4px 0 0 22px;padding:0;list-style:disc">';
+            $prev_km = 0;
+            foreach ( $tiers as $tier ) {
+                $max_km = isset( $tier['maxKm'] ) ? (float) $tier['maxKm'] : 0;
+                $pct    = isset( $tier['percent'] ) ? (float) $tier['percent'] : 0;
+                $pts    = round( $max_per_task * $pct / 100, 1 );
+                echo '<li>' . esc_html( $prev_km ) . '–' . esc_html( $max_km ) . ' km = <strong>' . esc_html( $pct ) . ' %</strong> = ' . esc_html( $pts ) . ' b</li>';
+                $prev_km = $max_km;
+            }
+            echo '<li>nad ' . esc_html( $prev_km ) . ' km = <strong>0 %</strong> = 0 b</li>';
+            echo '</ul>';
+        } else {
+            $type_label = ( $quiz_type === 'line' ? 'čiarového objektu (rieka, železnica…)' : 'územia / oblasti (štát, pohorie, NP…)' );
+            echo '<div style="margin-top:6px">Hodnotenie <strong>' . esc_html( $type_label ) . '</strong>: <strong>binárne</strong> — buď klikneš na správnu feature (= plný počet bodov za úlohu, <strong>' . esc_html( $max_per_task_disp ) . '</strong> b), alebo nie (= 0 b). Vzdialenosti sa neuplatňujú.</div>';
+        }
+        echo '</div>';
+
         $this->show_total_credits_gained( $gained_credits, $user, $team );
 
         // Write results to DB (insert — new row per submit, like other quizzes)
