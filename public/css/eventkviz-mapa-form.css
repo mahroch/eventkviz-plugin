@@ -129,12 +129,14 @@
     background: transparent;
     border: none;
     box-shadow: none;
-    color: #455a64;
-    font-size: 9px;
+    color: #546e7a;
+    font-size: 7px;
     font-weight: 500;
-    padding: 0 2px;
+    padding: 0 1px;
     pointer-events: none;
     text-shadow: 0 0 2px #fff, 0 0 2px #fff, 0 0 2px #fff;
+    line-height: 1.1;
+    white-space: nowrap;
 }
 .ek-mapa-mini-country-label:before {
     display: none;

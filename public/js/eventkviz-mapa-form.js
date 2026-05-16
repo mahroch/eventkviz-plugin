@@ -879,6 +879,7 @@
             $el.data('ek-init', true);
 
             var featureName = $el.data('feature');
+            var guessFeature = $el.data('guess-feature') || ''; // čo hráč klikol nesprávne (pre area/line)
             var pinLat = $el.data('pin-lat');
             var pinLon = $el.data('pin-lon');
             var region = $el.data('region') || 'slovakia';
@@ -967,22 +968,44 @@
                     .then(function (r) { return r.ok ? r.json() : null; })
                     .then(function (data) {
                         if (!data) return;
-                        var matching = data.features.filter(function (f) {
+                        var correctFeatures = data.features.filter(function (f) {
                             return f.properties && f.properties.name === featureName;
                         });
-                        if (!matching.length) return;
-                        var style = qt === 'line'
+                        var guessFeatures = guessFeature
+                            ? data.features.filter(function (f) {
+                                return f.properties && f.properties.name === guessFeature;
+                            })
+                            : [];
+                        if (!correctFeatures.length) return;
+
+                        var correctStyle = qt === 'line'
                             ? { color: '#1976d2', weight: 5, opacity: 1 }
                             : { color: '#1b5e20', weight: 2, fillColor: '#43a047', fillOpacity: 0.75 };
-                        var fl = L.geoJSON({ type: 'FeatureCollection', features: matching }, {
-                            style: style, interactive: false
+                        var wrongStyle = qt === 'line'
+                            ? { color: '#c62828', weight: 5, opacity: 1, dashArray: '6,4' }
+                            : { color: '#b71c1c', weight: 2, fillColor: '#ef5350', fillOpacity: 0.65 };
+
+                        // Vykresli najprv guess (červený) — bude pod správnym, aby keď
+                        // sa prekrývajú, zelený vrchol bol vidno.
+                        var combinedBounds = null;
+                        if (guessFeatures.length) {
+                            var glayer = L.geoJSON({ type: 'FeatureCollection', features: guessFeatures }, {
+                                style: wrongStyle, interactive: false
+                            }).addTo(miniMap);
+                            combinedBounds = glayer.getBounds();
+                        }
+                        var clayer = L.geoJSON({ type: 'FeatureCollection', features: correctFeatures }, {
+                            style: correctStyle, interactive: false
                         }).addTo(miniMap);
-                        // Zoom na expanded bounds samotnej feature — pad(0.8) zväčší
-                        // viewport o 80% (vidno feature + okolité štáty/regióny pre geo
-                        // kontext). Capnúť na región bounds aby pri obrích features
-                        // (Rusko) sa pohľad nezoomoval mimo kontinentu.
-                        var rawBounds = fl.getBounds();
-                        featureBounds = rawBounds.pad(0.8);
+                        combinedBounds = combinedBounds
+                            ? combinedBounds.extend(clayer.getBounds())
+                            : clayer.getBounds();
+
+                        // Zoom na expanded bounds OBOCH features — pad(0.8) zväčší
+                        // viewport o 80% (vidno feature + okolité štáty pre geo kontext).
+                        // Capnúť na región bounds aby pri obrích features (Rusko)
+                        // sa pohľad nezoomoval mimo kontinentu.
+                        featureBounds = combinedBounds.pad(0.8);
                         var regionMaxBounds = L.latLngBounds(preset.bounds);
                         if (!regionMaxBounds.contains(featureBounds)) {
                             featureBounds = L.latLngBounds(

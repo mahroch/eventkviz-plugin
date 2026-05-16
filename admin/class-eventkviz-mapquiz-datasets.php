@@ -43,6 +43,13 @@ class Eventkviz_MapQuiz_Datasets {
                 'singular' => 'rieku',
                 'style'    => array( 'color' => '#3aa6f0', 'weight' => 4 ),
             ),
+            'sk-national-parks' => array(
+                'label'    => 'Národné parky SR',
+                'region'   => 'slovakia',
+                'file'     => 'sk-national-parks.geojson',
+                'geometry' => 'polygon',
+                'singular' => 'národný park',
+            ),
 
             // ===== Europe =====
             'europe-countries' => array(

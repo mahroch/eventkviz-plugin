@@ -610,7 +610,11 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                         $plon = isset( $r['pin']['lon'] ) ? (float) $r['pin']['lon'] : 0;
                         echo '<div class="ek-mapa-mini" data-pin-lat="' . esc_attr( $plat ) . '" data-pin-lon="' . esc_attr( $plon ) . '" data-region="' . esc_attr( $region ) . '" data-quiz-type="pin"></div>';
                     } else {
-                        echo '<div class="ek-mapa-mini" data-feature="' . esc_attr( $correct_name ) . '" data-region="' . esc_attr( $region ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-dataset="' . esc_attr( $dataset_slug_attr ) . '"></div>';
+                        // Pre area/line: aj guess_feature (= čo hráč klikol nesprávne),
+                        // aby mini-mapa nakreslila aj červený polygón / línku hráčovho výberu
+                        // vedľa zeleného správneho.
+                        $guess_feat = isset( $r['guess_feature'] ) ? (string) $r['guess_feature'] : '';
+                        echo '<div class="ek-mapa-mini" data-feature="' . esc_attr( $correct_name ) . '" data-guess-feature="' . esc_attr( $guess_feat ) . '" data-region="' . esc_attr( $region ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-dataset="' . esc_attr( $dataset_slug_attr ) . '"></div>';
                     }
                     echo '</div>';
                 }

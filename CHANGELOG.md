@@ -8,6 +8,15 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Added (mapový kvíz — Národné parky SR migrácia z pin na area)
+- Šablóna „Národné parky SR" prepnutá z `pin` (jedna súradnica = stredisko parku) na `area` (polygon kompletného územia parku). Národný park je oblasť, nie miesto.
+- Nový dataset `sk-national-parks` (9 SK NP polygónov, stiahnutých z OSM Overpass cez `tools/fetch-sk-national-parks.py`, simplified `n=6`, výsledný bundle 107 KB).
+- Hráč teraz klikne na polygon parku ako pri Pohoria SR / Štáty Európy. Binárne hodnotenie (správny park = full body, iný = 0).
+
+### Added (mapový kvíz — mini-mapa: aj nesprávny guess ako červený polygón/línia)
+- Mini-mapa pre wrong answer doteraz ukazovala iba zelený správny štát — hráč nevidel kde sám klikol. Teraz sa renderuje aj **červený polygón** (area mód) alebo **červená dashed línia** (line mód) hráčovho výberu, zoom-uje fit-Bounds nad oboma. Hráč vidí súčasne „kde si trafil = červený" a „kde malo byť = zelený".
+- Mini-mapa EU labely — zmenšené na 7px + nowrap, aby pri zoom na región/štát nebol crowd.
+
 ### Fixed (mapový kvíz — mini-mapa zoom na konkrétnu feature)
 - Mini-mapa pre nesprávnu odpoveď v review fitla celý región (kontinent Európy alebo SR bounding box), takže pri malom štáte (Srbsko, Slovinsko, …) alebo riečke bola feature ledva vidno. Teraz mini-mapa po načítaní fit-ne bounds samotnej feature s paddingom 16px a `maxZoom: 7` — dostatočne blízko aby bolo vidno detail, ale stále s nejakým geo kontextom. Pre pin mode auto-bbox ±1.2° okolo súradnice.
 - ResizeObserver pri zmene kontajnera tiež refit-uje na feature bounds (predtým by re-set-ol pohľad na celý kontinent).
