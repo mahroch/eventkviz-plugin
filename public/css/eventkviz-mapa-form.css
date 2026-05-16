@@ -2,14 +2,23 @@
    Mapa player form / eval — RESPONSIVE LAYOUT
    ============================================ */
 
-/* Wrapper override: pre mapa quiz max-width sa rozšíri na celú obrazovku
-   (default ek-quiz-content má 720px — to je pre music/movies kvízy). */
+/* Wrapper override: pre mapa quiz plná šírka obrazovky.
+   Default ek-quiz-content má 720 px (pre music/movies kvízy);
+   plus ek-quiz wrapper má 40px+20px padding ktorý zmenšíme. */
+.ek-quiz--mapa {
+    padding: 16px 12px !important;
+}
 .ek-quiz-content--mapa {
-    max-width: 1600px !important;
-    padding: 24px 28px !important;
+    max-width: 100% !important;
+    padding: 20px 20px !important;
+}
+@media (min-width: 1024px) {
+    .ek-quiz--mapa { padding: 20px 16px !important; }
+    .ek-quiz-content--mapa { padding: 24px 28px !important; }
 }
 @media (min-width: 1400px) {
-    .ek-quiz-content--mapa { padding: 28px 36px !important; }
+    .ek-quiz--mapa { padding: 24px 20px !important; }
+    .ek-quiz-content--mapa { padding: 28px 32px !important; }
 }
 
 #ek-mapa-container {
