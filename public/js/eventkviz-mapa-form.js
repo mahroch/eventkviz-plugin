@@ -308,37 +308,90 @@
     }
 
     function loadOverlays() {
-        // Pomocné vrstvy — v1 iba pre Slovensko (dáta bundleované v plugine).
-        if (region !== 'slovakia') return;
+        // Per-region overlay renderers. Slovenské + európske overlays bundleované
+        // v plugine. Admin zaškrtne overlay v editor → flag v overlaysCfg → fetch
+        // GeoJSON + render.
+        if (region === 'slovakia') {
+            if (overlaysCfg.regions) {
+                fetch(ekMapaCfg.geoJsonBase + 'sk-regions.geojson').then(function (r) {
+                    return r.ok ? r.json() : null;
+                }).then(function (data) { if (data) renderRegionsOverlay(data); }).catch(function () {});
+            }
+            if (overlaysCfg.rivers) {
+                fetch(ekMapaCfg.geoJsonBase + 'sk-rivers.geojson').then(function (r) {
+                    return r.ok ? r.json() : null;
+                }).then(function (data) { if (data) renderRiversOverlay(data); }).catch(function () {});
+            }
+            if (overlaysCfg.cities_main || overlaysCfg.cities_regional) {
+                fetch(ekMapaCfg.geoJsonBase + 'sk-cities.geojson').then(function (r) {
+                    return r.ok ? r.json() : null;
+                }).then(function (data) {
+                    if (!data) return;
+                    // Filter podľa tier: tier 1 = krajské, tier 2 = okresné. Admin si vyberie.
+                    var filtered = {
+                        type: 'FeatureCollection',
+                        features: data.features.filter(function (f) {
+                            var t = f.properties && f.properties.tier;
+                            if (t === 1) return !!overlaysCfg.cities_main;
+                            if (t === 2) return !!overlaysCfg.cities_regional;
+                            return false;
+                        })
+                    };
+                    renderCitiesOverlay(filtered);
+                }).catch(function () {});
+            }
+            return;
+        }
 
-        if (overlaysCfg.regions) {
-            fetch(ekMapaCfg.geoJsonBase + 'sk-regions.geojson').then(function (r) {
-                return r.ok ? r.json() : null;
-            }).then(function (data) { if (data) renderRegionsOverlay(data); }).catch(function () {});
+        if (region === 'europe') {
+            // Hranice štátov ako jemné polygon outlines (interactive: false aby
+            // neblokovali klik na feature layer pri area/line móde).
+            if (overlaysCfg.eu_borders) {
+                fetch(ekMapaCfg.geoJsonBase + 'europe-countries.geojson').then(function (r) {
+                    return r.ok ? r.json() : null;
+                }).then(function (data) { if (data) renderEuBordersOverlay(data); }).catch(function () {});
+            }
+            // Top európske rieky ako modré línie s tooltip názvom (rovnaký style ako SK rivers).
+            if (overlaysCfg.eu_major_rivers) {
+                fetch(ekMapaCfg.geoJsonBase + 'europe-rivers.geojson').then(function (r) {
+                    return r.ok ? r.json() : null;
+                }).then(function (data) { if (data) renderRiversOverlay(data); }).catch(function () {});
+            }
+            // Hlavné mestá Európy ako pinky s permanentnými labelmi (rovnako ako SK krajské mestá).
+            if (overlaysCfg.eu_capitals) {
+                fetch(ekMapaCfg.geoJsonBase + 'europe-capitals.geojson').then(function (r) {
+                    return r.ok ? r.json() : null;
+                }).then(function (data) {
+                    if (!data) return;
+                    // Inject tier=1 ak chýba (point GeoJSON typicky bez tier) — používa rovnaký
+                    // styling code path ako SK krajské mestá (väčší marker + permanent label).
+                    data.features.forEach(function (f) {
+                        if (!f.properties) f.properties = {};
+                        if (!f.properties.tier) f.properties.tier = 1;
+                    });
+                    renderCitiesOverlay(data);
+                }).catch(function () {});
+            }
+            return;
         }
-        if (overlaysCfg.rivers) {
-            fetch(ekMapaCfg.geoJsonBase + 'sk-rivers.geojson').then(function (r) {
-                return r.ok ? r.json() : null;
-            }).then(function (data) { if (data) renderRiversOverlay(data); }).catch(function () {});
-        }
-        if (overlaysCfg.cities_main || overlaysCfg.cities_regional) {
-            fetch(ekMapaCfg.geoJsonBase + 'sk-cities.geojson').then(function (r) {
-                return r.ok ? r.json() : null;
-            }).then(function (data) {
-                if (!data) return;
-                // Filter podľa tier: tier 1 = krajské, tier 2 = okresné. Admin si vyberie.
-                var filtered = {
-                    type: 'FeatureCollection',
-                    features: data.features.filter(function (f) {
-                        var t = f.properties && f.properties.tier;
-                        if (t === 1) return !!overlaysCfg.cities_main;
-                        if (t === 2) return !!overlaysCfg.cities_regional;
-                        return false;
-                    })
-                };
-                renderCitiesOverlay(filtered);
-            }).catch(function () {});
-        }
+    }
+
+    function renderEuBordersOverlay(geojson) {
+        // Jemné hranice štátov — light fill, šedý border, interactive: false.
+        // Pre area mode (Štáty Európy) NIE JE potrebné renderovať tento overlay
+        // (feature layer renderuje rovnaké polygóny ako interaktívne) — admin si
+        // ho v takom prípade nemá vôbec zapnúť. Pre line mode (Rieky Európy) dáva
+        // hranice kontext kde sú rieky vs štáty.
+        L.geoJSON(geojson, {
+            style: {
+                color: '#9aa5b1',
+                weight: 1,
+                opacity: 0.7,
+                fillColor: '#f6f7f7',
+                fillOpacity: 0.4
+            },
+            interactive: false
+        }).addTo(map);
     }
 
     function renderRegionsOverlay(geojson) {

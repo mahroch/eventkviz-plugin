@@ -4,6 +4,13 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Added (mapový kvíz — EU overlays rendering)
+- JS frontend teraz renderuje overlays pre `region=europe`:
+  - **Hranice štátov** (`eu_borders`) — jemné šedé polygon outlines s polotransparentným fillom; pre `line` mód (Rieky Európy) dáva geografický kontext kde sú rieky vs štáty. Pre `area` mód (Štáty Európy) nemá zmysel zapínať — feature layer renderuje rovnaké polygóny interaktívne.
+  - **Top európske rieky** (`eu_major_rivers`) — modré línie s tooltip názvom (rovnaký style ako SK rivers overlay).
+  - **Hlavné mestá Európy** (`eu_capitals`) — pinky s permanentnými labelmi (auto-injected `tier=1` lebo point GeoJSON typicky tier nemá).
+- Predtým boli EU overlay checkboxy v admin UI prítomné ale `loadOverlays()` mala early-return pre non-slovakia regióny — admin si zaškrtol overlay, no-op.
+
 ### Fixed (mapový kvíz — stale dataset_slug pri prepnutí quiz_type alebo regionu)
 - Admin editor a save handler nevalidoval, či uložený `_mapquiz_dataset_slug` zodpovedá aktuálnemu `quiz_type` a `region`. Po prepnutí napr. z `area`+europe na `line`+europe ostal v postmeta starý slug („europe-countries"), čo spôsobilo že frontend načítal polygóny štátov namiesto riek + sidebar zobrazoval „Nájdi štát: Dunaj" namiesto „Nájdi rieku: Dunaj".
 - Admin editor: pri renderovaní dropdown a features list teraz validuje, či stored slug match-uje `available_datasets`. Ak nie, fallback na prvý platný dataset.
