@@ -4,6 +4,11 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Fixed (mapový kvíz — stale dataset_slug pri prepnutí quiz_type alebo regionu)
+- Admin editor a save handler nevalidoval, či uložený `_mapquiz_dataset_slug` zodpovedá aktuálnemu `quiz_type` a `region`. Po prepnutí napr. z `area`+europe na `line`+europe ostal v postmeta starý slug („europe-countries"), čo spôsobilo že frontend načítal polygóny štátov namiesto riek + sidebar zobrazoval „Nájdi štát: Dunaj" namiesto „Nájdi rieku: Dunaj".
+- Admin editor: pri renderovaní dropdown a features list teraz validuje, či stored slug match-uje `available_datasets`. Ak nie, fallback na prvý platný dataset.
+- Save handler: pred uložením `dataset_slug` overí cez `for_mode_and_region()` že slug má správnu geometry + region. Pri mismatch fallback na prvý platný (alebo prázdno). Pin mode vždy clearuje slug (nerelevantný).
+
 ### Fixed (mapový kvíz — threshold check pre GeoChallenge code)
 - Mapový kvíz pri vyhodnotení nekontroloval `min_body_na_postup` a hráč dostal kód do GeoChallenge / seed page aj keď nedosiahol prah. Teraz mirror logika z movies/music/knowledge kvízov: ak hráč nedosiahol prah, zobrazí sa „Nezískali ste dosť bodov na postup" + aktuálne získané body, žiadny seed kód ani GeoChallenge return link.
 

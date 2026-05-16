@@ -182,11 +182,16 @@ class Eventkviz_MapQuiz_Editor {
             $available_datasets = Eventkviz_MapQuiz_Datasets::for_mode_and_region( $quiz_type, $region );
         }
 
-        // Aktuálne vybraný dataset (per quiz_type uložený v postmeta)
-        $current_dataset_slug = get_post_meta( $post->ID, '_mapquiz_dataset_slug', true );
-        if ( ! $current_dataset_slug && ! empty( $available_datasets ) ) {
-            $current_dataset_slug = array_key_first( $available_datasets );
-        }
+        // Aktuálne vybraný dataset — len ak match-uje aktuálny quiz_type + region.
+        // Ak admin zmení quiz_type (area→line) alebo region (slovakia→europe),
+        // postmeta môže obsahovať „stale" slug z predchádzajúcej konfigurácie
+        // (napr. „europe-countries" zostal pri prepnutí na line mode).
+        // Defaultneme na prvý dataset z available_datasets aby UI a save handler
+        // vždy operovali na konzistentnom stave.
+        $stored_dataset_slug = get_post_meta( $post->ID, '_mapquiz_dataset_slug', true );
+        $current_dataset_slug = ( $stored_dataset_slug && isset( $available_datasets[ $stored_dataset_slug ] ) )
+            ? $stored_dataset_slug
+            : ( ! empty( $available_datasets ) ? array_key_first( $available_datasets ) : '' );
         // Features pool pre vybraný dataset (z bundle súboru cez registry)
         $available_features = $current_dataset_slug
             ? Eventkviz_MapQuiz_Datasets::load_feature_names( $current_dataset_slug )
@@ -451,9 +456,26 @@ class Eventkviz_MapQuiz_Editor {
         if ( ! in_array( $quiz_type, array( 'pin', 'area', 'line' ), true ) ) $quiz_type = 'pin';
         update_post_meta( $post_id, self::META_QUIZ_TYPE, $quiz_type );
 
-        // Dataset slug (pre area/line) — referenc do Eventkviz_MapQuiz_Datasets registry
+        // Dataset slug (pre area/line) — referenc do Eventkviz_MapQuiz_Datasets registry.
+        // Validujeme:
+        //   1. dataset existuje v registry
+        //   2. geometry zodpovedá quiz_type (area=polygon, line=line, pin=point)
+        //   3. region zodpovedá template regionu
+        // Browsery posielajú HTML form values aj pre skryté `display:none` sekcie
+        // (area dropdown ostane v $_POST aj keď admin prepol na line) — guard
+        // proti tomu aby sa „stale" slug uložil pri zmene quiz_type alebo regionu.
         $dataset_slug = isset( $_POST[ self::META_DATASET_SLUG ] ) ? sanitize_key( $_POST[ self::META_DATASET_SLUG ] ) : '';
-        if ( $dataset_slug !== '' && ! Eventkviz_MapQuiz_Datasets::get( $dataset_slug ) ) $dataset_slug = '';
+        if ( $dataset_slug !== '' && in_array( $quiz_type, array( 'area', 'line' ), true ) ) {
+            $allowed = Eventkviz_MapQuiz_Datasets::for_mode_and_region( $quiz_type, $region );
+            if ( ! isset( $allowed[ $dataset_slug ] ) ) {
+                // Mismatch: dataset nie je platný pre tento quiz_type+region.
+                // Fallback: prvý platný dataset (alebo prázdno ak žiadny).
+                $dataset_slug = ! empty( $allowed ) ? array_key_first( $allowed ) : '';
+            }
+        } else {
+            // Pin mode — clearuj akýkoľvek leftover dataset_slug (relevantný len pre area/line).
+            $dataset_slug = '';
+        }
         update_post_meta( $post_id, self::META_DATASET_SLUG, $dataset_slug );
 
         // Feature pool (pre area/line — array of feature names z vybraného datasetu)
