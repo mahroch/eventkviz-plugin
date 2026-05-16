@@ -207,8 +207,8 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
 
         $is_review = ! empty( $_POST['prev_review'] );
 
-        echo '<div class="ek-quiz">';
-        echo '<div class="ek-quiz-content">';
+        echo '<div class="ek-quiz ek-quiz--mapa">';
+        echo '<div class="ek-quiz-content ek-quiz-content--mapa">';
         echo '<h1 class="ek-quiz-title">Mapový kvíz: ' . esc_html( $template->post_title ) . '</h1>';
         echo '<p class="ek-quiz-subtitle">Označ na mape miesta uvedené v zozname.</p>';
         if ( $just_reset ) {
@@ -513,8 +513,8 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
         $region        = get_post_meta( $template_id, '_mapquiz_region', true ) ?: 'slovakia';
         $player_detail = get_post_meta( $template_id, '_mapquiz_player_detail', true ) ?: 'outline-only';
 
-        echo '<div class="ek-quiz">';
-        echo '<div class="ek-quiz-content">';
+        echo '<div class="ek-quiz ek-quiz--mapa">';
+        echo '<div class="ek-quiz-content ek-quiz-content--mapa">';
         echo '<h1 class="ek-quiz-title">Vyhodnotenie mapového kvízu: ' . esc_html( $template->post_title ) . '</h1>';
 
         // Overlay vodítka (rovnaké ako form) — pomáhajú hráčovi orientovať sa pri review

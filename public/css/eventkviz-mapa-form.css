@@ -1,10 +1,25 @@
-/* Mapa player form layout */
+/* ============================================
+   Mapa player form / eval — RESPONSIVE LAYOUT
+   ============================================ */
+
+/* Wrapper override: pre mapa quiz max-width sa rozšíri na celú obrazovku
+   (default ek-quiz-content má 720px — to je pre music/movies kvízy). */
+.ek-quiz-content--mapa {
+    max-width: 1600px !important;
+    padding: 24px 28px !important;
+}
+@media (min-width: 1400px) {
+    .ek-quiz-content--mapa { padding: 28px 36px !important; }
+}
+
 #ek-mapa-container {
     display: flex;
     flex-direction: row;
     gap: 14px;
     margin-bottom: 18px;
 }
+
+/* --- Sidebar (Úlohy) — width responsive --- */
 .ek-mapa-tasks {
     flex: 0 0 220px;
     max-height: 600px;
@@ -20,12 +35,32 @@
     color: var(--ek-text, #fff);
     opacity: 0.85;
 }
+
+/* --- Map — height responsive --- */
 .ek-mapa-map {
     flex: 1 1 auto;
     height: 600px;
     border-radius: var(--ek-radius-sm, 10px);
     border: 1px solid rgba(255,255,255,0.15);
     background: #fff;
+}
+
+/* Tablet landscape (~1024px+) — väčší sidebar, vyššia mapa */
+@media (min-width: 1024px) {
+    .ek-mapa-tasks { flex: 0 0 280px; max-height: 700px; padding: 14px; }
+    .ek-mapa-map { height: 700px; }
+}
+
+/* Desktop (~1366px+) */
+@media (min-width: 1366px) {
+    .ek-mapa-tasks { flex: 0 0 320px; max-height: 760px; }
+    .ek-mapa-map { height: 760px; }
+}
+
+/* Large desktop (~1700px+) — maximálne využitie obrazovky */
+@media (min-width: 1700px) {
+    .ek-mapa-tasks { flex: 0 0 360px; max-height: 820px; }
+    .ek-mapa-map { height: 820px; }
 }
 
 /* Overlay vodítka — mestá / rieky tooltips */
@@ -76,7 +111,12 @@
     background: #34495e;
     color: #fff;
 }
+/* Mobile (do 720px) — stack vertical: sidebar nad mapou, kompaktne */
 @media (max-width: 720px) {
+    .ek-quiz-content--mapa {
+        max-width: 100% !important;
+        padding: 16px 12px !important;
+    }
     #ek-mapa-container {
         flex-direction: column;
     }
@@ -272,6 +312,15 @@
     border: 1px solid rgba(255,255,255,0.2);
     border-radius: 8px;
     overflow: hidden;
+}
+/* Mini-mapa väčšia na desktope — vzdelávací aspekt je dôležitejší ak je miesto */
+@media (min-width: 1024px) {
+    .ek-mapa-mini-wrap { max-width: 460px; }
+    .ek-mapa-mini { width: 440px; height: 260px; }
+}
+@media (min-width: 1400px) {
+    .ek-mapa-mini-wrap { max-width: 540px; }
+    .ek-mapa-mini { width: 520px; height: 310px; }
 }
 .ek-review-banner {
     background: rgba(33,150,243,0.15);
