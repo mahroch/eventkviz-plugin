@@ -646,10 +646,23 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
 
         $this->send_results_by_email( $user, $team, $akcia, $gained_credits, 'mapa' );
 
-        $this->show_seed( $user, $akcia, 'mapa', $team );
+        // Threshold check — kód do GeoChallenge / seed sa zobrazí len ak hráč
+        // dosiahol min_body_na_postup. Bez prahu (= 0) sa kód zobrazí vždy
+        // (legacy správanie pre šablóny bez nakonfigurovaného prahu).
+        // Mirror logika z movies/music/knowledge quizov.
+        $min_body = isset( $sub_quiz['min_body_na_postup'] ) ? (int) $sub_quiz['min_body_na_postup'] : 0;
+        $passed_threshold = ( $min_body <= 0 ) || ( $gained_credits >= $min_body );
 
-        if ( $gained_credits > 0 ) {
-            $this->show_geochallenge_return( $gained_credits );
+        if ( $passed_threshold ) {
+            $this->show_seed( $user, $akcia, 'mapa', $team );
+            if ( $gained_credits > 0 ) {
+                $this->show_geochallenge_return( $gained_credits );
+            }
+        } else {
+            echo '<div class="ek-quiz-message ek-quiz-message--fail" style="margin-top:20px;padding:16px 20px;background:#fff3e0;border:2px solid #ff9800;border-radius:10px;text-align:center;color:#3e2723;">';
+            echo '<p style="margin:0;font-size:15px;"><strong>Nezískali ste dosť bodov na postup.</strong></p>';
+            echo '<p style="margin:6px 0 0;font-size:14px;">Je potrebné dosiahnuť aspoň <strong>' . esc_html( $min_body ) . '</strong> bodov. Získali ste <strong>' . esc_html( $gained_credits ) . '</strong>.</p>';
+            echo '</div>';
         }
 
         // Vyhodnoť či hráč mal perfektný pokus (žiaden zmysel ponúkať retry).

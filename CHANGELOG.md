@@ -4,6 +4,9 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Fixed (mapový kvíz — threshold check pre GeoChallenge code)
+- Mapový kvíz pri vyhodnotení nekontroloval `min_body_na_postup` a hráč dostal kód do GeoChallenge / seed page aj keď nedosiahol prah. Teraz mirror logika z movies/music/knowledge kvízov: ak hráč nedosiahol prah, zobrazí sa „Nezískali ste dosť bodov na postup" + aktuálne získané body, žiadny seed kód ani GeoChallenge return link.
+
 ### Added (mapový kvíz — 4 mapové šablóny v novom multi-region móde)
 - **Pohoria SR** (migrované z legacy 'Pohoria') — quiz_type `area`, dataset `sk-mountains`, default pool 5 pohorí (VT, NT, MF, VF, MK).
 - **Rieky SR** (migrované z legacy 'Rieky') — quiz_type `line`, dataset `sk-rivers`, default pool 8 klasických riek (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec).
