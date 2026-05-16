@@ -95,6 +95,10 @@ if ( is_admin() ) {
 require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-mapquiz-cpt.php' );
 Eventkviz_MapQuiz_CPT::init();
 
+// Mapquiz dataset registry — central definícia pre area/line datasety (bundled
+// GeoJSON v public/data/regions/). Použité v admin (dataset dropdown) + form/eval.
+require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-mapquiz-datasets.php' );
+
 // Map quiz admin editor — meta boxes + save hook + asset enqueues. Admin-only.
 if ( is_admin() ) {
 	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-mapquiz-editor.php' );
