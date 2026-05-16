@@ -905,13 +905,12 @@
             // featureBounds = priority view (zoomed na konkrétnu feature/pin)
             // Set-uje sa po async fetch; do tej doby fit-ujeme región bounds ako fallback.
             var featureBounds = null;
-            // Pre pin mode vieme zoom-núť hneď (bez fetch) — vytvor mali bbox okolo lat/lon.
-            // ±1.2° zoomu cca na úroveň 7-8 — dostatočne blízko aby bolo vidno kontext mesta,
-            // ale aj nejaké okolie pre orientáciu.
+            // Pre pin mode vieme zoom-núť hneď (bez fetch) — bbox ±5° v každom smere
+            // (cca úroveň 5-6) — vidno feature aj okolité regióny/štáty pre geo kontext.
             if (qt === 'pin') {
                 featureBounds = L.latLngBounds(
-                    [pinLat - 1.2, pinLon - 1.5],
-                    [pinLat + 1.2, pinLon + 1.5]
+                    [pinLat - 5, pinLon - 6],
+                    [pinLat + 5, pinLon + 6]
                 );
                 miniMap.fitBounds(featureBounds, { padding: [12, 12] });
             }
@@ -929,14 +928,27 @@
                         }).addTo(miniMap);
                     });
             } else if (region === 'europe') {
-                // Pre EU mini-mapy renderuj hranice štátov ako outline (geografický kontext).
+                // Pre EU mini-mapy renderuj hranice štátov ako outline (geografický kontext)
+                // + názvy štátov ako permanent labely (orientácia: „toto je Srbsko, vedľa
+                // Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje permanent tooltip
+                // pri center polygónu — pri zoomovanej mini-mape sa zobrazia len label-y
+                // štátov v aktuálnom viewporte.
                 fetch(ekMapaCfg.geoJsonBase + 'europe-countries.geojson')
                     .then(function (r) { return r.ok ? r.json() : null; })
                     .then(function (data) {
                         if (!data) return;
                         L.geoJSON(data, {
                             style: { color: '#9aa5b1', weight: 0.6, fillColor: '#f6f7f7', fillOpacity: 0.6 },
-                            interactive: false
+                            interactive: false,
+                            onEachFeature: function (feature, layer) {
+                                var name = feature.properties && feature.properties.name;
+                                if (!name) return;
+                                layer.bindTooltip(name, {
+                                    permanent: true,
+                                    direction: 'center',
+                                    className: 'ek-mapa-mini-country-label'
+                                });
+                            }
                         }).addTo(miniMap);
                     });
             }
@@ -965,10 +977,22 @@
                         var fl = L.geoJSON({ type: 'FeatureCollection', features: matching }, {
                             style: style, interactive: false
                         }).addTo(miniMap);
-                        // Zoom na bounds samotnej feature s paddingom — predtým mini-mapa
-                        // fitla celý kontinent a malá feature (napr. Srbsko) bola ledva vidno.
-                        featureBounds = fl.getBounds();
-                        miniMap.fitBounds(featureBounds, { padding: [16, 16], maxZoom: 7 });
+                        // Zoom na expanded bounds samotnej feature — pad(0.8) zväčší
+                        // viewport o 80% (vidno feature + okolité štáty/regióny pre geo
+                        // kontext). Capnúť na región bounds aby pri obrích features
+                        // (Rusko) sa pohľad nezoomoval mimo kontinentu.
+                        var rawBounds = fl.getBounds();
+                        featureBounds = rawBounds.pad(0.8);
+                        var regionMaxBounds = L.latLngBounds(preset.bounds);
+                        if (!regionMaxBounds.contains(featureBounds)) {
+                            featureBounds = L.latLngBounds(
+                                [Math.max(featureBounds.getSouth(), regionMaxBounds.getSouth()),
+                                 Math.max(featureBounds.getWest(),  regionMaxBounds.getWest())],
+                                [Math.min(featureBounds.getNorth(), regionMaxBounds.getNorth()),
+                                 Math.min(featureBounds.getEast(),  regionMaxBounds.getEast())]
+                            );
+                        }
+                        miniMap.fitBounds(featureBounds, { padding: [8, 8] });
                     });
             }
 
@@ -979,7 +1003,7 @@
                 var ro = new ResizeObserver(function () {
                     miniMap.invalidateSize(false);
                     if (featureBounds) {
-                        miniMap.fitBounds(featureBounds, { padding: [16, 16], maxZoom: 7 });
+                        miniMap.fitBounds(featureBounds, { padding: [8, 8] });
                     } else {
                         miniMap.fitBounds(b);
                     }

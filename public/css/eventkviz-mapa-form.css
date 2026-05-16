@@ -122,6 +122,24 @@
     display: none;
 }
 
+/* Mini-mapa (review mode) — názvy štátov v EU outline ako jemné labely.
+   Malý font, takmer transparentné pozadie aby nezakrývali highlighted
+   feature ale boli čitateľné pre kontext. */
+.ek-mapa-mini-country-label {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: #455a64;
+    font-size: 9px;
+    font-weight: 500;
+    padding: 0 2px;
+    pointer-events: none;
+    text-shadow: 0 0 2px #fff, 0 0 2px #fff, 0 0 2px #fff;
+}
+.ek-mapa-mini-country-label:before {
+    display: none;
+}
+
 /* Leaflet zoom controls — bigger + dark background so they sú viditeľné
    na light fill polygónov. Default Leaflet je 26px biele tlačidlá. */
 .ek-mapa-map .leaflet-control-zoom a {
