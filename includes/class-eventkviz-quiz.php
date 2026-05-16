@@ -450,9 +450,10 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
 				: '🎯 Toto je jediný pokus, využi ho dobre.';
 			$cls = 'ek-tries-banner ek-tries-banner--last';
 		} else {
-			$msg = '🎯 Zostávajú ti ' . $remaining . ' '
-				. self::_n_pokus_label($remaining)
-				. ($pocet > 0 ? ' z ' . $pocet : '') . '.';
+			// Formát: „Zostáva ti: 4 z 5 pokusov."
+			$msg = 'Zostáva ti: ' . $remaining
+				. ($pocet > 0 ? ' z ' . $pocet : '')
+				. ' ' . self::_n_pokus_label($remaining) . '.';
 			$cls = 'ek-tries-banner';
 		}
 
