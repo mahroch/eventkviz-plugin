@@ -4,6 +4,9 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Changed (mapový kvíz — area polygon base color zo zelenej na šedú)
+- V area móde (štáty, pohoria, NP, …) mali polygóny default zelený fill, čo v review móde kolidovalo so semantikou: zelená = správna odpoveď, červená = nesprávna, oranžová = vybraté v form móde. Base je teraz **neutrálna šedo-modrá** (`#cfd8dc` fill, `#78909c` border), hover **svetlomodrá** (`#90caf9` fill, `#1565c0` border). Zelená/červená/oranžová sú vyhradené pre stavové signály.
+
 ### Fixed (mapový kvíz — modrý placeholder rectangle pre Európu)
 - Pre Európu sa renderoval modrý ohraničujúci obdĺžnik (placeholder z `europe.geojson` 187B súboru) — kontinentálne regióny ale nemajú jeden polygónový obrys, takže to bolo iba vizuálne rušenie. Teraz pre `europe`/`world` región nerenderujeme outline ani fallback rectangle vôbec; kontextové vodítka dodajú overlays (hranice štátov, hlavné mestá). Placeholder `europe.geojson` zmazaný.
 - Mini-mapy v review móde pre Európu teraz renderujú jemné hranice štátov ako outline (jemne šedé, polotransparentné) — užitočnejšie než placeholder obdĺžnik.

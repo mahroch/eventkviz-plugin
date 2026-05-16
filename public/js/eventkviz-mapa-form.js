@@ -259,14 +259,16 @@
 
     function featureBaseStyle(feature) {
         if (quizType === 'line') return { color: '#3aa6f0', weight: 4, opacity: 0.85 };
-        // Area polygons — vyplnená plocha s tmavým borderom
-        return { color: '#33691e', weight: 2, fillColor: '#7cb342', fillOpacity: 0.7 };
+        // Area polygons — neutrálny šedo-modrý fill (zelená rezervovaná pre
+        // správnu odpoveď, červená pre nesprávnu — review mode konvencia).
+        return { color: '#78909c', weight: 1.5, fillColor: '#cfd8dc', fillOpacity: 0.75 };
     }
 
     function featureHoverStyle() {
         if (quizType === 'line') return { color: '#1976d2', weight: 6, opacity: 1.0 };
-        // Area hover — jasná modrá vs base zelená pre maximálny kontrast
-        return { color: '#0d47a1', weight: 3, fillColor: '#42a5f5', fillOpacity: 0.85 };
+        // Area hover — tmavšia modrá border + svetlomodrý fill (vizuálne zvýraznené,
+        // ale nekoliduje so semantickými farbami zelená/červená/oranžová).
+        return { color: '#1565c0', weight: 2.5, fillColor: '#90caf9', fillOpacity: 0.85 };
     }
 
     function featureSelectedStyle(isCorrect) {
