@@ -72,22 +72,32 @@
             loadOverlays();
             loadFeatureLayer();
         } else {
-            // Outline mode — fetch region geojson, render, then overlays
-            var geoUrl = ekMapaCfg.geoJsonBase + region + '.geojson';
-            fetch(geoUrl).then(function (r) {
-                if (!r.ok) throw new Error('geojson missing');
-                return r.json();
-            }).then(function (data) {
-                renderRegion(data);
+            // Outline mode — fetch region geojson, render, then overlays.
+            // Kontinentálne regióny (europe/world) nemajú jeden polygonový obrys,
+            // takže pre ne neukazujeme región outline ani fallback rectangle —
+            // hranice štátov / mapové podklady dodajú kontext cez overlays.
+            var hasOutline = (region === 'slovakia' || region === 'czechia');
+            if (hasOutline) {
+                var geoUrl = ekMapaCfg.geoJsonBase + region + '.geojson';
+                fetch(geoUrl).then(function (r) {
+                    if (!r.ok) throw new Error('geojson missing');
+                    return r.json();
+                }).then(function (data) {
+                    renderRegion(data);
+                    refitToRegion(b);
+                    loadOverlays();
+                    loadFeatureLayer();
+                }).catch(function () {
+                    renderPlaceholderRect(preset.bounds);
+                    refitToRegion(b);
+                    loadOverlays();
+                    loadFeatureLayer();
+                });
+            } else {
                 refitToRegion(b);
                 loadOverlays();
                 loadFeatureLayer();
-            }).catch(function () {
-                renderPlaceholderRect(preset.bounds);
-                refitToRegion(b);
-                loadOverlays();
-                loadFeatureLayer();
-            });
+            }
         }
 
         if (!isReview) {
@@ -891,16 +901,30 @@
             var b = L.latLngBounds(preset.bounds);
             miniMap.fitBounds(b);
 
-            // 1) Outline regiónu (jemný šedý)
-            fetch(ekMapaCfg.geoJsonBase + region + '.geojson')
-                .then(function (r) { return r.ok ? r.json() : null; })
-                .then(function (data) {
-                    if (!data) return;
-                    L.geoJSON(data, {
-                        style: { color: '#9aa5b1', weight: 1, fillColor: '#f6f7f7', fillOpacity: 1 },
-                        interactive: false
-                    }).addTo(miniMap);
-                });
+            // 1) Outline regiónu (jemný šedý) — len SK/CZ (kontinentálne regióny
+            // nemajú jeden polygónový obrys, vykreslili by sa ako placeholder rectangle).
+            if (region === 'slovakia' || region === 'czechia') {
+                fetch(ekMapaCfg.geoJsonBase + region + '.geojson')
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (data) {
+                        if (!data) return;
+                        L.geoJSON(data, {
+                            style: { color: '#9aa5b1', weight: 1, fillColor: '#f6f7f7', fillOpacity: 1 },
+                            interactive: false
+                        }).addTo(miniMap);
+                    });
+            } else if (region === 'europe') {
+                // Pre EU mini-mapy renderuj hranice štátov ako outline (geografický kontext).
+                fetch(ekMapaCfg.geoJsonBase + 'europe-countries.geojson')
+                    .then(function (r) { return r.ok ? r.json() : null; })
+                    .then(function (data) {
+                        if (!data) return;
+                        L.geoJSON(data, {
+                            style: { color: '#9aa5b1', weight: 0.6, fillColor: '#f6f7f7', fillOpacity: 0.6 },
+                            interactive: false
+                        }).addTo(miniMap);
+                    });
+            }
 
             // 2) Highlighted location
             if (qt === 'pin') {
