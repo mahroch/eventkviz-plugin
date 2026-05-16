@@ -897,21 +897,28 @@
 
             var preset = REGION_PRESETS[region] || REGION_PRESETS.slovakia;
             var miniMap = L.map($el[0], {
-                zoomControl: false, attributionControl: false,
-                dragging: false, scrollWheelZoom: false, doubleClickZoom: false,
-                touchZoom: false, boxZoom: false, keyboard: false
+                // Povolené interakcie aby si hráč mohol zoom-núť/posunúť pre detail.
+                // scrollWheelZoom vypnutý — aby kolieskom hráč scrolloval stránku
+                // (mini-mapa je len malý box uprostred dlhej review stránky, scroll
+                // by ináč „zasekol" stránku pri prejazde myšou cez mapu).
+                zoomControl: true, attributionControl: false,
+                dragging: true, scrollWheelZoom: false, doubleClickZoom: true,
+                touchZoom: true, boxZoom: true, keyboard: false
             });
             var b = L.latLngBounds(preset.bounds);
             miniMap.fitBounds(b);
             // featureBounds = priority view (zoomed na konkrétnu feature/pin)
             // Set-uje sa po async fetch; do tej doby fit-ujeme región bounds ako fallback.
             var featureBounds = null;
-            // Pre pin mode vieme zoom-núť hneď (bez fetch) — bbox ±5° v každom smere
-            // (cca úroveň 5-6) — vidno feature aj okolité regióny/štáty pre geo kontext.
+            // Pin mode default bbox — proporcionálny k regiónu. Pre SR (~5.5°×2°)
+            // chceme tesný zoom okolo bodu (±1° dáva cca 30% SR vo viewport-e).
+            // Pre EU/world ±5° aby bolo vidno aj okolité štáty pre geo kontext.
             if (qt === 'pin') {
+                var pinHalfLat = (region === 'slovakia' || region === 'czechia') ? 1.0 : 5.0;
+                var pinHalfLon = (region === 'slovakia' || region === 'czechia') ? 1.5 : 6.0;
                 featureBounds = L.latLngBounds(
-                    [pinLat - 5, pinLon - 6],
-                    [pinLat + 5, pinLon + 6]
+                    [pinLat - pinHalfLat, pinLon - pinHalfLon],
+                    [pinLat + pinHalfLat, pinLon + pinHalfLon]
                 );
                 miniMap.fitBounds(featureBounds, { padding: [12, 12] });
             }

@@ -8,6 +8,10 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Changed (mapový kvíz — mini-mapa interaktívna + lepší default zoom pre SR pin)
+- Mini-mapa v review móde má teraz povolený zoom (`+`/`–` controls, double-click, pinch), drag a box-zoom. Hráč si môže dozoom-nuť pre detail miesta. `scrollWheelZoom` zostáva vypnutý — aby kolieskom myši hráč scrolloval stránku, nezasekol sa pri prejazde cez mapu.
+- Pin mode default bbox je teraz proporcionálny k regiónu: SR/ČR ±1°/±1.5° (tesný zoom, vidno cca 30 % SR), EU/svet ±5°/±6° (vidno okolité štáty). Predtým bolo univerzálnych ±5°/±6° — pre Slovensko príliš zoom-out.
+
 ### Added (mapový kvíz — Národné parky SR migrácia z pin na area)
 - Šablóna „Národné parky SR" prepnutá z `pin` (jedna súradnica = stredisko parku) na `area` (polygon kompletného územia parku). Národný park je oblasť, nie miesto.
 - Nový dataset `sk-national-parks` (9 SK NP polygónov, stiahnutých z OSM Overpass cez `tools/fetch-sk-national-parks.py`, simplified `n=6`, výsledný bundle 107 KB).
