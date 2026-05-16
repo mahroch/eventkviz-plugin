@@ -142,21 +142,42 @@
     display: none;
 }
 
-/* Leaflet zoom controls — bigger + dark background so they sú viditeľné
-   na light fill polygónov. Default Leaflet je 26px biele tlačidlá. */
-.ek-mapa-map .leaflet-control-zoom a {
+/* Leaflet zoom controls — dark background pre dobrú viditeľnosť nad
+   light fill polygónov + tile vrstvami. Default Leaflet sú jemné biele
+   tlačidlá ktoré nad bielou mapou prakticky zaniknú. */
+.ek-mapa-map .leaflet-control-zoom a,
+.ek-mapa-mini .leaflet-control-zoom a {
     background: #2c3e50;
-    color: #fff;
+    color: #fff !important;
     border-color: #1a252f;
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.ek-mapa-map .leaflet-control-zoom a:hover,
+.ek-mapa-mini .leaflet-control-zoom a:hover {
+    background: #34495e;
+    color: #fff !important;
+}
+/* Hlavná mapa — väčšie tlačidlá (32px, dobre viditeľné na desktope) */
+.ek-mapa-map .leaflet-control-zoom a {
     width: 32px;
     height: 32px;
     line-height: 32px;
     font-size: 18px;
-    font-weight: 700;
 }
-.ek-mapa-map .leaflet-control-zoom a:hover {
-    background: #34495e;
-    color: #fff;
+/* Mini-mapa — menšie tlačidlá aby nezabrali pol mapy (26px = default Leaflet) */
+.ek-mapa-mini .leaflet-control-zoom a {
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
+    font-size: 16px;
+}
+/* Disabled tlačidlo (max/min zoom) — jemne tlmené, ale stále kontrastné */
+.ek-mapa-map .leaflet-control-zoom a.leaflet-disabled,
+.ek-mapa-mini .leaflet-control-zoom a.leaflet-disabled {
+    background: #607d8b;
+    color: #cfd8dc !important;
+    cursor: default;
 }
 /* Mobile (do 720px) — stack vertical: sidebar nad mapou, kompaktne */
 @media (max-width: 720px) {
