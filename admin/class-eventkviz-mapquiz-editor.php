@@ -28,10 +28,14 @@ class Eventkviz_MapQuiz_Editor {
     const META_PINS          = '_mapquiz_pins';
     // JSON object: {tile_*:bool, cities_*:bool, regions:bool, rivers:bool}
     const META_OVERLAYS      = '_mapquiz_overlays';
-    // Typ kvízu: 'pin' (default — pin-based haversine), 'river', 'mountain' (feature-pick).
+    // Typ kvízu: 'pin' (default — pin-based haversine), 'line' (čiarové features),
+    // 'area' (polygon features — pohorie/štát/región).
     const META_QUIZ_TYPE     = '_mapquiz_quiz_type';
-    // JSON array of feature names (pre quiz_type=mountain — admin si vyberie ktoré pohoria
-    // budú v pool, hráč dostane N náhodných z toho).
+    // Pre area/line — slug datasetu z Eventkviz_MapQuiz_Datasets registry
+    // (napr. 'sk-mountains', 'europe-countries', 'sk-rivers').
+    const META_DATASET_SLUG  = '_mapquiz_dataset_slug';
+    // JSON array of feature names (pre area/line — admin si vyberie subset
+    // z dataset poolu; hráč dostane N náhodných z výberu).
     const META_FEATURE_POOL  = '_mapquiz_feature_pool';
 
     const DEFAULT_TIERS = '[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},{"maxKm":20,"percent":50},{"maxKm":40,"percent":25}]';
@@ -169,31 +173,38 @@ class Eventkviz_MapQuiz_Editor {
         $details = self::get_player_detail_presets();
         $maptiler_set = ( class_exists( 'Eventkviz_Settings' ) && Eventkviz_Settings::get_maptiler_key() !== '' );
 
-        // Bundleovaný zoznam pohorí pre quiz_type=mountain — admin si vyberie pool.
-        // Názvy musia presne zodpovedať `properties.name` v sk-mountains.geojson
-        // (16 OSM `natural=mountain_range` geomorphological-unit relations).
-        $available_mountains = array(
-            'Vysoké Tatry', 'Západné Tatry', 'Nízke Tatry',
-            'Malá Fatra', 'Veľká Fatra',
-            'Malé Karpaty', 'Biele Karpaty', 'Strážovské vrchy',
-            'Štiavnické vrchy', 'Tribeč',
-            'Vihorlat', 'Poľana', 'Branisko',
-            'Slanské vrchy', 'Levočské vrchy', 'Slovenský kras',
-        );
+        // Pool pre area/line mode sa load-uje dynamicky z dataset registry
+        // podľa quiz_type + región. Datasety s matching geometry + región
+        // figurujú v dataset dropdowne; pre vybraný dataset sa vyrenderuje
+        // checkbox list features (admin si vyberie pool).
+        $available_datasets = array();
+        if ( in_array( $quiz_type, array( 'area', 'line' ), true ) ) {
+            $available_datasets = Eventkviz_MapQuiz_Datasets::for_mode_and_region( $quiz_type, $region );
+        }
+
+        // Aktuálne vybraný dataset (per quiz_type uložený v postmeta)
+        $current_dataset_slug = get_post_meta( $post->ID, '_mapquiz_dataset_slug', true );
+        if ( ! $current_dataset_slug && ! empty( $available_datasets ) ) {
+            $current_dataset_slug = array_key_first( $available_datasets );
+        }
+        // Features pool pre vybraný dataset (z bundle súboru cez registry)
+        $available_features = $current_dataset_slug
+            ? Eventkviz_MapQuiz_Datasets::load_feature_names( $current_dataset_slug )
+            : array();
         ?>
 
         <div class="ekm-editor-toolbar" style="margin-bottom:14px; padding:10px; background:#eef4fa; border-left:3px solid #2271b1; border-radius:0 4px 4px 0">
             <label>
                 <strong>Typ kvízu:</strong>
                 <select name="<?php echo esc_attr( self::META_QUIZ_TYPE ); ?>" id="ekm-quiz-type" onchange="document.querySelectorAll('.ekm-mode').forEach(function(el){el.style.display='none'});var m=document.getElementById('ekm-mode-'+this.value);if(m)m.style.display='';">
-                    <option value="pin"      <?php selected( $quiz_type, 'pin' ); ?>>Hľadanie miest na mape (klik kdekoľvek, scoring podľa vzdialenosti)</option>
-                    <option value="river"    <?php selected( $quiz_type, 'river' ); ?>>Označenie rieky (klikni na správnu rieku)</option>
-                    <option value="mountain" <?php selected( $quiz_type, 'mountain' ); ?>>Označenie pohoria (klikni na správne pohorie)</option>
+                    <option value="pin"  <?php selected( $quiz_type, 'pin' ); ?>>Hľadanie miest na mape (klik kdekoľvek, scoring podľa vzdialenosti)</option>
+                    <option value="line" <?php selected( $quiz_type, 'line' ); ?>>Označenie čiarového objektu (rieka, železnica, cyklotrasa…)</option>
+                    <option value="area" <?php selected( $quiz_type, 'area' ); ?>>Označenie územia / oblasti (pohorie, štát, národný park, región…)</option>
                 </select>
             </label>
             <p class="description" style="margin:6px 0 0">
-                <strong>Hľadanie miest:</strong> admin definuje konkrétne body (lat/lon), hráč klikne kdekoľvek a body sú podľa vzdialenosti od správneho miesta.<br>
-                <strong>Rieka / Pohorie:</strong> hráč dostane úlohu „nájdi <em>X</em>", musí kliknúť priamo na danú rieku/pohorie. Binárne hodnotenie (správne / zle).
+                <strong>Hľadanie miest (pin):</strong> admin definuje konkrétne body (lat/lon), hráč klikne kdekoľvek a body sú podľa vzdialenosti.<br>
+                <strong>Čiara / Územie:</strong> hráč dostane úlohu „nájdi <em>X</em>", musí kliknúť priamo na danú feature. Admin si v dataset dropdowne vyberie zo zoznamu bundleovaných datasetov (pre vybraný región). Binárne hodnotenie.
             </p>
         </div>
 
@@ -230,39 +241,49 @@ class Eventkviz_MapQuiz_Editor {
             </label>
         </fieldset>
 
+        <?php
+        // Per-region overlay registry — admin uvidí len overlays relevantné pre selected región.
+        // Vrámci jedného regiónu sa môže pridať nový overlay len pridaním do registra,
+        // bez zmien v editor.php.
+        $region_overlays = Eventkviz_MapQuiz_Datasets::overlays_for_region( $region );
+        if ( ! empty( $region_overlays ) ) :
+            $region_label = $regions[ $region ]['label'] ?? $region;
+        ?>
         <fieldset style="margin:10px 0; padding:10px; border:1px solid #dcdcde; border-radius:4px; background:#f9f9f9">
             <legend style="font-weight:600; padding:0 6px">Geografické vodítka (overlay nad mapou)</legend>
-            <p class="description" style="margin:0 0 8px">Zaškrtnuté vrstvy sa zobrazia ako pomôcka. Funguje pre <strong>Slovensko</strong>; dáta napevno v plugine.</p>
-            <label style="margin-right:18px">
-                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[cities_main]" value="1" <?php checked( ! empty( $overlays['cities_main'] ) ); ?> />
-                Krajské mestá (8 — BA, TT, TN, NR, ZA, BB, PO, KE)
-            </label>
-            <label style="margin-right:18px">
-                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[cities_regional]" value="1" <?php checked( ! empty( $overlays['cities_regional'] ) ); ?> />
-                Významné okresné mestá (26 — Martin, Poprad, Lučenec, …)
-            </label>
-            <label style="margin-right:18px">
-                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[regions]" value="1" <?php checked( ! empty( $overlays['regions'] ) ); ?> />
-                Kraje (8 administratívnych krajov)
-            </label>
-            <label style="margin-right:18px">
-                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[rivers]" value="1" <?php checked( ! empty( $overlays['rivers'] ) ); ?> />
-                Rieky (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec)
-            </label>
+            <p class="description" style="margin:0 0 8px">
+                Zaškrtnuté vrstvy sa zobrazia ako pomôcka pre hráča. Overlays sú špecifické pre región: <strong><?php echo esc_html( $region_label ); ?></strong>.
+            </p>
+            <?php foreach ( $region_overlays as $slug => $def ) : ?>
+                <label style="margin-right:18px">
+                    <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[<?php echo esc_attr( $slug ); ?>]" value="1" <?php checked( ! empty( $overlays[ $slug ] ) ); ?> />
+                    <?php echo esc_html( $def['label'] ); ?>
+                </label>
+            <?php endforeach; ?>
         </fieldset>
+        <?php endif; ?>
 
-        <?php // Pomôcky relevantné iba pre river/mountain quiz typy — skryté pre pin ?>
-        <?php $hide_features_helpers = ! in_array( $quiz_type, array( 'river', 'mountain' ), true ); ?>
+        <?php // Pomôcky relevantné iba pre area/line quiz typy — skryté pre pin ?>
+        <?php $hide_features_helpers = ! in_array( $quiz_type, array( 'area', 'line' ), true ); ?>
         <fieldset class="ekm-mode" id="ekm-mode-feature-labels" <?php if ( $hide_features_helpers ) echo 'style="display:none"'; ?>
             style="margin:10px 0; padding:10px; border:1px solid #dcdcde; border-radius:4px; background:#f9f9f9">
-            <legend style="font-weight:600; padding:0 6px">Pomôcky pre hráča (rieky / pohoria)</legend>
+            <legend style="font-weight:600; padding:0 6px">Pomôcky pre hráča (oblasti / čiarové features)</legend>
 
             <label style="display:block; padding:4px 0">
                 <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[feature_labels]" value="1" <?php checked( ! empty( $overlays['feature_labels'] ) ); ?> />
                 <strong>Zobraziť názvy pri hover myšou</strong>
                 <p class="description" style="margin:4px 0 0 24px">
-                    <strong>Vypnuté</strong> (default): hráč nevidí názov rieky/pohoria pri hover — musí ich vedieť rozpoznať podľa polohy.<br>
+                    <strong>Vypnuté</strong> (default): hráč nevidí názov features pri hover — musí ich vedieť rozpoznať podľa polohy.<br>
                     <strong>Zapnuté:</strong> hráč pri hover uvidí názov v tooltip. Vhodné pre žiakov / vzdelávacie účely.
+                </p>
+            </label>
+
+            <label style="display:block; padding:4px 0; margin-top:6px; border-top:1px dashed #ccd0d4; padding-top:10px">
+                <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[feature_labels_permanent]" value="1" <?php checked( ! empty( $overlays['feature_labels_permanent'] ) ); ?> />
+                <strong>Zobraziť názov priamo na polygone / čiare</strong> (vždy viditeľné, aj bez hover)
+                <p class="description" style="margin:4px 0 0 24px">
+                    <strong>Vypnuté</strong> (default): názov sa zobrazí len pri hover (ak je „názvy pri hover" zapnuté).<br>
+                    <strong>Zapnuté:</strong> názov features je vždy viditeľný — extrémne uľahčenie, vhodné len pre úvodné lekcie / deti. Pre súťažné kvízy nechaj vypnuté.
                 </p>
             </label>
 
@@ -270,8 +291,8 @@ class Eventkviz_MapQuiz_Editor {
                 <input type="checkbox" name="<?php echo esc_attr( self::META_OVERLAYS ); ?>[feature_only_set]" value="1" <?php checked( ! empty( $overlays['feature_only_set'] ) ); ?> />
                 <strong>Zobraziť na mape iba features ktoré hráč háda</strong> (skry rozptyľovače)
                 <p class="description" style="margin:4px 0 0 24px">
-                    <strong>Vypnuté</strong> (default): hráč vidí <em>všetky</em> rieky/pohoria z poolu a musí ich rozlíšiť podľa polohy. Ťažšie, viac výberu.<br>
-                    <strong>Zapnuté:</strong> hráč vidí iba tie rieky/pohoria ktoré práve <em>háda</em> (napr. admin nastaví pool 10, hráč háda 3 → vidí len tie 3 zvýraznené). Eliminuje rozptyľovače — vhodné pre žiakov.
+                    <strong>Vypnuté</strong> (default): hráč vidí <em>všetky</em> features z poolu a musí ich rozlíšiť podľa polohy. Ťažšie, viac výberu.<br>
+                    <strong>Zapnuté:</strong> hráč vidí iba tie features ktoré práve <em>háda</em> (napr. admin nastaví pool 10, hráč háda 3 → vidí len tie 3 zvýraznené). Eliminuje rozptyľovače — vhodné pre žiakov.
                 </p>
             </label>
         </fieldset>
@@ -322,35 +343,52 @@ class Eventkviz_MapQuiz_Editor {
         <p class="description">Klikni na pin v zozname pre editáciu, alebo na mapu pre pridanie nového.</p>
         </div><!-- /ekm-mode-pin -->
 
-        <!-- Sekcia pre quiz_type = river -->
-        <div class="ekm-mode" id="ekm-mode-river" <?php if ( $quiz_type !== 'river' ) echo 'style="display:none"'; ?>>
+        <!-- Sekcia pre quiz_type = area | line (zdieľaná — len label sa líši) -->
+        <?php foreach ( array( 'line' => 'Čiarové objekty', 'area' => 'Územia / oblasti' ) as $mode => $mode_label ) : ?>
+        <div class="ekm-mode" id="ekm-mode-<?php echo esc_attr( $mode ); ?>" <?php if ( $quiz_type !== $mode ) echo 'style="display:none"'; ?>>
             <div style="margin:14px 0; padding:14px; background:#fff; border:1px solid #ccd0d4; border-radius:4px">
-                <h3 style="margin-top:0">Rieky — pool kvízu</h3>
-                <p>Hráč dostane <strong>náhodný výber</strong> z týchto 8 hlavných slovenských riek (admin nemusí nič vyberať):</p>
-                <ul style="columns:2; max-width:500px">
-                    <li>Dunaj</li><li>Váh</li><li>Hron</li><li>Hornád</li>
-                    <li>Slaná</li><li>Ipeľ</li><li>Morava</li><li>Dunajec</li>
-                </ul>
-                <p class="description">Počet otázok v sete (koľko z 8 hráč háda) sa nastavuje v evente, na taboch <em>Mapa → Počet otázok v sete</em>.</p>
-            </div>
-        </div><!-- /ekm-mode-river -->
+                <h3 style="margin-top:0"><?php echo esc_html( $mode_label ); ?> — vyber dataset + pool</h3>
 
-        <!-- Sekcia pre quiz_type = mountain -->
-        <div class="ekm-mode" id="ekm-mode-mountain" <?php if ( $quiz_type !== 'mountain' ) echo 'style="display:none"'; ?>>
-            <div style="margin:14px 0; padding:14px; background:#fff; border:1px solid #ccd0d4; border-radius:4px">
-                <h3 style="margin-top:0">Pohoria — vyber pool kvízu</h3>
-                <p>Zaškrtni pohoria ktoré chceš mať v <strong>pool</strong> tejto šablóny. Hráč dostane náhodný podmnožinu (počet sa určuje v evente cez <em>Počet otázok v sete</em>).</p>
-                <div style="columns:2; max-width:600px; column-gap:24px">
-                    <?php foreach ( $available_mountains as $mname ) : ?>
+                <p>
+                    <label><strong>Dataset:</strong>
+                        <select name="<?php echo esc_attr( self::META_DATASET_SLUG ); ?>" class="ekm-dataset-select" data-mode="<?php echo esc_attr( $mode ); ?>">
+                            <?php
+                            $mode_datasets = ( $quiz_type === $mode ) ? $available_datasets : Eventkviz_MapQuiz_Datasets::for_mode_and_region( $mode, $region );
+                            if ( empty( $mode_datasets ) ) {
+                                echo '<option value="">— Žiadne datasety pre vybraný región —</option>';
+                            } else {
+                                foreach ( $mode_datasets as $ds_slug => $ds ) {
+                                    printf(
+                                        '<option value="%s"%s>%s</option>',
+                                        esc_attr( $ds_slug ),
+                                        selected( $current_dataset_slug, $ds_slug, false ),
+                                        esc_html( $ds['label'] )
+                                    );
+                                }
+                            }
+                            ?>
+                        </select>
+                    </label>
+                    <span class="description" style="margin-left:8px">Datasety filtrované podľa <strong>regiónu</strong> + <strong>typu kvízu</strong>. Zmeň región vyššie ak chceš iné.</span>
+                </p>
+
+                <?php if ( ! empty( $available_features ) && $quiz_type === $mode ) : ?>
+                <p><strong>Vyber features do poolu:</strong></p>
+                <div style="columns:3; max-width:760px; column-gap:24px">
+                    <?php foreach ( $available_features as $fname ) : ?>
                         <label style="display:block; padding:3px 0">
-                            <input type="checkbox" name="<?php echo esc_attr( self::META_FEATURE_POOL ); ?>[]" value="<?php echo esc_attr( $mname ); ?>" <?php checked( in_array( $mname, $feature_pool, true ) ); ?> />
-                            <?php echo esc_html( $mname ); ?>
+                            <input type="checkbox" name="<?php echo esc_attr( self::META_FEATURE_POOL ); ?>[]" value="<?php echo esc_attr( $fname ); ?>" <?php checked( in_array( $fname, $feature_pool, true ) ); ?> />
+                            <?php echo esc_html( $fname ); ?>
                         </label>
                     <?php endforeach; ?>
                 </div>
-                <p class="description" style="margin-top:10px">Vyberte aspoň toľko pohorí ako je <em>Počet otázok v sete</em> v evente, inak sa pool capne na zaškrtnuté.</p>
+                <p class="description" style="margin-top:10px">Vyberte aspoň toľko features ako je <em>Počet otázok v sete</em> v evente, inak sa pool capne na zaškrtnuté. Pre uloženie checkboxov treba <strong>Update</strong>; po zmene datasetu/regiónu treba uložiť a feature list sa nahrá.</p>
+                <?php elseif ( $quiz_type === $mode ) : ?>
+                <p class="description" style="margin-top:10px">Po uložení vybraného datasetu sa tu zobrazí zoznam features na zaškrtnutie.</p>
+                <?php endif; ?>
             </div>
-        </div><!-- /ekm-mode-mountain -->
+        </div><!-- /ekm-mode-<?php echo esc_attr( $mode ); ?> -->
+        <?php endforeach; ?>
 
         <?php
     }
@@ -389,7 +427,7 @@ class Eventkviz_MapQuiz_Editor {
             <p class="description">Pri vzdialenosti väčšej než posledný stupeň hráč dostane 0 bodov. Príklad: 0–5 km = 100 %, 5–10 km = 75 %, atď.</p>
         <?php else : ?>
             <div style="padding:10px 12px; background:#f0f6fc; border-left:3px solid #2271b1; color:#1d2327; font-size:13px; max-width:520px">
-                ℹ Pre šablóny typu „<strong><?php echo esc_html( $quiz_type === 'river' ? 'Označenie rieky' : 'Označenie pohoria' ); ?></strong>" je hodnotenie <strong>binárne</strong>: hráč buď klikne na správnu feature (= max body za úlohu), alebo nie (= 0). Stupne podľa vzdialenosti sa neuplatňujú.
+                ℹ Pre šablóny typu „<strong><?php echo esc_html( $quiz_type === 'line' ? 'Označenie čiarového objektu' : 'Označenie územia / oblasti' ); ?></strong>" je hodnotenie <strong>binárne</strong>: hráč buď klikne na správnu feature (= max body za úlohu), alebo nie (= 0). Stupne podľa vzdialenosti sa neuplatňujú.
             </div>
         <?php endif; ?>
 
@@ -408,12 +446,17 @@ class Eventkviz_MapQuiz_Editor {
         if ( ! array_key_exists( $region, self::get_region_presets() ) ) $region = 'slovakia';
         update_post_meta( $post_id, self::META_REGION, $region );
 
-        // Quiz type
+        // Quiz type — nové generic: pin / area / line
         $quiz_type = isset( $_POST[ self::META_QUIZ_TYPE ] ) ? sanitize_key( $_POST[ self::META_QUIZ_TYPE ] ) : 'pin';
-        if ( ! in_array( $quiz_type, array( 'pin', 'river', 'mountain' ), true ) ) $quiz_type = 'pin';
+        if ( ! in_array( $quiz_type, array( 'pin', 'area', 'line' ), true ) ) $quiz_type = 'pin';
         update_post_meta( $post_id, self::META_QUIZ_TYPE, $quiz_type );
 
-        // Feature pool (pre quiz_type=mountain — array of mountain names)
+        // Dataset slug (pre area/line) — referenc do Eventkviz_MapQuiz_Datasets registry
+        $dataset_slug = isset( $_POST[ self::META_DATASET_SLUG ] ) ? sanitize_key( $_POST[ self::META_DATASET_SLUG ] ) : '';
+        if ( $dataset_slug !== '' && ! Eventkviz_MapQuiz_Datasets::get( $dataset_slug ) ) $dataset_slug = '';
+        update_post_meta( $post_id, self::META_DATASET_SLUG, $dataset_slug );
+
+        // Feature pool (pre area/line — array of feature names z vybraného datasetu)
         $pool_raw = isset( $_POST[ self::META_FEATURE_POOL ] ) && is_array( $_POST[ self::META_FEATURE_POOL ] ) ? wp_unslash( $_POST[ self::META_FEATURE_POOL ] ) : array();
         $pool_clean = array();
         foreach ( $pool_raw as $name ) {
@@ -434,18 +477,20 @@ class Eventkviz_MapQuiz_Editor {
             'tile_streets'    => ! empty( $overlays_raw['tile_streets'] ),
             'tile_satellite'  => ! empty( $overlays_raw['tile_satellite'] ),
             'tile_outdoor'    => ! empty( $overlays_raw['tile_outdoor'] ),
-            // Geografické overlays nad mapou.
-            'cities_main'     => ! empty( $overlays_raw['cities_main'] ),
-            'cities_regional' => ! empty( $overlays_raw['cities_regional'] ),
-            'regions'         => ! empty( $overlays_raw['regions'] ),
-            'rivers'          => ! empty( $overlays_raw['rivers'] ),
-            // Pomôcka pre žiakov: hover tooltip s názvom rieky/pohoria. Default OFF —
-            // anti-cheat, hráč nesmie vidieť odpoveď cez hover.
+            // Feature pomôcky (area/line): hover tooltip s názvom. Default OFF — anti-cheat.
             'feature_labels'  => ! empty( $overlays_raw['feature_labels'] ),
-            // Ďalšia pomôcka: pre river/mountain mód skryje rozptyľovače — hráč
-            // vidí iba features ktoré práve háda, nie celý pool.
+            // Vždy viditeľný label priamo na polygone/čiare — silnejšia pomôcka.
+            'feature_labels_permanent' => ! empty( $overlays_raw['feature_labels_permanent'] ),
+            // Skry rozptyľovače — hráč vidí iba features ktoré práve háda.
             'feature_only_set' => ! empty( $overlays_raw['feature_only_set'] ),
         );
+        // Per-región geografické overlays — iterujeme registry pre práve uložený región
+        // ($region je sanitizovaná hodnota z $_POST vyššie v tomto handleri),
+        // aby admin nemohol uložiť overlay z iného regiónu (čisté postmeta).
+        $region_overlays = Eventkviz_MapQuiz_Datasets::overlays_for_region( $region );
+        foreach ( array_keys( $region_overlays ) as $slug ) {
+            $overlays_clean[ $slug ] = ! empty( $overlays_raw[ $slug ] );
+        }
         update_post_meta( $post_id, self::META_OVERLAYS, wp_json_encode( $overlays_clean ) );
 
         // Max points

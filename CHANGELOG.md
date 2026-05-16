@@ -4,6 +4,15 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Changed (mapový kvíz — multi-region architektúra: SR / Európa / Svet)
+- **Centrálny dataset registry** `Eventkviz_MapQuiz_Datasets` (`admin/class-eventkviz-mapquiz-datasets.php`) — pridanie nového geo datasetu (železnice, cyklotrasy, sopky, ...) je teraz iba pridanie bundle súboru do `public/data/regions/` + jedného entry do registry array. Žiadne zmeny v editor/form/eval kóde.
+- **Generic quiz typy:** `mountain` → `area` (označenie územia / oblasti — pohorie, štát, národný park, región), `river` → `line` (čiarový objekt — rieka, železnica, cyklotrasa). Pin mode bez zmeny. Dropdown v šablóne má nové labely.
+- **Per-šablóna dataset dropdown:** admin v area/line móde vyberie konkrétny dataset z registry (filtruje sa podľa region + geometry). Pre vybraný dataset sa zobrazí checkbox list features (pool — admin vyberá ktoré features sa budú hádať).
+- **Per-region overlay registry:** overlay vodítka (krajské mestá, hranice, rieky atď.) sú teraz definované per-region v registry. SR uvidí 4 SK overlays, Európa uvidí EU overlays (Hlavné mestá Európy 44, Hranice štátov, Top európske rieky 15). Admin sa v editore už neutopí v irrelevantných checkboxoch.
+- **Nový toggle „Zobraziť názov priamo na polygone / čiare"** (`feature_labels_permanent`, default OFF) — vždy viditeľný label na features, vhodný len pre úvodné lekcie / deti. Pre súťažné kvízy ostáva vypnuté.
+- Bundleované Európa dáta: `europe-countries.geojson` (110 KB, 43 európskych štátov, slovenské názvy), `europe-rivers.geojson` (99 KB, 13 top európskych riek vrátane Dunaja, Rýna, Seiny, Loiry, Volgy), `europe-capitals.geojson` (5 KB, 40 hlavných miest), `europe.geojson` (placeholder bounding box). Source: Natural Earth.
+- Postmeta migration safe: legacy templates s `quiz_type=mountain` / `quiz_type=river` musia byť ručne reuložené (vybrať area/line + dataset). Bez migrácie sa post defaultuje na `pin`.
+
 ### Fixed (mapový kvíz — quiz typy)
 - Hráč pri hover nad riekou/pohorím už nevidí tooltip s názvom (anti-cheat). Pridaný admin overlay checkbox **„Pomôcť hráčovi názvami pri hover"** v sekcii Geografické vodítka — default OFF; admin si môže zapnúť pre vzdelávacie scenáre (žiaci).
 - `pocet_otazok_v_sete` v evente sa už rešpektuje aj keď admin zmení nastavenie po prvom hráčskom pokuse. Predtým stale set v DB s pôvodným počtom sa reuse-oval. Stale set detection rozšírená — porovnáva sa aj `count(stored_set) === count_in_set`, nielen členstvo IDs v poole.

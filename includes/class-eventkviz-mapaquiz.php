@@ -90,35 +90,21 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         $region        = get_post_meta( $template_id, '_mapquiz_region', true ) ?: 'slovakia';
         $player_detail = get_post_meta( $template_id, '_mapquiz_player_detail', true ) ?: 'outline-only';
         $quiz_type     = get_post_meta( $template_id, '_mapquiz_quiz_type', true ) ?: 'pin';
-        if ( ! in_array( $quiz_type, array( 'pin', 'river', 'mountain' ), true ) ) $quiz_type = 'pin';
+        if ( ! in_array( $quiz_type, array( 'pin', 'area', 'line' ), true ) ) $quiz_type = 'pin';
 
         // Build pool podľa quiz_type:
-        //   pin      → pole {id, name, hint, description, photo_id, lat, lon}
-        //   river    → pole {id, name}  (id = name; všetkých 8 riek z bundle)
-        //   mountain → pole {id, name}  (admin selection)
+        //   pin       → pole {id, name, hint, description, photo_id, lat, lon}
+        //   area/line → pole {id, name} (id = feature name z bundleovaného datasetu)
         $all_pins = array();
         if ( $quiz_type === 'pin' ) {
             $pins_json = get_post_meta( $template_id, '_mapquiz_pins', true );
             $all_pins  = is_string( $pins_json ) ? json_decode( $pins_json, true ) : array();
             if ( ! is_array( $all_pins ) ) $all_pins = array();
-        } elseif ( $quiz_type === 'river' ) {
-            // Fixed pool z bundleovaných riek
-            $rivers_path = plugin_dir_path( dirname( __FILE__ ) ) . 'public/data/regions/sk-rivers.geojson';
-            if ( file_exists( $rivers_path ) ) {
-                $rivers_data = json_decode( file_get_contents( $rivers_path ), true );
-                if ( is_array( $rivers_data ) && isset( $rivers_data['features'] ) ) {
-                    foreach ( $rivers_data['features'] as $feat ) {
-                        $name = $feat['properties']['name'] ?? '';
-                        if ( $name !== '' ) {
-                            $all_pins[] = array( 'id' => $name, 'name' => $name );
-                        }
-                    }
-                }
-            }
-        } elseif ( $quiz_type === 'mountain' ) {
-            // Admin selection z 14 bundleovaných pohorí
-            $pool_json = get_post_meta( $template_id, '_mapquiz_feature_pool', true );
-            $pool      = is_string( $pool_json ) ? json_decode( $pool_json, true ) : array();
+        } else {
+            // area/line — admin si vybral dataset + checkbox feature pool
+            $dataset_slug = get_post_meta( $template_id, '_mapquiz_dataset_slug', true );
+            $pool_json    = get_post_meta( $template_id, '_mapquiz_feature_pool', true );
+            $pool         = is_string( $pool_json ) ? json_decode( $pool_json, true ) : array();
             if ( ! is_array( $pool ) ) $pool = array();
             foreach ( $pool as $name ) {
                 $name = (string) $name;
@@ -127,11 +113,11 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         }
 
         if ( count( $all_pins ) === 0 ) {
-            $err = $quiz_type === 'mountain'
-                ? 'Šablóna „' . esc_html( $template->post_title ) . '" nemá vybraté žiadne pohoria v pool. Admin musí v editore šablóny zaškrtnúť aspoň jedno.'
-                : ( $quiz_type === 'river'
-                    ? 'Bundleované rieky chýbajú alebo sa nenašli (sk-rivers.geojson).'
-                    : 'Šablóna „' . esc_html( $template->post_title ) . '" nemá žiadne piny. Admin musí v editore šablóny pridať aspoň jeden pin.' );
+            if ( $quiz_type === 'pin' ) {
+                $err = 'Šablóna „' . esc_html( $template->post_title ) . '" nemá žiadne piny. Admin musí v editore šablóny pridať aspoň jeden pin.';
+            } else {
+                $err = 'Šablóna „' . esc_html( $template->post_title ) . '" nemá vybraté žiadne features v pool. Admin musí v editore šablóny vybrať dataset a zaškrtnúť aspoň jednu feature.';
+            }
             echo '<p class="ek-quiz-error">' . $err . '</p>';
             return;
         }
@@ -183,7 +169,7 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         }
 
         // Build sanitized data for JS — strip out solution coords (lat/lon for pin mode)
-        // alebo feature_id len v hidden inputs (pre river/mountain — to je correct ID, treba
+        // alebo feature_id len v hidden inputs (pre area/line — to je correct ID, treba
         // ho server-side ale klient ho aj tak musí poznať aby vedel aký je task. Anti-cheat
         // tu je obmedzená — pre feature mód má každá úloha viditeľný "Nájdi: Dunaj").
         $tasks_for_js = array();
@@ -231,23 +217,23 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         echo '<form action="' . esc_url( $url ) . '" method="post" class="ek-quiz-form" data-quiz-type="mapa">';
 
         // Overlay vodítka (mestá / kraje / rieky) — z template settings
+        // Passujeme cely overlays object (save handler ho už striktne whitelistnul
+        // per-region cez registry). JS si vyberie flagy ktoré pozná — extensible
+        // pre nové overlays bez zmien v tomto súbore.
         $overlays_json = get_post_meta( $template_id, '_mapquiz_overlays', true );
         $overlays      = is_string( $overlays_json ) && $overlays_json !== '' ? json_decode( $overlays_json, true ) : array();
         if ( ! is_array( $overlays ) ) $overlays = array();
-        $overlays_attr = wp_json_encode( array(
-            'tile_streets'    => ! empty( $overlays['tile_streets'] ),
-            'tile_satellite'  => ! empty( $overlays['tile_satellite'] ),
-            'tile_outdoor'    => ! empty( $overlays['tile_outdoor'] ),
-            'cities_main'     => ! empty( $overlays['cities_main'] ),
-            'cities_regional' => ! empty( $overlays['cities_regional'] ),
-            'regions'         => ! empty( $overlays['regions'] ),
-            'rivers'          => ! empty( $overlays['rivers'] ),
-            'feature_labels'  => ! empty( $overlays['feature_labels'] ),
-            'feature_only_set' => ! empty( $overlays['feature_only_set'] ),
-        ) );
+        $overlays_attr = wp_json_encode( $overlays );
 
         // Container for player map + task list. JS handles rendering.
-        echo '<div id="ek-mapa-container" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '">';
+        // Dataset slug pre area/line + singular label pre sidebar „Nájdi <singular>: X"
+        $dataset_slug_attr = get_post_meta( $template_id, '_mapquiz_dataset_slug', true );
+        $dataset_singular = '';
+        if ( $dataset_slug_attr && class_exists( 'Eventkviz_MapQuiz_Datasets' ) ) {
+            $ds_def = Eventkviz_MapQuiz_Datasets::get( $dataset_slug_attr );
+            if ( $ds_def && ! empty( $ds_def['singular'] ) ) $dataset_singular = $ds_def['singular'];
+        }
+        echo '<div id="ek-mapa-container" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-dataset="' . esc_attr( $dataset_slug_attr ) . '" data-singular="' . esc_attr( $dataset_singular ) . '">';
         echo '<div id="ek-mapa-tasks" class="ek-mapa-tasks"></div>';
         echo '<div id="ek-mapa-map" class="ek-mapa-map"></div>';
         echo '</div>';
@@ -266,7 +252,7 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
                 echo '<input type="hidden" name="mapa' . $hn . '_lat" id="ek-mapa-lat-' . $hn . '" value="' . $prev_lat . '">';
                 echo '<input type="hidden" name="mapa' . $hn . '_lon" id="ek-mapa-lon-' . $hn . '" value="' . $prev_lon . '">';
             } else {
-                // river/mountain — feature_id (názov vybranej rieky/pohoria)
+                // area/line — feature_id (názov vybranej feature)
                 $prev_feat = $is_review && isset( $_POST['prev_mapa' . $hn . '_feature'] ) ? esc_attr( wp_unslash( $_POST['prev_mapa' . $hn . '_feature'] ) ) : '';
                 echo '<input type="hidden" name="mapa' . $hn . '_feature" id="ek-mapa-feature-' . $hn . '" value="' . $prev_feat . '">';
             }
@@ -417,10 +403,10 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
             return;
         }
         $quiz_type = get_post_meta( $template_id, '_mapquiz_quiz_type', true ) ?: 'pin';
-        if ( ! in_array( $quiz_type, array( 'pin', 'river', 'mountain' ), true ) ) $quiz_type = 'pin';
+        if ( ! in_array( $quiz_type, array( 'pin', 'area', 'line' ), true ) ) $quiz_type = 'pin';
 
         // Build authoritative pin/feature map: id → record. Pre pin = lat/lon; pre
-        // river/mountain = id (= správna feature name) — eval len porovnáva guess vs id.
+        // area/line = id (= správna feature name) — eval len porovnáva guess vs id.
         $pin_by_id = array();
         if ( $quiz_type === 'pin' ) {
             $pins_json = get_post_meta( $template_id, '_mapquiz_pins', true );
@@ -504,7 +490,7 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                     'distance_km' => $distance_km, 'points' => $points,
                 );
             } else {
-                // river/mountain — binárne hodnotenie. Hráč pošle mapaN_feature = názov vybranej feature.
+                // area/line — binárne hodnotenie. Hráč pošle mapaN_feature = názov vybranej feature.
                 $guess_feature = isset( $_POST[ 'mapa' . $hn . '_feature' ] ) ? trim( (string) wp_unslash( $_POST[ 'mapa' . $hn . '_feature' ] ) ) : '';
                 $is_answered   = $guess_feature !== '';
                 $is_correct    = ( $is_answered && $guess_feature === $pin_id );
@@ -539,23 +525,20 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
         echo '<h1 class="ek-quiz-title">Vyhodnotenie mapového kvízu: ' . esc_html( $template->post_title ) . '</h1>';
 
         // Overlay vodítka (rovnaké ako form) — pomáhajú hráčovi orientovať sa pri review
+        // Cely overlays object — sanitization už spravil save handler (whitelist).
         $overlays_json = get_post_meta( $template_id, '_mapquiz_overlays', true );
         $overlays      = is_string( $overlays_json ) && $overlays_json !== '' ? json_decode( $overlays_json, true ) : array();
         if ( ! is_array( $overlays ) ) $overlays = array();
-        $overlays_attr = wp_json_encode( array(
-            'tile_streets'    => ! empty( $overlays['tile_streets'] ),
-            'tile_satellite'  => ! empty( $overlays['tile_satellite'] ),
-            'tile_outdoor'    => ! empty( $overlays['tile_outdoor'] ),
-            'cities_main'     => ! empty( $overlays['cities_main'] ),
-            'cities_regional' => ! empty( $overlays['cities_regional'] ),
-            'regions'         => ! empty( $overlays['regions'] ),
-            'rivers'          => ! empty( $overlays['rivers'] ),
-            'feature_labels'  => ! empty( $overlays['feature_labels'] ),
-            'feature_only_set' => ! empty( $overlays['feature_only_set'] ),
-        ) );
+        $overlays_attr = wp_json_encode( $overlays );
 
         // Review map container — JS reads window.ekMapaReview
-        echo '<div id="ek-mapa-container" class="ek-mapa-review" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-review="1">';
+        $dataset_slug_attr = get_post_meta( $template_id, '_mapquiz_dataset_slug', true );
+        $dataset_singular = '';
+        if ( $dataset_slug_attr && class_exists( 'Eventkviz_MapQuiz_Datasets' ) ) {
+            $ds_def = Eventkviz_MapQuiz_Datasets::get( $dataset_slug_attr );
+            if ( $ds_def && ! empty( $ds_def['singular'] ) ) $dataset_singular = $ds_def['singular'];
+        }
+        echo '<div id="ek-mapa-container" class="ek-mapa-review" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-dataset="' . esc_attr( $dataset_slug_attr ) . '" data-singular="' . esc_attr( $dataset_singular ) . '" data-review="1">';
         echo '<div id="ek-mapa-tasks" class="ek-mapa-tasks"></div>';
         echo '<div id="ek-mapa-map" class="ek-mapa-map"></div>';
         echo '</div>';
@@ -586,9 +569,9 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                     }
                 }
             } else {
-                // river/mountain — binárne hodnotenie
+                // area/line — binárne hodnotenie
                 if ( ! $r['is_answered'] ) {
-                    $this->show_answer( 'Hráč neoznačil žiadnu ' . ( $quiz_type === 'river' ? 'rieku' : 'pohorie' ) . ' — 0 bodov.', 'mapa', 'eventkviz_standard_answer', 'user_result' );
+                    $this->show_answer( 'Hráč neoznačil žiadnu ' . ( $quiz_type === 'line' ? 'feature' : 'oblasť' ) . ' — 0 bodov.', 'mapa', 'eventkviz_standard_answer', 'user_result' );
                 } elseif ( $r['is_correct'] ) {
                     $msg = '✅ Správne — hráč získava <strong>+' . $r['points'] . '</strong> bodov.';
                     $this->show_answer( $msg, 'mapa', 'eventkviz_standard_answer', 'user_result' );
@@ -600,7 +583,7 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
 
             // Mini-mapa pre vzdelávací účel — ak admin má toggle A
             // („zobraz_spravne_odpovede") ON a odpoveď nie je perfektná:
-            //   - feature mode (river/mountain): wrong/missing → mini-mapa s feature
+            //   - feature mode (area/line): wrong/missing → mini-mapa s feature
             //   - pin mode: not top-tier (points < max_per_task) → mini-mapa s pin
             $show_correct_answers = ! empty( $sub_quiz['zobraz_spravne_odpovede'] );
             $needs_mini_map = false;
@@ -627,7 +610,7 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                         $plon = isset( $r['pin']['lon'] ) ? (float) $r['pin']['lon'] : 0;
                         echo '<div class="ek-mapa-mini" data-pin-lat="' . esc_attr( $plat ) . '" data-pin-lon="' . esc_attr( $plon ) . '" data-region="' . esc_attr( $region ) . '" data-quiz-type="pin"></div>';
                     } else {
-                        echo '<div class="ek-mapa-mini" data-feature="' . esc_attr( $correct_name ) . '" data-region="' . esc_attr( $region ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '"></div>';
+                        echo '<div class="ek-mapa-mini" data-feature="' . esc_attr( $correct_name ) . '" data-region="' . esc_attr( $region ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-dataset="' . esc_attr( $dataset_slug_attr ) . '"></div>';
                     }
                     echo '</div>';
                 }
@@ -671,7 +654,7 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
 
         // Vyhodnoť či hráč mal perfektný pokus (žiaden zmysel ponúkať retry).
         //   - pin mode: všetky úlohy v top tier (percent == 100)
-        //   - feature mode (river/mountain): všetky is_correct === true
+        //   - feature mode (area/line): všetky is_correct === true
         $is_perfect_run = ! empty( $per_task_results );
         foreach ( $per_task_results as $r ) {
             if ( $quiz_type === 'pin' ) {

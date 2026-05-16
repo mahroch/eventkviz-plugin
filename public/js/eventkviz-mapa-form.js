@@ -13,7 +13,9 @@
 
     var region = $container.data('region') || 'slovakia';
     var detail = $container.data('detail') || 'outline-only';
-    var quizType = $container.data('quiz-type') || 'pin';   // 'pin' | 'river' | 'mountain'
+    var quizType = $container.data('quiz-type') || 'pin';   // 'pin' | 'area' | 'line'
+    var datasetSlug = $container.data('dataset') || '';     // pre area/line — určuje GeoJSON file
+    var datasetSingular = $container.data('singular') || ''; // pre prefix v sidebar tasks ("Nájdi rieku: …")
     // data-overlays je JSON object {cities,regions,rivers} — jQuery vie auto-parse JSON,
     // ale pre istotu defenzívne handling.
     var overlaysCfg = $container.data('overlays');
@@ -165,10 +167,11 @@
     }
 
     function loadFeatureLayer() {
-        // Pre quiz_type=river/mountain — načíta features GeoJSON, renderuje
-        // všetky features ako interaktívne layers s click handlerom.
-        if (quizType !== 'river' && quizType !== 'mountain') return;
-        var fileName = quizType === 'river' ? 'sk-rivers.geojson' : 'sk-mountains.geojson';
+        // Pre quiz_type=area/line — načíta features GeoJSON cez dataset slug.
+        if (quizType !== 'area' && quizType !== 'line') return;
+        if (!datasetSlug) return;
+        // Konvencia: GeoJSON file = "<slug>.geojson" v public/data/regions/
+        var fileName = datasetSlug + '.geojson';
         fetch(ekMapaCfg.geoJsonBase + fileName).then(function (r) {
             return r.ok ? r.json() : null;
         }).then(function (data) {
@@ -196,7 +199,12 @@
             // povoliť cez overlay checkbox „feature_labels" (default OFF). Pre
             // súťažné kvízy ostáva map clean. V review móde tooltip dáva zmysel
             // (kvíz už skončil) — ale držíme rovnaký flag pre konzistentnosť.
-            var showLabels = !!overlaysCfg.feature_labels;
+            //
+            // feature_labels_permanent (silnejšia pomôcka): label je vždy
+            // viditeľný priamo na polygone/čiare — implicitne zapína labels aj
+            // bez hover toggle (inak by flag nemal efekt).
+            var showLabels = !!overlaysCfg.feature_labels || !!overlaysCfg.feature_labels_permanent;
+            var labelsPermanent = !!overlaysCfg.feature_labels_permanent;
             featureLayer = L.geoJSON(data, {
                 style: featureBaseStyle,
                 // V review je feature layer čisto vizuálny — žiadny click ani hover handler.
@@ -214,7 +222,12 @@
                         });
                     }
                     if (showLabels) {
-                        layer.bindTooltip(name, { permanent: false, direction: 'top', sticky: true });
+                        layer.bindTooltip(name, {
+                            permanent: labelsPermanent,
+                            direction: labelsPermanent ? 'center' : 'top',
+                            sticky: !labelsPermanent,
+                            className: labelsPermanent ? 'ek-mapa-feature-label--perm' : ''
+                        });
                     }
                 }
             }).addTo(map);
@@ -235,18 +248,14 @@
     }
 
     function featureBaseStyle(feature) {
-        if (quizType === 'river') {
-            return { color: '#3aa6f0', weight: 4, opacity: 0.85 };
-        }
-        // Mountain polygons — vyplnená plocha aby bola dobre rozlíšiteľná
-        // (predtým iba jemný obrys s 0.45 fill — slabo viditeľné nad tile vrstvou).
+        if (quizType === 'line') return { color: '#3aa6f0', weight: 4, opacity: 0.85 };
+        // Area polygons — vyplnená plocha s tmavým borderom
         return { color: '#33691e', weight: 2, fillColor: '#7cb342', fillOpacity: 0.7 };
     }
 
     function featureHoverStyle() {
-        if (quizType === 'river') return { color: '#1976d2', weight: 6, opacity: 1.0 };
-        // Mountain hover — jasná modrá vs base zelená pre maximálny kontrast.
-        // (Predtým „tmavšia zelená" splývala s base zelenou, ťažko sa rozlišovalo.)
+        if (quizType === 'line') return { color: '#1976d2', weight: 6, opacity: 1.0 };
+        // Area hover — jasná modrá vs base zelená pre maximálny kontrast
         return { color: '#0d47a1', weight: 3, fillColor: '#42a5f5', fillOpacity: 0.85 };
     }
 
@@ -367,7 +376,7 @@
     }
 
     function renderCitiesOverlay(geojson) {
-        // V river/mountain móde nech mestá nezachytávajú klik (aby šiel na features pod nimi)
+        // V area/line móde nech mestá nezachytávajú klik (aby šiel na features pod nimi)
         var interactive = (quizType === 'pin');
         L.geoJSON(geojson, {
             pointToLayer: function (feature, latlng) {
@@ -583,7 +592,12 @@
         var $list = $('#ek-mapa-tasks').empty();
         var headerTxt = isReview ? 'Výsledky' : 'Úlohy';
         $list.append($('<h3 class="ek-mapa-tasks-header"></h3>').text(headerTxt));
-        var prefix = (quizType === 'river') ? 'Nájdi rieku: ' : (quizType === 'mountain' ? 'Nájdi pohorie: ' : '');
+        // Prefix podľa dataset.singular ("rieku", "pohorie", "štát", …).
+        // Pin mode: žiadny prefix (názov pinu je už samonosný).
+        var prefix = '';
+        if (quizType === 'area' || quizType === 'line') {
+            prefix = datasetSingular ? ('Nájdi ' + datasetSingular + ': ') : 'Nájdi: ';
+        }
         tasks.forEach(function (t, idx) {
             var hn = idx + 1;
             var placed = !!taskMarkers[idx];
@@ -620,7 +634,7 @@
                         $row.append('<div class="ek-mapa-task-result ek-mapa-task-result--miss">neoznačené · 0 b</div>');
                     }
                 } else {
-                    // Feature mode (river/mountain): binárne výsledky bez km
+                    // Feature mode (area/line): binárne výsledky bez km
                     var pts = t.points || 0;
                     if (typeof t.guess_feature === 'undefined' || t.guess_feature === null || t.guess_feature === '') {
                         $row.append('<div class="ek-mapa-task-result ek-mapa-task-result--miss">neoznačené · 0 b</div>');
@@ -636,7 +650,7 @@
                     // nie aby × spadla do nového riadku (4. neexistuje).
                     var $status = $('<span class="ek-mapa-task-status"></span>');
                     $status.append('<span class="ek-mapa-task-check">✓</span>');
-                    if (quizType === 'river' || quizType === 'mountain') {
+                    if (quizType === 'area' || quizType === 'line') {
                         var $x = $('<button type="button" class="ek-mapa-task-unpick" title="Odznačiť">×</button>');
                         $x.on('click', function (e) { e.stopPropagation(); unpickFeature(idx); });
                         $status.append($x);
@@ -803,13 +817,14 @@
             var pinLat = $el.data('pin-lat');
             var pinLon = $el.data('pin-lon');
             var region = $el.data('region') || 'slovakia';
-            var qt = $el.data('quiz-type'); // 'pin' | 'river' | 'mountain'
+            var qt = $el.data('quiz-type'); // 'pin' | 'area' | 'line'
+            var ds = $el.data('dataset') || ''; // dataset slug pre area/line
 
-            // Pin mode treba lat/lon; feature mode treba názov.
+            // Pin mode treba lat/lon; feature mode treba názov + dataset.
             if (qt === 'pin') {
                 if (typeof pinLat !== 'number' || typeof pinLon !== 'number') return;
-            } else if (qt === 'river' || qt === 'mountain') {
-                if (!featureName) return;
+            } else if (qt === 'area' || qt === 'line') {
+                if (!featureName || !ds) return;
             } else {
                 return;
             }
@@ -844,8 +859,7 @@
                 });
                 L.marker([pinLat, pinLon], { icon: icon, interactive: false }).addTo(miniMap);
             } else {
-                var dataset = qt === 'river' ? 'sk-rivers.geojson' : 'sk-mountains.geojson';
-                fetch(ekMapaCfg.geoJsonBase + dataset)
+                fetch(ekMapaCfg.geoJsonBase + ds + '.geojson')
                     .then(function (r) { return r.ok ? r.json() : null; })
                     .then(function (data) {
                         if (!data) return;
@@ -853,7 +867,7 @@
                             return f.properties && f.properties.name === featureName;
                         });
                         if (!matching.length) return;
-                        var style = qt === 'river'
+                        var style = qt === 'line'
                             ? { color: '#1976d2', weight: 5, opacity: 1 }
                             : { color: '#1b5e20', weight: 2, fillColor: '#43a047', fillOpacity: 0.75 };
                         L.geoJSON({ type: 'FeatureCollection', features: matching }, {

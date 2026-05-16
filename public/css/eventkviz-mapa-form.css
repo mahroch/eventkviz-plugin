@@ -104,6 +104,24 @@
     border: none;
 }
 
+/* Permanent feature label (toggle „Zobraziť názov priamo na polygone/čiare").
+   Centrovaný na feature, polotransparentné biele pozadie aby bolo čitateľné
+   nad area fill aj nad tile vrstvou. */
+.ek-mapa-map .ek-mapa-feature-label--perm {
+    background: rgba(255, 255, 255, 0.88);
+    color: #1a252f;
+    border: 1px solid #9aa5b1;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    pointer-events: none;
+}
+.ek-mapa-map .ek-mapa-feature-label--perm:before {
+    display: none;
+}
+
 /* Leaflet zoom controls — bigger + dark background so they sú viditeľné
    na light fill polygónov. Default Leaflet je 26px biele tlačidlá. */
 .ek-mapa-map .leaflet-control-zoom a {
