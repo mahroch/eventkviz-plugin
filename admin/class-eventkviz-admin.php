@@ -1981,7 +1981,7 @@ private function render_mapa_subquiz_fieldset( $q, $idx, $templates ) {
                 <th><label>Max body za celý kvíz <em style="color:#888;font-weight:400">(override)</em></label></th>
                 <td>
                     <input type="number" class="small-text" name="<?php echo esc_attr( $name_prefix ); ?>[max_points_override]" value="<?php echo esc_attr( $q['max_points_override'] ?? '' ); ?>" min="0" max="9999" placeholder="prázdne = default zo šablóny" />
-                    <p class="description"><code>max_per_úloha = max_body / počet_otázok</code>. Prázdne = default zo šablóny.</p>
+                    <p class="description"><code>max_per_úloha = max_body / počet_otázok</code>. <strong>Prázdne</strong> = použije sa hodnota <strong>z mapovej šablóny</strong> (default 100).</p>
                 </td>
             </tr>
 
@@ -2006,8 +2006,9 @@ private function render_mapa_subquiz_fieldset( $q, $idx, $templates ) {
                         </p>
                     </div>
                     <p class="description">
-                        ⚠ Aplikuje sa LEN pre šablóny typu „Hľadanie miest" (pin). Pre rieku/pohorie binárne.<br>
-                        Príklad: 0–5 km = 100 %, 5–10 km = 75 %. Pri vzdialenosti väčšej než posledný stupeň → 0 bodov.
+                        ⚠ Aplikuje sa LEN pre šablóny typu „Hľadanie miest" (pin). Pre rieku/pohorie je hodnotenie binárne (správne = max body, nesprávne = 0).<br>
+                        Príklad: 0–5 km = 100 %, 5–10 km = 75 %. Pri vzdialenosti väčšej než posledný stupeň → 0 bodov.<br>
+                        <strong>Prázdne</strong> = použijú sa default stupne <strong>z mapovej šablóny</strong> (najčastejšie: do 5 km = 100 %, do 10 km = 75 %, do 20 km = 50 %, do 40 km = 25 %). Skutočný default si pozri / nastav v editore vybranej šablóny.
                     </p>
                 </td>
             </tr>
