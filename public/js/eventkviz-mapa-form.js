@@ -690,11 +690,11 @@
 
             if (isReview) {
                 if (quizType === 'pin') {
-                    // Pin mode: km + body (alebo neoznačené)
+                    // Pin mode: vzdialenosť + body (alebo neoznačené)
                     if (t.distance_km !== null && typeof t.distance_km !== 'undefined') {
                         var dist = Number(t.distance_km).toFixed(2);
                         var ptsClass = t.points > 0 ? 'ek-mapa-task-result ek-mapa-task-result--ok' : 'ek-mapa-task-result ek-mapa-task-result--miss';
-                        $row.append('<div class="' + ptsClass + '">' + dist + ' km · ' + (t.points || 0) + ' b</div>');
+                        $row.append('<div class="' + ptsClass + '">Vzdialenosť: ' + dist + ' km · ' + (t.points || 0) + ' b</div>');
                     } else {
                         $row.append('<div class="ek-mapa-task-result ek-mapa-task-result--miss">neoznačené · 0 b</div>');
                     }
@@ -724,8 +724,10 @@
                 } else {
                     $row.append('<span class="ek-mapa-task-pending">…</span>');
                 }
+                // V form móde zobrazujeme len hint (krátka nápoveda) + photo
+                // (ak je nastavená — môže byť súčasťou kvízovej úlohy). Popis je
+                // detailné info o lokalite a je spoiler — ukáže sa až v eval review.
                 if (t.hint) $row.append('<div class="ek-mapa-task-hint">' + escapeHtml(t.hint) + '</div>');
-                if (t.description) $row.append('<div class="ek-mapa-task-desc">' + escapeHtml(t.description) + '</div>');
                 if (t.photo_url) {
                     $row.append('<img class="ek-mapa-task-photo" src="' + t.photo_url + '" alt="" />');
                 }

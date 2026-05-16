@@ -620,22 +620,23 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                 }
             }
 
-            // „Správna lokalita: X" textová info — IBA pre PIN mode (hráč klikol blízko
-            // ale nie presne, treba ukázať detail). Pre FEATURE mode máme mini-mapu vyššie
-            // (visual) — textová info je redundantná s hlavičkou úlohy.
-            $show_correct = ( $quiz_type === 'pin' );
-            if ( $show_correct ) {
-                $name_txt = isset( $r['pin']['name'] ) ? $r['pin']['name'] : '';
+            // Vzdelávací box pre PIN mode — popis + foto lokality. Bez „Správna
+            // lokalita: X" textu — názov je už v hlavičke úlohy aj v sidebar
+            // a duplikoval by sa. Box sa zobrazí len ak existuje description
+            // alebo photo (inak nemá čo ukázať).
+            if ( $quiz_type === 'pin' ) {
                 $desc_txt = isset( $r['pin']['description'] ) ? (string) $r['pin']['description'] : '';
                 $photo    = '';
                 if ( ! empty( $r['pin']['photo_id'] ) ) {
                     $url = wp_get_attachment_image_url( (int) $r['pin']['photo_id'], 'medium' );
                     if ( $url ) $photo = $url;
                 }
-                $correct_html = '🎯 Správna lokalita: <strong>' . esc_html( $name_txt ) . '</strong>';
-                if ( $desc_txt !== '' ) $correct_html .= '<br><span style="font-style:italic">' . esc_html( $desc_txt ) . '</span>';
-                if ( $photo !== '' ) $correct_html .= '<br><img src="' . esc_url( $photo ) . '" alt="" style="max-width:200px;border-radius:6px;margin-top:6px;">';
-                $this->show_answer( $correct_html, 'mapa', 'eventkviz_standard_answer', 'correct_answer' );
+                if ( $desc_txt !== '' || $photo !== '' ) {
+                    $detail_html = '';
+                    if ( $desc_txt !== '' ) $detail_html .= '<div style="font-style:italic">' . esc_html( $desc_txt ) . '</div>';
+                    if ( $photo !== '' )    $detail_html .= '<div><img src="' . esc_url( $photo ) . '" alt="" style="max-width:200px;border-radius:6px;margin-top:6px;"></div>';
+                    $this->show_answer( $detail_html, 'mapa', 'eventkviz_standard_answer', 'correct_answer' );
+                }
             }
 
             echo '</div>'; // .ek-question
