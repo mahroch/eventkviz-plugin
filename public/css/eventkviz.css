@@ -859,3 +859,16 @@ body.eventkviz-page .page-title {
         padding: 16px;
     }
 }
+
+/* Scoring info text — human-friendly vysvetlenie ako sa kvíz vyhodnocuje.
+   Zobrazuje sa nad formulárom (pred kvízom) aj nad eval výsledkom (po kvíze).
+   Decentný italic, neutralna farba — informačný, nie dominantný. */
+.ek-scoring-info {
+    color: rgba(255,255,255,0.85);
+    font-style: italic;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 720px;
+    margin: 16px auto;
+    text-align: center;
+}

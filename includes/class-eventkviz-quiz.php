@@ -557,6 +557,118 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 			}
 	}
 
+	/**
+	 * Vyrenderuje human-friendly info text o tom ako sa kvíz vyhodnocuje.
+	 * Volá sa nad formulárom (mode=form) a nad eval výsledkom (mode=eval).
+	 *
+	 * @param string $quiz_type 'music'|'movies'|'knowledge'|'sudoku'|'mapa'
+	 * @param array  $settings  per-quiz settings (cAkcia->X_settings)
+	 * @param string $mode      'form' (pred kvízom) | 'eval' (po odoslaní)
+	 * @param array  $extra     Volitelné: 'remaining' (int) pre eval mode,
+	 *                          'mapa_type' ('pin'|'area'|'line'), 'mapa_max_per_task' (float)
+	 */
+	public function render_scoring_info( $quiz_type, $settings, $mode = 'form', $extra = array() ) {
+		$is_eval  = ( $mode === 'eval' );
+		$N        = (int) ( $settings['pocet_otazok_v_sete'] ?? 0 );
+		$min_body = (int) ( $settings['min_body_na_postup'] ?? 0 );
+		$pokusy   = (int) ( $settings['pocet_pokusov'] ?? 0 );
+
+		$sentences = array();
+
+		// 1) hlavná veta podľa kvíz typu
+		switch ( $quiz_type ) {
+			case 'music':
+				$c = $settings['credits'] ?? array();
+				$art  = (int) ( $c['corr_art_corr_pos_incorr_song'] ?? 0 );
+				$song = (int) ( $c['incorr_art_corr_song_corr_pos'] ?? 0 );
+				$both = (int) ( $c['corr_art_corr_pos_corr_song_corr_pos'] ?? 0 );
+				$sentences[] = $is_eval
+					? sprintf( 'V tomto hudobnom kvíze si hádal interpreta a skladbu k %d hudobným ukážkam. Za správne určeného interpreta bolo %d bodov, za skladbu %d, a %d bodov za obe správne k tej istej ukážke.', $N, $art, $song, $both )
+					: sprintf( 'V tomto hudobnom kvíze hádaš interpreta a skladbu k %d hudobným ukážkam. Za správne určeného interpreta získaš %d bodov, za správnu skladbu %d bodov. Ak správne priradíš aj interpreta aj skladbu k tej istej ukážke, dostaneš %d bodov.', $N, $art, $song, $both );
+				break;
+
+			case 'movies':
+				$c = $settings['credits'] ?? array();
+				$movie_wrong = (int) ( $c['corr_movie_wrong_pos'] ?? 0 );
+				$movie_right = (int) ( $c['corr_movie'] ?? 0 );
+				$sentences[] = $is_eval
+					? sprintf( 'V tomto filmovom kvíze si hádal %d filmov podľa ukážok. Za správne určený film bolo %d bodov; ak hráč priradil film aj k správnej ukážke, dostal %d bodov.', $N, $movie_wrong, $movie_right )
+					: sprintf( 'V tomto filmovom kvíze hádaš %d filmov podľa ukážok. Za správne určený film získaš %d bodov; ak ho priradíš aj k správnej ukážke, dostaneš %d bodov.', $N, $movie_wrong, $movie_right );
+				break;
+
+			case 'knowledge':
+				$c   = $settings['credits'] ?? array();
+				$ans = (int) ( $c['corr_answer'] ?? 0 );
+				$sentences[] = $is_eval
+					? sprintf( 'V tomto vedomostnom kvíze si odpovedal na %d otázok. Za každú správnu odpoveď bolo %d bodov.', $N, $ans )
+					: sprintf( 'V tomto vedomostnom kvíze odpovedáš na %d otázok. Za každú správnu odpoveď získaš %d bodov.', $N, $ans );
+				break;
+
+			case 'sudoku':
+				$c    = $settings['credits'] ?? array();
+				$easy = (int) ( $c['easy']   ?? 0 );
+				$med  = (int) ( $c['medium'] ?? 0 );
+				$hard = (int) ( $c['hard']   ?? 0 );
+				$sentences[] = $is_eval
+					? sprintf( 'V tomto sudoku kvíze si vyplnil %d tabuliek. Body sa líšili podľa obťažnosti — ľahká %d, stredná %d, ťažká %d bodov.', $N, $easy, $med, $hard )
+					: sprintf( 'V tomto sudoku kvíze vyplníš %d tabuliek rôznej náročnosti. Body sa líšia podľa obťažnosti — za ľahkú tabuľku %d, za strednú %d, za ťažkú %d bodov.', $N, $easy, $med, $hard );
+				break;
+
+			case 'mapa':
+				$mapa_type = $extra['mapa_type'] ?? 'pin';
+				$max_pt    = isset( $extra['mapa_max_per_task'] ) ? (float) $extra['mapa_max_per_task'] : 0;
+				// "12.5" alebo "12" podľa toho či je celé
+				$max_pt_disp = ( fmod( $max_pt, 1.0 ) === 0.0 ) ? (string) (int) $max_pt : rtrim( rtrim( number_format( $max_pt, 1, '.', '' ), '0' ), '.' );
+				$mapa_N = $N > 0 ? $N : (int) ( $extra['mapa_task_count'] ?? 0 );
+
+				if ( $mapa_type === 'pin' ) {
+					$sentences[] = $is_eval
+						? sprintf( 'V tomto mapovom kvíze si hľadal %d miest na mape. Body sa počítali podľa vzdialenosti od správneho miesta — čím bližšie, tým viac. Za úlohu bolo až %s bodov.', $mapa_N, $max_pt_disp )
+						: sprintf( 'V tomto mapovom kvíze hľadáš %d miest. Klikni na mapu tam, kde si myslíš, že sa nachádzajú. Body sa počítajú podľa vzdialenosti od správneho miesta — čím bližšie, tým viac. Za úlohu môžeš získať až %s bodov.', $mapa_N, $max_pt_disp );
+				} elseif ( $mapa_type === 'area' ) {
+					$sentences[] = $is_eval
+						? sprintf( 'V tomto mapovom kvíze si označoval %d území na mape. Za správnu odpoveď bolo %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp )
+						: sprintf( 'V tomto mapovom kvíze označuješ %d území na mape. Klikni priamo na správnu plochu (štát, pohorie, národný park…). Za správnu odpoveď získaš %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp );
+				} elseif ( $mapa_type === 'line' ) {
+					$sentences[] = $is_eval
+						? sprintf( 'V tomto mapovom kvíze si označoval %d čiarových objektov na mape (rieky, železnice…). Za správnu odpoveď bolo %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp )
+						: sprintf( 'V tomto mapovom kvíze označuješ %d čiarových objektov na mape (rieky, železnice…). Klikni priamo na správnu líniu. Za správnu odpoveď získaš %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp );
+				}
+				break;
+		}
+
+		// 2) Prah na kód / motivácia
+		if ( $min_body > 0 ) {
+			$sentences[] = sprintf( 'Na získanie kódu musíš dosiahnuť aspoň %d bodov.', $min_body );
+		} else {
+			$sentences[] = 'Skús získať čo najviac bodov.';
+		}
+
+		// 3) Pokusy (v evale „zostáva", v form „máš")
+		if ( $is_eval ) {
+			$remaining = isset( $extra['remaining'] ) ? max( 0, (int) $extra['remaining'] ) : null;
+			if ( $remaining === 0 ) {
+				$sentences[] = 'Toto bol tvoj posledný pokus.';
+			} elseif ( $remaining === 1 ) {
+				$sentences[] = 'Zostáva ti 1 pokus.';
+			} elseif ( $remaining !== null && $remaining >= 2 && $remaining <= 4 ) {
+				$sentences[] = sprintf( 'Zostávajú ti %d pokusy.', $remaining );
+			} elseif ( $remaining !== null ) {
+				$sentences[] = sprintf( 'Zostáva ti %d pokusov.', $remaining );
+			}
+		} else {
+			if ( $pokusy === 1 ) {
+				$sentences[] = 'Máš 1 pokus.';
+			} elseif ( $pokusy >= 2 && $pokusy <= 4 ) {
+				$sentences[] = sprintf( 'Máš %d pokusy.', $pokusy );
+			} elseif ( $pokusy > 0 ) {
+				$sentences[] = sprintf( 'Máš %d pokusov.', $pokusy );
+			}
+		}
+
+		echo '<p class="ek-scoring-info">' . esc_html( implode( ' ', $sentences ) ) . '</p>';
+	}
+
 	public function show_seed($user_code='', $akcia='',$place='',$team_code='') {
 		//global $all_quizes_settings;
 		if( $this->cAkcia->all_quizes_settings['use_seed'] === true) {

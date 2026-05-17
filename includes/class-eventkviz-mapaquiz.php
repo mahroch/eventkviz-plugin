@@ -209,6 +209,18 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
             echo '<a href="' . esc_url( $reset_url ) . '" style="color:#888;text-decoration:none" onclick="try{Object.keys(localStorage).filter(function(k){return k.indexOf(\'ek_autosave:mapa:\')===0}).forEach(function(k){localStorage.removeItem(k)});}catch(e){};return true;">🔧 Reset (admin only) — vymaže DB záznamy + localStorage pre tento event</a>';
             echo '</div>';
         }
+        // Scoring info — friendly text o tom ako sa kvíz vyhodnocuje (max body,
+        // počet úloh, scoring metóda podľa quiz_type, prah na kód, počet pokusov).
+        $form_max_points_override = isset( $sub_quiz['max_points_override'] ) ? trim( (string) $sub_quiz['max_points_override'] ) : '';
+        $form_max_points_template = (int) get_post_meta( $template_id, '_mapquiz_max_points', true );
+        $form_max_points          = $form_max_points_override !== '' ? (int) $form_max_points_override : $form_max_points_template;
+        if ( $form_max_points <= 0 ) $form_max_points = 100;
+        $form_max_per_task = $count_in_set > 0 ? ( $form_max_points / $count_in_set ) : 0;
+        $this->render_scoring_info( 'mapa', $sub_quiz, 'form', array(
+            'mapa_type'         => $quiz_type,
+            'mapa_max_per_task' => $form_max_per_task,
+            'mapa_task_count'   => $count_in_set,
+        ) );
         $this->render_tries_remaining_banner( 'mapa' );
         if ( $is_review ) {
             echo '<div class="ek-review-banner">📝 Vaše predchádzajúce odpovede sú vyznačené — <strong style="color:#6dd58c">zelené</strong> boli v tieri (úspech), <strong style="color:#ff6b6b">červené</strong> mimo. Klikni znova na ktorýkoľvek pin a presuň.</div>';
@@ -643,31 +655,16 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
         }
         echo '</div>'; // .ek-mapa-eval-list
 
-        // Info box „Ako sa kvíz vyhodnocuje" — vysvetlí scoring (max body,
-        // rozdelenie per úloha, metodológia podľa quiz_type). Pomáha hráčovi
-        // porozumieť ako sa dopracoval k výslednému počtu bodov.
-        $max_per_task_disp = $task_count > 0 ? round( $max_per_task, 1 ) : 0;
-        echo '<div class="ek-mapa-scoring-info" style="margin:18px auto;max-width:720px;padding:14px 18px;background:#eef4fa;border-left:3px solid #2271b1;border-radius:0 6px 6px 0;color:#1d2327;font-size:14px;line-height:1.5">';
-        echo '<div style="font-weight:700;margin-bottom:6px">ℹ Ako sa kvíz vyhodnocuje</div>';
-        echo '<div>Maximálny počet bodov: <strong>' . esc_html( $max_points ) . '</strong> · rozdelených na <strong>' . esc_html( $task_count ) . '</strong> úlo' . ( $task_count === 1 ? 'hu' : ( $task_count >= 2 && $task_count <= 4 ? 'hy' : 'h' ) ) . ' (max <strong>' . esc_html( $max_per_task_disp ) . '</strong> b za úlohu).</div>';
-        if ( $quiz_type === 'pin' ) {
-            echo '<div style="margin-top:6px">Hodnotenie <strong>pin</strong> kvízu: body sa počítajú podľa <strong>vzdialenosti</strong> od správneho miesta:</div>';
-            echo '<ul style="margin:4px 0 0 22px;padding:0;list-style:disc">';
-            $prev_km = 0;
-            foreach ( $tiers as $tier ) {
-                $max_km = isset( $tier['maxKm'] ) ? (float) $tier['maxKm'] : 0;
-                $pct    = isset( $tier['percent'] ) ? (float) $tier['percent'] : 0;
-                $pts    = round( $max_per_task * $pct / 100, 1 );
-                echo '<li>' . esc_html( $prev_km ) . '–' . esc_html( $max_km ) . ' km = <strong>' . esc_html( $pct ) . ' %</strong> = ' . esc_html( $pts ) . ' b</li>';
-                $prev_km = $max_km;
-            }
-            echo '<li>nad ' . esc_html( $prev_km ) . ' km = <strong>0 %</strong> = 0 b</li>';
-            echo '</ul>';
-        } else {
-            $type_label = ( $quiz_type === 'line' ? 'čiarového objektu (rieka, železnica…)' : 'územia / oblasti (štát, pohorie, NP…)' );
-            echo '<div style="margin-top:6px">Hodnotenie <strong>' . esc_html( $type_label ) . '</strong>: <strong>binárne</strong> — buď klikneš na správnu feature (= plný počet bodov za úlohu, <strong>' . esc_html( $max_per_task_disp ) . '</strong> b), alebo nie (= 0 b). Vzdialenosti sa neuplatňujú.</div>';
-        }
-        echo '</div>';
+        // Friendly scoring info text (eval mode) — human-readable summary
+        // ako sa kvíz vyhodnocoval + zostávajúce pokusy. Predchádzajúci verbose
+        // box s tiers/percentami bol nahradený jednoduchším textom (user feedback).
+        $eval_remaining = isset( $this->zostava_pocet_pokusov ) ? max( 0, (int) $this->zostava_pocet_pokusov - 1 ) : null;
+        $this->render_scoring_info( 'mapa', $sub_quiz, 'eval', array(
+            'mapa_type'         => $quiz_type,
+            'mapa_max_per_task' => $max_per_task,
+            'mapa_task_count'   => $task_count,
+            'remaining'         => $eval_remaining,
+        ) );
 
         $this->show_total_credits_gained( $gained_credits, $user, $team );
 

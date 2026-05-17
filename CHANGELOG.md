@@ -8,6 +8,19 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Changed (všetky kvízy — human-friendly „scoring info" text nad formulárom + v evale)
+- Pre **všetky druhy kvízov** (music / movies / knowledge / sudoku / mapa) sa zobrazí krátky informačný text v ľudskej reči — vysvetľuje za koľko bodov je čo, koľko ich treba na kód a koľko pokusov má hráč. Text je prispôsobený typu kvízu:
+  - **Music:** rôzne body za interpreta vs skladbu vs obe spolu k tej istej ukážke.
+  - **Movies:** body za správny film vs film priradený k správnej ukážke.
+  - **Knowledge:** body za správnu odpoveď + počet otázok.
+  - **Sudoku:** rôzne body podľa obťažnosti (ľahká/stredná/ťažká).
+  - **Mapa:** varianty pre pin (podľa vzdialenosti — čím bližšie, tým viac), area (klik na plochu — binárne) a line (klik na líniu — binárne).
+- Veta o **kóde** sa prispôsobuje: ak `min_body_na_postup > 0` → „Na získanie kódu musíš dosiahnuť aspoň X bodov"; ak = 0 → „Skús získať čo najviac bodov".
+- Veta o **pokusoch** sa prispôsobuje: pred kvízom „Máš X pokusov", v evale „Zostáva ti X pokusov" / „Zostávajú ti X pokusy" / „Zostáva ti 1 pokus" / „Toto bol tvoj posledný pokus" — slovenská gramatika 1 / 2-4 / 5+.
+- V evale je text v minulom čase („hádal si", „odpovedal si"…).
+- Helper `Eventkviz_Quiz_Class::render_scoring_info()` v parent class — jeden formátovač pre všetky kvízy.
+- Predchádzajúci verbose box „Ako sa kvíz vyhodnocuje" (s tiers + percentami) v mapquiz evale **odstránený** — nahradený novým friendly textom.
+
 ### Added (mapový kvíz — 4 nové šablóny + scoring info box)
 - **Pohoria Európy** (area, 12 pohorí z Natural Earth: Alpy, Karpaty, Pyreneje, Tatry, Sudety, Vogézy, Balkán, Dinárske vrchy, Kavkaz, Malý Kaukaz, Ural, Južné Karpaty)
 - **Top rieky sveta** (line, 17 riek z NE: Amazonka, Níl, Jang-c’-ťiang, Mississippi, Jenisej, Ob, Lena, Mekong, Volga, Dunaj, Ganga, Niger, Kongo, Paraná, Amur, Mackenzie, Žltá rieka)

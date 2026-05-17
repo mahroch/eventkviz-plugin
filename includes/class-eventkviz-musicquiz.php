@@ -108,6 +108,7 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
             echo '<div class="ek-quiz-content">';
             echo '<h1 class="ek-quiz-title">Hudobný kvíz</h1>';
             echo '<p class="ek-quiz-subtitle">Vypočujte si pieseň a uhádnite interpreta a názov skladby</p>';
+            $this->render_scoring_info( 'music', $this->cAkcia->music_settings, 'form' );
             $this->render_tries_remaining_banner('music');
             if ($is_review) {
                 echo '<div class="ek-review-banner">📝 Vaše predchádzajúce odpovede sú vyplnené — <strong style="color:#6dd58c">zelené</strong> boli správne, <strong style="color:#ff6b6b">červené</strong> nesprávne. Opravte a odošlite znova.</div>';
@@ -291,6 +292,8 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
                 $this->evaluate_combination_music($i, $questions[$i], 1, 'dynamic');
             }
             if(!$gained_credits) $gained_credits = 0;
+            $remaining_after = isset($this->zostava_pocet_pokusov) ? max(0, (int) $this->zostava_pocet_pokusov - 1) : null;
+            $this->render_scoring_info( 'music', $this->cAkcia->music_settings, 'eval', array( 'remaining' => $remaining_after ) );
             $this->show_total_credits_gained($gained_credits, $user, $team, );
 
             if($this->cAkcia->music_settings['min_body_na_postup'] > 0 && $gained_credits >= $this->cAkcia->music_settings['min_body_na_postup']) {

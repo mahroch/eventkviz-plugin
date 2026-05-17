@@ -69,6 +69,7 @@ class Eventkviz_SudokuForm_Quiz_Class extends Eventkviz_Quiz_Class{
             echo '<div class="ek-quiz-content">';
             echo '<h1 class="ek-quiz-title">Sudoku kvíz</h1>';
             echo '<p class="ek-quiz-subtitle">Vyriešte sudoku a zapíšte čísla z označených políčok</p>';
+            $this->render_scoring_info( 'sudoku', $this->cAkcia->sudoku_settings, 'form' );
             $this->render_tries_remaining_banner('sudoku');
             echo '<form action="' . esc_url($url) . '" method="post" class="ek-quiz-form" data-quiz-type="sudoku">';
 
@@ -181,6 +182,8 @@ class Eventkviz_SudokuEval_Quiz_Class extends Eventkviz_Quiz_Class{
                 $this->evaluate_sudoku($i, 1, 'dynamic', $questions[$i]);
             }
             if(!$gained_credits) $gained_credits = 0;
+            $remaining_after = isset($this->zostava_pocet_pokusov) ? max(0, (int) $this->zostava_pocet_pokusov - 1) : null;
+            $this->render_scoring_info( 'sudoku', $this->cAkcia->sudoku_settings, 'eval', array( 'remaining' => $remaining_after ) );
             $this->show_total_credits_gained($gained_credits, $user, $team);
 
             // zapis do databazy bodove hodnotenie uzivatela

@@ -55,6 +55,7 @@ class Eventkviz_KnowledgeForm_Quiz_Class extends Eventkviz_Quiz_Class{
                     echo '<div class="ek-quiz-content">';
                     echo '<h1 class="ek-quiz-title">Vedomostný kvíz</h1>';
                     echo '<p class="ek-quiz-subtitle">Odpovedzte na otázky a získajte body</p>';
+                    $this->render_scoring_info( 'knowledge', $this->cAkcia->knowledge_settings, 'form' );
                     $this->render_tries_remaining_banner('knowledge');
                     if ($is_review) {
                         echo '<div class="ek-review-banner">📝 Vaše predchádzajúce odpovede sú vyplnené — <strong style="color:#6dd58c">zelené</strong> boli správne, <strong style="color:#ff6b6b">červené</strong> nesprávne. Opravte a odošlite znova.</div>';
@@ -371,6 +372,8 @@ class Eventkviz_KnowledgeEval_Quiz_Class extends Eventkviz_KnowledgeForm_Quiz_Cl
                 $this->evaluate_knowledge($questions[$i], $i, 1, 'dynamic');
             }
             if(!$gained_credits) $gained_credits = 0;
+            $remaining_after = isset($this->zostava_pocet_pokusov) ? max(0, (int) $this->zostava_pocet_pokusov - 1) : null;
+            $this->render_scoring_info( 'knowledge', $this->cAkcia->knowledge_settings, 'eval', array( 'remaining' => $remaining_after ) );
             $this->show_total_credits_gained($gained_credits, $user, $team);
 
             if($this->cAkcia->knowledge_settings['min_body_na_postup'] > 0 && $gained_credits >= $this->cAkcia->knowledge_settings['min_body_na_postup']) {
