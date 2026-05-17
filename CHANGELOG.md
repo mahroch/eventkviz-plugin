@@ -8,6 +8,16 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Added (security — opaque link tokens proti URL podvodom)
+- Quiz URLs sa už negenerujú v plain forme `?akcia=velka-noc&team=TEAM&user=USER&mq=0f0ab8`, ale ako opaque token `?t=<base64+HMAC>` (cca 80 znakov). Hráč v URL nevidí team/user/akcia/mq — útočník nedokáže fabricate vlastný token bez prelomenia HMAC secretu.
+- **Helper class** `Eventkviz_Link_Token` (`includes/class-eventkviz-link-token.php`) — `encode()` / `decode()` / `build_url()`. Krátke aliasy (a/t/u/m) + URL-safe base64 bez padding + HMAC-SHA256 podpis (10 znakov, dosť pre brute-force resistance).
+- **Init hook** (priorita 4) dekóduje `?t=...` a namapuje na `$_GET[akcia/team/user/mq]` — zvyšok plugin kódu ostáva nezmenený.
+- **REST endpoint** `/wp-json/eventkviz/v1/link-token` — JS link generátory (show_team_links, show_link_to_quiz) ho volajú async pri kliknutí na „Start" tlačidlo aby získali tokenized URL. Pri REST chybe fallback na plain URL.
+- **Retry buttons** vo všetkých kvízoch (music/movies/knowledge/sudoku/mapa) cez `build_retry_url()` automaticky generujú tokenized URL.
+- **GeoChallenge return URL ostáva plain** — link do externej GC appky musí byť dekódovateľný GC-om, ten nemá náš secret. Plus `gc_id/gc_cp/gc_return` v retry context tiež ostávajú plain (musia byť čitateľné mimo nášho pluginu).
+- **Backwards compat:** staré plain `?akcia=...&team=...&user=...` linky stále fungujú (žiadny mandatory redirect). Bookmark z prv vytvoreného linku sa nepokazí.
+- **Secret key** auto-generated pri plugin activate cez `wp_generate_password(64)` do `wp_options` (key `eventkviz_link_secret`). Lazy init pre už-bežiace installs.
+
 ### Added (mapquiz — šablóna „Vodné nádrže a jazerá SR")
 - 11 najznámejších slovenských vodných plôch — mix umelých priehrad + prírodných plies/sopečných jazier:
   - **Priehrady:** Oravská priehrada, Liptovská Mara, Zemplínska šírava, Domaša (Veľká), Sĺňava, Ružín, Nosická priehrada, Gabčíkovo (Hrušovská zdrž)

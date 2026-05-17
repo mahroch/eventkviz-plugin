@@ -16,7 +16,7 @@
  * Plugin Name:       Eventkviz
  * Plugin URI:        http://eventkviz.sk/
  * Description:       Quizes for events
- * Version:           1.12.0
+ * Version:           1.13.0
  * Author:            Maros Markovic
  * Author URI:        http://eventkviz.sk/
  * License:           GPL-2.0+
@@ -35,7 +35,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'EVENKVIZ_VERSION', '1.12.0' );
+define( 'EVENKVIZ_VERSION', '1.13.0' );
 
 /**
  * The code that runs during plugin activation.
@@ -75,6 +75,11 @@ require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-seedpage.p
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-activator.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-finalpage.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-rest.php' );
+require_once( plugin_dir_path( __FILE__ ) . 'includes/class-eventkviz-link-token.php' );
+
+// Opaque link token decode — early init aby $_GET[akcia/team/user/mq] boli
+// dostupné pre všetky shortcodes/handlers nižšie v request cykle.
+add_action( 'init', array( 'Eventkviz_Link_Token', 'apply_from_request' ), 4 );
 if ( is_admin() ) {
 	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-leaderboard.php' );
 	require_once( plugin_dir_path( __FILE__ ) . 'admin/class-eventkviz-questions-admin.php' );

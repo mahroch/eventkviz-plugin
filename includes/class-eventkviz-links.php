@@ -119,10 +119,18 @@ class Eventkviz_OneLink_Quiz_Class extends Eventkviz_Quiz_Class{
                 );
                 if ( isset( $type_to_slug[ $value['type'] ] ) && $type_to_slug[ $value['type'] ][1] === true ) {
                     $quiz_slug = $type_to_slug[ $value['type'] ][0];
-                    echo 'const url = "' . esc_js( $host_base ) . '/' . esc_js( $quiz_slug ) . '/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia);';
+                    // Tokenized URL cez REST endpoint (skryje team/user/akcia v URL).
+                    // Fallback na plain QS pri REST chybe — vždy funguje.
+                    $rest_url = esc_js( esc_url_raw( rest_url( 'eventkviz/v1/link-token' ) ) );
+                    $fallback = esc_js( $host_base ) . '/' . esc_js( $quiz_slug ) . '/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia)';
+                    echo 'const fbUrl = "' . $fallback . ';';
+                    echo 'fetch("' . $rest_url . '?quiz_slug=' . esc_js( $quiz_slug ) . '&akcia=" + encodeURIComponent(akcia) + "&team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user))';
+                    echo '.then(r => r.ok ? r.json() : null)';
+                    echo '.then(d => { window.location.href = (d && d.url) ? d.url : fbUrl; })';
+                    echo '.catch(() => { window.location.href = fbUrl; });';
+                } else {
+                    echo 'console.warn("Kvíz nie je aktívny pre tento typ.");';
                 }
-            
-                echo 'window.location.href = url;';
                 echo ' });';
         
         echo '</script>';
@@ -292,7 +300,25 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
 
             echo 'displayValues();}
 
-            function displayValues() {
+            // Tokenized URL helper — fetch z REST endpoint /eventkviz/v1/link-token.
+            // Pri network/REST chybe fallback na plain URL aby kvíz vždy fungoval.
+            async function ekTokUrl(quizSlug, akcia, team, user, mq) {
+                const fb = "' . esc_js( untrailingslashit( home_url() ) ) . '/" + quizSlug + "/?team=" + encodeURIComponent(team) + "&user=" + encodeURIComponent(user) + "&akcia=" + encodeURIComponent(akcia) + (mq ? "&mq=" + encodeURIComponent(mq) : "");
+                try {
+                    const u = new URL("' . esc_js( esc_url_raw( rest_url( 'eventkviz/v1/link-token' ) ) ) . '");
+                    u.searchParams.set("quiz_slug", quizSlug);
+                    u.searchParams.set("akcia", akcia);
+                    u.searchParams.set("team", team);
+                    u.searchParams.set("user", user);
+                    if (mq) u.searchParams.set("mq", mq);
+                    const r = await fetch(u.toString());
+                    if (!r.ok) return fb;
+                    const d = await r.json();
+                    return (d && d.url) ? d.url : fb;
+                } catch (e) { return fb; }
+            }
+
+            async function displayValues() {
 
                 const user  = document.getElementById("inputField1")?.value || "";
                 const team  = document.getElementById("inputField2")?.value || "";
@@ -302,16 +328,16 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             $host_url = untrailingslashit( home_url() );
 
             if ($this->cAkcia->music_settings['music_quiz_active']) {
-                echo 'const link1 = "' . $host_url . '/aqljk?team="+encodeURIComponent(team)+"&user="+encodeURIComponent(user)+"&akcia="+encodeURIComponent(akcia);';
+                echo 'const link1 = await ekTokUrl("aqljk", akcia, team, user);';
             }
             if ($this->cAkcia->movies_settings['movies_quiz_active']) {
-                echo 'const link2 = "' . $host_url . '/merdfghh/?team="+encodeURIComponent(team)+"&user="+encodeURIComponent(user)+"&akcia="+encodeURIComponent(akcia);';
+                echo 'const link2 = await ekTokUrl("merdfghh", akcia, team, user);';
             }
             if ($this->cAkcia->knowledge_settings['knowledge_quiz_active']) {
-                echo 'const link3 = "' . $host_url . '/kwersdfzx/?team="+encodeURIComponent(team)+"&user="+encodeURIComponent(user)+"&akcia="+encodeURIComponent(akcia);';
+                echo 'const link3 = await ekTokUrl("kwersdfzx", akcia, team, user);';
             }
             if ($this->cAkcia->sudoku_settings['sudoku_quiz_active']) {
-                echo 'const link4 = "' . $host_url . '/sweertydfd/?team="+encodeURIComponent(team)+"&user="+encodeURIComponent(user)+"&akcia="+encodeURIComponent(akcia);';
+                echo 'const link4 = await ekTokUrl("sweertydfd", akcia, team, user);';
             }
             // Multi-mapa: žiadny single link5; pre každý sub-kvíz samostatná karta nižšie.
 
@@ -338,13 +364,14 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             if ($this->cAkcia->sudoku_settings['sudoku_quiz_active']) {
                 echo 'if(!singleQuiz||singleQuiz==="sudoku"){out.innerHTML+=`<a href="${link4}" class="ek-quiz-card ek-quiz-sudoku" target="_blank"><span class="ek-quiz-icon">🔢</span><span class="ek-quiz-label">Sudoku kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
             }
-            // Multi-mapa: pre každý sub-kvíz jedna karta s vlastným mq slug + admin label
+            // Multi-mapa: pre každý sub-kvíz jedna karta s vlastným mq slug + admin label.
+            // Render je async (fetch tokenized URL pre každú karu paralelne).
             if ( ! empty( $this->cAkcia->mapa_quizzes ) && is_array( $this->cAkcia->mapa_quizzes ) ) {
                 foreach ( $this->cAkcia->mapa_quizzes as $sq ) {
                     $slug  = isset( $sq['slug'] ) ? sanitize_key( $sq['slug'] ) : '';
                     $label = isset( $sq['label'] ) ? (string) $sq['label'] : 'Mapový kvíz';
                     if ( $slug === '' ) continue;
-                    echo 'if(!singleQuiz){var mqLink="' . $host_url . '/mapa-quiz/?akcia="+encodeURIComponent(akcia)+"&mq=' . esc_js( $slug ) . '&team="+encodeURIComponent(team)+"&user="+encodeURIComponent(user); out.innerHTML+=`<a href="${mqLink}" class="ek-quiz-card ek-quiz-mapa" target="_blank"><span class="ek-quiz-icon">🗺️</span><span class="ek-quiz-label">' . esc_js( $label ) . '</span><span class="ek-quiz-arrow">→</span></a>`;}';
+                    echo 'if(!singleQuiz){const mqLink = await ekTokUrl("mapa-quiz", akcia, team, user, "' . esc_js( $slug ) . '"); out.innerHTML+=`<a href="${mqLink}" class="ek-quiz-card ek-quiz-mapa" target="_blank"><span class="ek-quiz-icon">🗺️</span><span class="ek-quiz-label">' . esc_js( $label ) . '</span><span class="ek-quiz-arrow">→</span></a>`;}';
                 }
             }
 

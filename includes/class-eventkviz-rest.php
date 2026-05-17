@@ -38,6 +38,44 @@ class Eventkviz_Rest_Search {
                 ),
             )
         );
+
+        // /link-token — vygeneruje tokenized URL pre quiz formulár.
+        // JS volá pri „Start" tlačidle namiesto skladania plain QS URL.
+        register_rest_route(
+            self::NAMESPACE_ROUTE,
+            '/link-token',
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( __CLASS__, 'link_token' ),
+                'permission_callback' => '__return_true',
+                'args'                => array(
+                    'quiz_slug' => array( 'required' => true, 'type' => 'string' ),
+                    'akcia'     => array( 'required' => true, 'type' => 'string' ),
+                    'team'      => array( 'default' => '',    'type' => 'string' ),
+                    'user'      => array( 'default' => '',    'type' => 'string' ),
+                    'mq'        => array( 'default' => '',    'type' => 'string' ),
+                ),
+            )
+        );
+    }
+
+    public static function link_token( WP_REST_Request $req ) {
+        if ( ! class_exists( 'Eventkviz_Link_Token' ) ) {
+            return new WP_Error( 'no_helper', 'Link token helper missing', array( 'status' => 500 ) );
+        }
+        $slug = sanitize_title( (string) $req->get_param( 'quiz_slug' ) );
+        if ( $slug === '' ) {
+            return new WP_Error( 'bad_slug', 'quiz_slug required', array( 'status' => 400 ) );
+        }
+        $params = array(
+            'akcia' => sanitize_text_field( (string) $req->get_param( 'akcia' ) ),
+            'team'  => sanitize_text_field( (string) $req->get_param( 'team' ) ),
+            'user'  => sanitize_text_field( (string) $req->get_param( 'user' ) ),
+            'mq'    => sanitize_text_field( (string) $req->get_param( 'mq' ) ),
+        );
+        $base = untrailingslashit( home_url() ) . '/' . $slug . '/';
+        $url  = Eventkviz_Link_Token::build_url( $base, $params );
+        return rest_ensure_response( array( 'url' => $url ) );
     }
 
     public static function search( WP_REST_Request $req ) {

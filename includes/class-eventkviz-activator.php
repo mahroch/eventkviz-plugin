@@ -37,6 +37,21 @@ class Eventkviz_Activator {
 
 	public static function activate() {
 		self::ensure_hub_pages();
+		self::ensure_link_secret();
+	}
+
+	/**
+	 * Vygeneruje secret kľúč pre HMAC podpisy v opaque link tokenoch
+	 * (Eventkviz_Link_Token). Idempotentné — ak option už existuje, nič nerobí.
+	 * Volá sa pri activate + lazy z helpera (pre legacy installs ktoré pluginu už
+	 * bežia ale option zatiaľ chýba — nebol re-aktivovaný po update).
+	 */
+	public static function ensure_link_secret() {
+		$key = get_option( 'eventkviz_link_secret', '' );
+		if ( $key === '' ) {
+			$new = wp_generate_password( 64, true, true );
+			update_option( 'eventkviz_link_secret', $new, false ); // not autoload
+		}
 	}
 
 	/**

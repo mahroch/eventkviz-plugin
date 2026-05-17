@@ -746,7 +746,7 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                 $mark_on_retry      = ! empty( $sub_quiz['mark_correctness_on_retry'] );
                 $new_set_on_retry   = ! empty( $sub_quiz['new_questions_on_retry'] );
                 $retry_state        = ( $mark_on_retry && ! $new_set_on_retry ) ? $previous_state : array();
-                $retry_url          = add_query_arg( 'mq', $mq_slug, $this->build_retry_url( $team, $user, $akcia, '/mapa-quiz/' ) );
+                $retry_url          = $this->build_retry_url( $team, $user, $akcia, '/mapa-quiz/', $mq_slug );
                 $label              = 'Opakovať kvíz (zostáva ' . $remaining . ' ' . Eventkviz_Quiz_Class::_n_pokus_label( $remaining ) . ')';
                 echo '<div style="margin-top:30px;text-align:center;">';
                 $this->render_retry_button( $retry_url, $label, $retry_state );

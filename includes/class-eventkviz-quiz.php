@@ -810,21 +810,32 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 	 * Build the retry URL. Preserves GC context (id, cp, return_url) so
 	 * subsequent retries stay scoped to the same participant.
 	 */
-	public function build_retry_url($team, $user, $akcia, $quiz_path) {
-		$args = array('team' => $team, 'user' => $user, 'akcia' => $akcia);
+	public function build_retry_url($team, $user, $akcia, $quiz_path, $mq = '') {
+		// GC context (id/cp/return_url) — ostávajú plain (kompatibilita s GC appkou).
+		$gc_extra = array();
 		if ( ! empty($_POST['gc_id']) && ! empty($_POST['gc_cp'])) {
-			$args = array(
-				'team'  => '',
-				'user'  => '',
-				'akcia' => $akcia,
-				'id'    => sanitize_text_field(wp_unslash($_POST['gc_id'])),
-				'cp'    => sanitize_text_field(wp_unslash($_POST['gc_cp'])),
-			);
+			$team = '';
+			$user = '';
+			$gc_extra['id'] = sanitize_text_field(wp_unslash($_POST['gc_id']));
+			$gc_extra['cp'] = sanitize_text_field(wp_unslash($_POST['gc_cp']));
 			if ( ! empty($_POST['gc_return'])) {
-				$args['return_url'] = esc_url_raw(wp_unslash($_POST['gc_return']));
+				$gc_extra['return_url'] = esc_url_raw(wp_unslash($_POST['gc_return']));
 			}
 		}
-		return add_query_arg($args, home_url($quiz_path));
+
+		$base = home_url($quiz_path);
+		// Opaque token (?t=...) ak je dostupný; inak fallback na plain QS.
+		if ( class_exists( 'Eventkviz_Link_Token' ) ) {
+			return Eventkviz_Link_Token::build_url( $base, array(
+				'akcia' => $akcia,
+				'team'  => $team,
+				'user'  => $user,
+				'mq'    => $mq,
+			), $gc_extra );
+		}
+		$args = array('team' => $team, 'user' => $user, 'akcia' => $akcia);
+		if ( $mq !== '' ) $args['mq'] = $mq;
+		return add_query_arg( array_merge( $args, $gc_extra ), $base );
 	}
 
 	public function render_retry_button($url, $label, $previous_state = array()){
