@@ -8,6 +8,10 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Fixed (admin „Výsledky" — „Sorry, you are not allowed" pri zmene akcie)
+- Form na zmenu akcie v EventKviz → Výsledky používal default action URL (= current URL) bez explicit `post_type=eventkviz_event`. Po submit GET request URL nemala `post_type` parameter → WP admin router nerozpoznal že submenu patrí pod CPT menu → permission check fail → 403 „Sorry, you are not allowed to access this page".
+- Fix: form action explicitne na `admin_url('edit.php')` + hidden `post_type=eventkviz_event` input.
+
 ### Added (admin event editor — warning ak pocet_otazok > pool size templatu)
 - Pri každom mapquiz sub-quize v Edit Event admin teraz vidí: „📊 Aktuálna šablóna má **X** features v poole." Pri zmene template alebo počtu otázok (set) sa text live aktualizuje.
 - Ak `set > pool` zobrazí sa červené upozornenie: „⚠ Set N otázok je väčší než pool M features — hráč dostane reálne len M úloh. Pridaj viac features do šablóny alebo zníž počet otázok." Admin tak nezistí problém až keď ho hráč nahlási.

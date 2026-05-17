@@ -45,7 +45,12 @@ class Eventkviz_Leaderboard {
             return;
         }
 
-        echo '<form method="get" style="margin:14px 0">';
+        // Form action MUSÍ byť edit.php s post_type=eventkviz_event aby WP admin
+        // router rozpoznal že submenu patrí pod CPT menu. Bez post_type by URL
+        // sklouzla na /wp-admin/edit.php?page=eventkviz-leaderboard&... a WP by
+        // odmietol (`Sorry, you are not allowed to access this page`).
+        echo '<form method="get" action="' . esc_url( admin_url( 'edit.php' ) ) . '" style="margin:14px 0">';
+        echo '<input type="hidden" name="post_type" value="eventkviz_event">';
         echo '<input type="hidden" name="page" value="eventkviz-leaderboard">';
         echo '<label for="akcia"><strong>' . esc_html__( 'Akcia', 'eventkviz' ) . ':</strong> </label>';
         echo '<select name="akcia" id="akcia" onchange="this.form.submit()">';
