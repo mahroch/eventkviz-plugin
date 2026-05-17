@@ -8,6 +8,12 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Removed (admin „Výsledky" submenu — duplikát so [statistika] shortcode)
+- `EventKviz → Výsledky` submenu (admin leaderboard view) odstránené. Funkčne sa duplikoval s verejným `[statistika]` shortcode (`/eventkviz-statistika/?akcia=X`), užívateľ ho nepoužíval.
+- Zmazaný `admin/class-eventkviz-leaderboard.php` + require/init v `eventkviz.php` + odkaz v Linky pre hráčov.
+- Pre raw záznamy ostáva **JetEngine → Results** (CCT view) — neukončené.
+- Pre verejný leaderboard ostáva `[statistika]` shortcode na `/eventkviz-statistika/?akcia=X`.
+
 ### Fixed (admin „Výsledky" — „Sorry, you are not allowed" pri zmene akcie)
 - Form na zmenu akcie v EventKviz → Výsledky používal default action URL (= current URL) bez explicit `post_type=eventkviz_event`. Po submit GET request URL nemala `post_type` parameter → WP admin router nerozpoznal že submenu patrí pod CPT menu → permission check fail → 403 „Sorry, you are not allowed to access this page".
 - Fix: form action explicitne na `admin_url('edit.php')` + hidden `post_type=eventkviz_event` input.

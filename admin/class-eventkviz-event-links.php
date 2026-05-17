@@ -232,7 +232,7 @@ class Eventkviz_Event_Links_Admin {
         // 4. Stats
         echo '<div class="ek-links-section">';
         echo '<h3>4. Štatistika eventu (verejný leaderboard)</h3>';
-        echo '<p class="description">Link s celkovým rebríčkom tímov tohto eventu. Pre detailný admin pohľad pozri <a href="' . esc_url( admin_url( 'admin.php?page=eventkviz-leaderboard&akcia=' . $akcia ) ) . '">EventKviz → Výsledky</a>.</p>';
+        echo '<p class="description">Link s celkovým rebríčkom tímov tohto eventu — verejný, hráči si môžu pozerať počas eventu (napr. na projektor). Pre raw záznamy pozri JetEngine → Results.</p>';
         self::render_link( add_query_arg( 'akcia', $akcia, $stats_url ), '' );
         echo '</div>';
 
