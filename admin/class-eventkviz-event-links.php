@@ -128,6 +128,107 @@ class Eventkviz_Event_Links_Admin {
         }
         echo '</div>';
 
+        // 3b. Tokenizované linky pre konkrétny tím — JS form generuje cez REST endpoint.
+        // Plain šablóny vyššie (sekcia 3) ostávajú pre batch ručnú replacement; tieto
+        // sú opaque (?t=...) bez čitateľného team/user/akcia v URL.
+        echo '<div class="ek-links-section">';
+        echo '<h3>3b. 🔒 Tokenizované linky pre konkrétny tím (skryje team/user/akcia v URL)</h3>';
+        echo '<p class="description">Zadaj reálny <strong>kód tímu</strong> a <strong>kód hráča</strong>, klikni „Generuj". Vygenerujú sa <em>opaque</em> linky (<code>?t=...</code>) pre všetky kvízy. Hráč v URL nevidí, čo tam je — útočník nedokáže manipulovať identitu. <em>Plain linky vyššie stále fungujú</em> pre prípady kde robíš ručný batch replacement.</p>';
+        echo '<div class="ek-token-form" style="margin:10px 0; padding:12px; background:#f6f7f7; border-radius:4px; display:flex; gap:12px; align-items:center; flex-wrap:wrap">';
+        echo '<label>Kód tímu: <input type="text" id="ek-tok-team" placeholder="napr. ABC" style="margin-left:6px"></label>';
+        echo '<label>Kód hráča: <input type="text" id="ek-tok-user" placeholder="napr. XYZ (nepov.)" style="margin-left:6px"></label>';
+        echo '<button type="button" class="button button-primary" id="ek-tok-gen">Generuj tokenizované linky</button>';
+        echo '</div>';
+        echo '<div id="ek-tok-results"></div>';
+
+        // Build dataset pre JS — zoznam (slug, label) pre štandardné kvízy + mapquiz sub-quizzes
+        $token_links_dataset = array();
+        foreach ( self::QUIZ_SLUGS as $type => $info ) {
+            $token_links_dataset[] = array(
+                'slug'  => $info['slug'],
+                'label' => $info['label'],
+                'mq'    => '',
+            );
+        }
+        if ( is_array( $mapa_quizzes ) && ! empty( $mapa_quizzes ) ) {
+            foreach ( $mapa_quizzes as $sq ) {
+                $slug  = isset( $sq['slug'] ) ? $sq['slug'] : '';
+                $label = isset( $sq['label'] ) ? $sq['label'] : 'Mapový kvíz';
+                if ( $slug === '' ) continue;
+                $token_links_dataset[] = array(
+                    'slug'  => 'mapa-quiz',
+                    'label' => 'Mapa: ' . $label,
+                    'mq'    => $slug,
+                );
+            }
+        }
+        ?>
+        <script>
+        (function(){
+            var btn = document.getElementById('ek-tok-gen');
+            if (!btn) return;
+            var quizzes = <?php echo wp_json_encode( $token_links_dataset ); ?>;
+            var akcia = <?php echo wp_json_encode( $akcia ); ?>;
+            var restUrl = <?php echo wp_json_encode( esc_url_raw( rest_url( 'eventkviz/v1/link-token' ) ) ); ?>;
+            var $results = document.getElementById('ek-tok-results');
+
+            btn.addEventListener('click', async function(){
+                var team = document.getElementById('ek-tok-team').value.trim();
+                var user = document.getElementById('ek-tok-user').value.trim();
+                if (!team && !user) { alert('Zadaj aspoň kód tímu alebo hráča.'); return; }
+                btn.disabled = true; btn.textContent = 'Generujem…';
+                $results.innerHTML = '';
+
+                for (var i = 0; i < quizzes.length; i++) {
+                    var q = quizzes[i];
+                    var u = new URL(restUrl);
+                    u.searchParams.set('quiz_slug', q.slug);
+                    u.searchParams.set('akcia', akcia);
+                    u.searchParams.set('team', team);
+                    u.searchParams.set('user', user);
+                    if (q.mq) u.searchParams.set('mq', q.mq);
+                    try {
+                        var r = await fetch(u.toString());
+                        var d = await r.json();
+                        var url = (d && d.url) ? d.url : '(chyba)';
+                        appendRow(q.label, url);
+                    } catch (e) {
+                        appendRow(q.label, '(REST error: ' + e.message + ')');
+                    }
+                }
+                btn.disabled = false; btn.textContent = 'Generuj tokenizované linky';
+            });
+
+            function appendRow(label, url) {
+                var row = document.createElement('div');
+                row.className = 'ek-link-row';
+                row.innerHTML =
+                    '<span class="ek-link-label">' + escapeHtml(label) + '</span>' +
+                    '<a href="' + escapeAttr(url) + '" target="_blank" rel="noopener" class="ek-link-url"><code>' + escapeHtml(url) + '</code></a>' +
+                    '<a href="' + escapeAttr(url) + '" target="_blank" rel="noopener" class="button ek-open-btn" title="Otvoriť">↗</a>' +
+                    '<button type="button" class="button ek-copy-btn" data-copy="' + escapeAttr(url) + '">Kopírovať</button>' +
+                    '<span class="ek-copy-feedback">✓ Skopírované</span>';
+                $results.appendChild(row);
+                // Wire copy button (musí byť dynamic)
+                row.querySelector('.ek-copy-btn').addEventListener('click', function(){
+                    navigator.clipboard.writeText(this.dataset.copy);
+                    var fb = row.querySelector('.ek-copy-feedback');
+                    fb.style.opacity = '1';
+                    setTimeout(function(){ fb.style.opacity = ''; }, 1500);
+                });
+            }
+
+            function escapeHtml(s) {
+                return String(s).replace(/[&<>"']/g, function(c){
+                    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]);
+                });
+            }
+            function escapeAttr(s) { return escapeHtml(s); }
+        })();
+        </script>
+        <?php
+        echo '</div>';
+
         // 4. Stats
         echo '<div class="ek-links-section">';
         echo '<h3>4. Štatistika eventu (verejný leaderboard)</h3>';

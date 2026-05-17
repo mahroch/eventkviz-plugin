@@ -8,6 +8,10 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Added (admin „Linky pre hráčov" — generátor tokenizovaných liniek)
+- Pribudla sekcia **„3b. Tokenizované linky pre konkrétny tím"** v admin Event-Links meta box. Admin zadá kód tímu + (voliteľne) hráča, klikne „Generuj" → JS volá REST `/eventkviz/v1/link-token` a vygeneruje **opaque `?t=...` linky** pre všetky kvízy (vrátane mapquiz sub-kvízov). Každý link má vlastné „Kopírovať" tlačidlo.
+- Plain šablóny v sekcii 3 (s `team=TEAM&user=USER` placeholdermi) ostávajú — pre batch ručnú replacement scenarios. Backwards compat zachovaný.
+
 ### Added (security — opaque link tokens proti URL podvodom)
 - Quiz URLs sa už negenerujú v plain forme `?akcia=velka-noc&team=TEAM&user=USER&mq=0f0ab8`, ale ako opaque token `?t=<base64+HMAC>` (cca 80 znakov). Hráč v URL nevidí team/user/akcia/mq — útočník nedokáže fabricate vlastný token bez prelomenia HMAC secretu.
 - **Helper class** `Eventkviz_Link_Token` (`includes/class-eventkviz-link-token.php`) — `encode()` / `decode()` / `build_url()`. Krátke aliasy (a/t/u/m) + URL-safe base64 bez padding + HMAC-SHA256 podpis (10 znakov, dosť pre brute-force resistance).
