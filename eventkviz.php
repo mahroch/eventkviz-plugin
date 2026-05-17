@@ -16,7 +16,7 @@
  * Plugin Name:       Eventkviz
  * Plugin URI:        http://eventkviz.sk/
  * Description:       Quizes for events
- * Version:           1.10.1
+ * Version:           1.10.2
  * Author:            Maros Markovic
  * Author URI:        http://eventkviz.sk/
  * License:           GPL-2.0+
@@ -35,7 +35,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'EVENKVIZ_VERSION', '1.10.1' );
+define( 'EVENKVIZ_VERSION', '1.10.2' );
 
 /**
  * The code that runs during plugin activation.
