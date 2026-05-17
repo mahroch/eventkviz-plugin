@@ -240,15 +240,28 @@ class Eventkviz_MapaForm_Quiz_Class extends Eventkviz_Quiz_Class {
         // Container for player map + task list. JS handles rendering.
         // Dataset slug pre area/line + singular label pre sidebar „Nájdi <singular>: X"
         $dataset_slug_attr = get_post_meta( $template_id, '_mapquiz_dataset_slug', true );
+        $features_source   = get_post_meta( $template_id, '_mapquiz_features_source', true ) ?: 'bundle';
         $dataset_singular = '';
-        if ( $dataset_slug_attr && class_exists( 'Eventkviz_MapQuiz_Datasets' ) ) {
+        if ( $features_source === 'custom' ) {
+            // Pre custom feature collection nemáme registry → use generic singular podľa quiz_type
+            $dataset_singular = ( $quiz_type === 'line' ? 'líniu' : ( $quiz_type === 'area' ? 'oblasť' : '' ) );
+        } elseif ( $dataset_slug_attr && class_exists( 'Eventkviz_MapQuiz_Datasets' ) ) {
             $ds_def = Eventkviz_MapQuiz_Datasets::get( $dataset_slug_attr );
             if ( $ds_def && ! empty( $ds_def['singular'] ) ) $dataset_singular = $ds_def['singular'];
         }
-        echo '<div id="ek-mapa-container" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-dataset="' . esc_attr( $dataset_slug_attr ) . '" data-singular="' . esc_attr( $dataset_singular ) . '">';
+        echo '<div id="ek-mapa-container" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-dataset="' . esc_attr( $dataset_slug_attr ) . '" data-features-source="' . esc_attr( $features_source ) . '" data-singular="' . esc_attr( $dataset_singular ) . '">';
         echo '<div id="ek-mapa-tasks" class="ek-mapa-tasks"></div>';
         echo '<div id="ek-mapa-map" class="ek-mapa-map"></div>';
         echo '</div>';
+
+        // Pre custom features source — passni FeatureCollection inline ako JS global
+        // (vyhne sa fetch HTTP requestu na bundle file). JS si to vyzdvihne v
+        // loadFeatureLayer() namiesto fetch.
+        if ( $features_source === 'custom' ) {
+            $custom_json = get_post_meta( $template_id, '_mapquiz_custom_features', true );
+            if ( empty( $custom_json ) ) $custom_json = '{"type":"FeatureCollection","features":[]}';
+            echo '<script>window.ekMapaCustomFeatures = ' . $custom_json . ';</script>';
+        }
 
         // Hidden inputs per task. Pin mode: lat/lon. Feature mode: feature_id (hráčov výber).
         // mapaN_pin obsahuje vždy CORRECT id (task ID) — eval to porovnáva so guess.
@@ -545,16 +558,25 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
 
         // Review map container — JS reads window.ekMapaReview
         $dataset_slug_attr = get_post_meta( $template_id, '_mapquiz_dataset_slug', true );
+        $features_source   = get_post_meta( $template_id, '_mapquiz_features_source', true ) ?: 'bundle';
         $dataset_singular = '';
-        if ( $dataset_slug_attr && class_exists( 'Eventkviz_MapQuiz_Datasets' ) ) {
+        if ( $features_source === 'custom' ) {
+            $dataset_singular = ( $quiz_type === 'line' ? 'líniu' : ( $quiz_type === 'area' ? 'oblasť' : '' ) );
+        } elseif ( $dataset_slug_attr && class_exists( 'Eventkviz_MapQuiz_Datasets' ) ) {
             $ds_def = Eventkviz_MapQuiz_Datasets::get( $dataset_slug_attr );
             if ( $ds_def && ! empty( $ds_def['singular'] ) ) $dataset_singular = $ds_def['singular'];
         }
-        echo '<div id="ek-mapa-container" class="ek-mapa-review" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-dataset="' . esc_attr( $dataset_slug_attr ) . '" data-singular="' . esc_attr( $dataset_singular ) . '" data-review="1">';
+        echo '<div id="ek-mapa-container" class="ek-mapa-review" data-region="' . esc_attr( $region ) . '" data-detail="' . esc_attr( $player_detail ) . '" data-overlays="' . esc_attr( $overlays_attr ) . '" data-quiz-type="' . esc_attr( $quiz_type ) . '" data-dataset="' . esc_attr( $dataset_slug_attr ) . '" data-features-source="' . esc_attr( $features_source ) . '" data-singular="' . esc_attr( $dataset_singular ) . '" data-review="1">';
         echo '<div id="ek-mapa-tasks" class="ek-mapa-tasks"></div>';
         echo '<div id="ek-mapa-map" class="ek-mapa-map"></div>';
         echo '</div>';
         echo '<script>window.ekMapaReview = ' . wp_json_encode( $tasks_for_js ) . ';</script>';
+        // Custom features inline (rovnako ako vo form mode)
+        if ( $features_source === 'custom' ) {
+            $custom_json = get_post_meta( $template_id, '_mapquiz_custom_features', true );
+            if ( empty( $custom_json ) ) $custom_json = '{"type":"FeatureCollection","features":[]}';
+            echo '<script>window.ekMapaCustomFeatures = ' . $custom_json . ';</script>';
+        }
 
         // Textual per-task summary (independent of JS)
         echo '<div class="ek-mapa-eval-list">';

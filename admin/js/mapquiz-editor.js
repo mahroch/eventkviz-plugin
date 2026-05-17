@@ -315,10 +315,260 @@
         }[c]));
     }
 
+    // ============================================================
+    // DRAW EDITOR — pre area/line custom features (Leaflet.draw)
+    // ============================================================
+
+    const $customFeaturesJson = $('#ekm-custom-features-json');
+    // Per-mode state (admin môže zmeniť quiz_type medzi area/line bez reloadu,
+    // ale vykreslené features sú per template — zdieľame ich medzi modes).
+    const drawMaps = {}; // 'area' | 'line' → { map, drawnItems, drawControl }
+
+    function loadCustomFeatures() {
+        try {
+            const v = $customFeaturesJson.val() || '';
+            if (!v) return { type: 'FeatureCollection', features: [] };
+            const d = JSON.parse(v);
+            if (!d || d.type !== 'FeatureCollection' || !Array.isArray(d.features)) {
+                return { type: 'FeatureCollection', features: [] };
+            }
+            return d;
+        } catch (e) {
+            return { type: 'FeatureCollection', features: [] };
+        }
+    }
+
+    function saveCustomFeatures(fc) {
+        $customFeaturesJson.val(JSON.stringify(fc));
+    }
+
+    function initDrawMap(mode) {
+        const elId = 'ekm-draw-map-' + mode;
+        const el = document.getElementById(elId);
+        if (!el || drawMaps[mode]) return;
+
+        const regionKey = $region.val() || 'slovakia';
+        const region = cfg.regions[regionKey] || cfg.regions.slovakia;
+
+        const dmap = L.map(elId, { worldCopyJump: true }).setView(region.center, region.zoom);
+
+        // Tile layer (rovnako ako hlavná mapa)
+        if (cfg.maptilerKey) {
+            L.tileLayer(
+                'https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=' + encodeURIComponent(cfg.maptilerKey),
+                { attribution: '&copy; MapTiler &copy; OpenStreetMap contributors', maxZoom: 18, crossOrigin: true }
+            ).addTo(dmap);
+        } else {
+            el.style.background = '#f5f5f5';
+        }
+
+        // FeatureGroup pre nakreslené tvary
+        const drawnItems = new L.FeatureGroup().addTo(dmap);
+
+        // Leaflet.draw control — povolíme len mode-relevantný shape
+        const drawCtl = new L.Control.Draw({
+            position: 'topleft',
+            draw: {
+                polygon:    mode === 'area' ? { showArea: false, shapeOptions: { color: '#7cb342', weight: 2, fillOpacity: 0.5 } } : false,
+                polyline:   mode === 'line' ? { shapeOptions: { color: '#3aa6f0', weight: 4 } } : false,
+                rectangle:  false,
+                circle:     false,
+                marker:     false,
+                circlemarker: false,
+            },
+            edit: { featureGroup: drawnItems, remove: true }
+        });
+        dmap.addControl(drawCtl);
+
+        drawMaps[mode] = { map: dmap, drawnItems: drawnItems, mode: mode };
+
+        // Load existujúce custom features (filtruj len kompatibilné s mode)
+        renderCustomFeaturesOnDrawMap(mode);
+
+        // Handle CREATE
+        dmap.on(L.Draw.Event.CREATED, function (e) {
+            const layer = e.layer;
+            const name = window.prompt('Názov tejto ' + (mode === 'area' ? 'oblasti' : 'línie') + ':', '');
+            if (!name || !name.trim()) {
+                // Bez názvu — neuložíme.
+                return;
+            }
+            layer.feature = {
+                type: 'Feature',
+                properties: { name: name.trim() },
+                geometry: layer.toGeoJSON().geometry,
+            };
+            drawnItems.addLayer(layer);
+            bindFeatureTooltip(layer);
+            persistDrawnFeatures(mode);
+            renderCustomFeaturesList(mode);
+        });
+
+        // Handle EDIT (drag vertexov)
+        dmap.on(L.Draw.Event.EDITED, function (e) {
+            e.layers.eachLayer(function (l) {
+                if (l.feature) l.feature.geometry = l.toGeoJSON().geometry;
+            });
+            persistDrawnFeatures(mode);
+        });
+
+        // Handle DELETE
+        dmap.on(L.Draw.Event.DELETED, function () {
+            persistDrawnFeatures(mode);
+            renderCustomFeaturesList(mode);
+        });
+
+        // Resize observer — kontajner môže byť 0×0 keď nie je active mode
+        if (typeof ResizeObserver !== 'undefined') {
+            const ro = new ResizeObserver(function () { dmap.invalidateSize(false); });
+            ro.observe(el);
+        }
+    }
+
+    function bindFeatureTooltip(layer) {
+        if (!layer.feature || !layer.feature.properties || !layer.feature.properties.name) return;
+        layer.bindTooltip(layer.feature.properties.name, { permanent: false, direction: 'top', sticky: true });
+    }
+
+    function renderCustomFeaturesOnDrawMap(mode) {
+        const dm = drawMaps[mode];
+        if (!dm) return;
+        const fc = loadCustomFeatures();
+        const expectedTypes = mode === 'area' ? ['Polygon', 'MultiPolygon'] : ['LineString', 'MultiLineString'];
+        fc.features.forEach(function (feat) {
+            if (!feat.geometry || expectedTypes.indexOf(feat.geometry.type) === -1) return;
+            const layer = L.geoJSON(feat, {
+                style: mode === 'area'
+                    ? { color: '#7cb342', weight: 2, fillOpacity: 0.5 }
+                    : { color: '#3aa6f0', weight: 4 }
+            });
+            // L.geoJSON vracia featureGroup; jeho deti pridáme do drawnItems
+            layer.eachLayer(function (l) {
+                l.feature = feat;
+                dm.drawnItems.addLayer(l);
+                bindFeatureTooltip(l);
+            });
+        });
+        renderCustomFeaturesList(mode);
+    }
+
+    function persistDrawnFeatures(mode) {
+        // Existing features iného modu treba zachovať (admin môže mať aj area aj
+        // line nakreslené, ale aktuálne quiz_type rozhoduje ktorý sa použije).
+        const fc = loadCustomFeatures();
+        const otherTypes = mode === 'area' ? ['LineString', 'MultiLineString'] : ['Polygon', 'MultiPolygon'];
+        const preserved = fc.features.filter(function (f) {
+            return f.geometry && otherTypes.indexOf(f.geometry.type) !== -1;
+        });
+
+        // Aktuálne mode features z drawnItems
+        const dm = drawMaps[mode];
+        const current = [];
+        if (dm) {
+            dm.drawnItems.eachLayer(function (l) {
+                if (!l.feature) return;
+                current.push({
+                    type: 'Feature',
+                    properties: l.feature.properties,
+                    geometry: l.toGeoJSON().geometry,
+                });
+            });
+        }
+
+        saveCustomFeatures({ type: 'FeatureCollection', features: preserved.concat(current) });
+    }
+
+    function renderCustomFeaturesList(mode) {
+        const $list = $('.ekm-draw-list[data-mode="' + mode + '"]').empty();
+        const $count = $('.ekm-draw-count[data-mode="' + mode + '"]');
+        const dm = drawMaps[mode];
+        if (!dm) { $count.text(0); return; }
+        let i = 0;
+        dm.drawnItems.eachLayer(function (layer) {
+            i++;
+            const name = (layer.feature && layer.feature.properties && layer.feature.properties.name) || '(bez názvu)';
+            const $li = $('<li></li>').css({
+                padding: '6px 10px', borderBottom: '1px solid #eee',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px'
+            });
+            $li.append($('<span></span>').text(i + '. ' + name).css({ cursor: 'pointer', flex: '1' }).on('click', function () {
+                // Fokus na feature
+                if (layer.getBounds) dm.map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+                else if (layer.getLatLng) dm.map.panTo(layer.getLatLng());
+            }));
+            const $rename = $('<button type="button" class="button button-small" title="Premenovať">✎</button>').on('click', function () {
+                const newName = window.prompt('Nový názov:', name === '(bez názvu)' ? '' : name);
+                if (newName && newName.trim()) {
+                    layer.feature.properties.name = newName.trim();
+                    layer.unbindTooltip();
+                    bindFeatureTooltip(layer);
+                    persistDrawnFeatures(mode);
+                    renderCustomFeaturesList(mode);
+                }
+            });
+            const $del = $('<button type="button" class="button button-small" title="Vymazať">✕</button>').css({ color: '#a00' }).on('click', function () {
+                if (window.confirm('Vymazať feature „' + name + '"?')) {
+                    dm.drawnItems.removeLayer(layer);
+                    persistDrawnFeatures(mode);
+                    renderCustomFeaturesList(mode);
+                }
+            });
+            $li.append($rename).append($del);
+            $list.append($li);
+        });
+        $count.text(i);
+    }
+
+    function bindSourceRadios() {
+        $('.ekm-source-radio').on('change', function () {
+            const source = $(this).val();
+            const mode = $(this).data('mode');
+            // Pre quiz_type mode toggle visibility bundle vs custom section
+            $('.ekm-source-bundle').toggle(source === 'bundle');
+            $('.ekm-source-custom').toggle(source === 'custom');
+
+            if (source === 'custom') {
+                // Lazy init draw map keď admin prvý raz prepol na custom
+                const activeMode = $('#ekm-quiz-type').val();
+                if (activeMode === 'area' || activeMode === 'line') {
+                    initDrawMap(activeMode);
+                    // Trigger resize aby Leaflet rozpoznal kontajner
+                    setTimeout(function () {
+                        if (drawMaps[activeMode]) drawMaps[activeMode].map.invalidateSize();
+                    }, 100);
+                }
+            }
+        });
+
+        // Pri zmene quiz_type prepoj draw mapu na nový mode
+        $('#ekm-quiz-type').on('change', function () {
+            const qt = $(this).val();
+            if ((qt === 'area' || qt === 'line') && $('.ekm-source-radio:checked').val() === 'custom') {
+                initDrawMap(qt);
+                setTimeout(function () {
+                    if (drawMaps[qt]) drawMaps[qt].map.invalidateSize();
+                }, 100);
+            }
+        });
+    }
+
     $(function () {
-        if (!document.getElementById('ekm-map')) return;
-        loadPins();
-        initMap();
+        if (document.getElementById('ekm-map')) {
+            loadPins();
+            initMap();
+        }
+        if (document.getElementById('ekm-custom-features-json')) {
+            bindSourceRadios();
+            // Ak admin uložil v custom mode, init draw mapy pre aktuálny quiz_type
+            const activeMode = $('#ekm-quiz-type').val();
+            const activeSource = $('input.ekm-source-radio:checked').val() || 'bundle';
+            if (activeSource === 'custom' && (activeMode === 'area' || activeMode === 'line')) {
+                initDrawMap(activeMode);
+                setTimeout(function () {
+                    if (drawMaps[activeMode]) drawMaps[activeMode].map.invalidateSize();
+                }, 200);
+            }
+        }
     });
 
 })(jQuery);

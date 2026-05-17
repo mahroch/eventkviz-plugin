@@ -15,6 +15,7 @@
     var detail = $container.data('detail') || 'outline-only';
     var quizType = $container.data('quiz-type') || 'pin';   // 'pin' | 'area' | 'line'
     var datasetSlug = $container.data('dataset') || '';     // pre area/line — určuje GeoJSON file
+    var featuresSource = $container.data('features-source') || 'bundle'; // 'bundle' | 'custom'
     var datasetSingular = $container.data('singular') || ''; // pre prefix v sidebar tasks ("Nájdi rieku: …")
     // data-overlays je JSON object {cities,regions,rivers} — jQuery vie auto-parse JSON,
     // ale pre istotu defenzívne handling.
@@ -177,14 +178,24 @@
     }
 
     function loadFeatureLayer() {
-        // Pre quiz_type=area/line — načíta features GeoJSON cez dataset slug.
+        // Pre quiz_type=area/line — načíta features GeoJSON cez dataset slug
+        // (bundle source) alebo z window.ekMapaCustomFeatures (custom draw source).
         if (quizType !== 'area' && quizType !== 'line') return;
-        if (!datasetSlug) return;
-        // Konvencia: GeoJSON file = "<slug>.geojson" v public/data/regions/
-        var fileName = datasetSlug + '.geojson';
-        fetch(ekMapaCfg.geoJsonBase + fileName).then(function (r) {
-            return r.ok ? r.json() : null;
-        }).then(function (data) {
+
+        var dataPromise;
+        if (featuresSource === 'custom') {
+            // Custom features sú inline JSON z PHP — žiadny HTTP fetch.
+            var inlineData = window.ekMapaCustomFeatures || null;
+            dataPromise = Promise.resolve(inlineData);
+        } else {
+            // Bundle — fetch z public/data/regions/
+            if (!datasetSlug) return;
+            var fileName = datasetSlug + '.geojson';
+            dataPromise = fetch(ekMapaCfg.geoJsonBase + fileName).then(function (r) {
+                return r.ok ? r.json() : null;
+            });
+        }
+        dataPromise.then(function (data) {
             if (!data) return;
 
             // Ak overlay flag feature_only_set, zobraz IBA features relevantné pre

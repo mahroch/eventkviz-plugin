@@ -146,6 +146,59 @@ class Eventkviz_MapQuiz_Datasets {
     }
 
     /**
+     * Vráti zoznam feature names pre template — podľa zdroja features:
+     *   - 'bundle' → načíta z dataset_slug bundle súboru
+     *   - 'custom' → načíta z _mapquiz_custom_features postmeta
+     *
+     * Použité v admin (pool checkbox) + form/eval (názvy úloh).
+     */
+    public static function feature_names_for_template( $post_id ) {
+        $source = get_post_meta( $post_id, '_mapquiz_features_source', true ) ?: 'bundle';
+        if ( $source === 'custom' ) {
+            $json = get_post_meta( $post_id, '_mapquiz_custom_features', true );
+            $data = $json ? json_decode( $json, true ) : null;
+            if ( ! is_array( $data ) || ! is_array( $data['features'] ?? null ) ) return array();
+            $names = array();
+            foreach ( $data['features'] as $f ) {
+                if ( ! empty( $f['properties']['name'] ) ) $names[] = (string) $f['properties']['name'];
+            }
+            return $names;
+        }
+        $slug = get_post_meta( $post_id, '_mapquiz_dataset_slug', true );
+        return $slug ? self::load_feature_names( $slug ) : array();
+    }
+
+    /**
+     * Vráti GeoJSON FeatureCollection pre template — bundle súbor alebo custom
+     * features. Pre form/eval rendering features layer.
+     *
+     * @return array|null { 'features': [...], '_source': 'bundle'|'custom', '_url': string|null }
+     */
+    public static function geojson_for_template( $post_id ) {
+        $source = get_post_meta( $post_id, '_mapquiz_features_source', true ) ?: 'bundle';
+        if ( $source === 'custom' ) {
+            $json = get_post_meta( $post_id, '_mapquiz_custom_features', true );
+            $data = $json ? json_decode( $json, true ) : null;
+            if ( ! is_array( $data ) || ( $data['type'] ?? '' ) !== 'FeatureCollection' ) {
+                return array( 'type' => 'FeatureCollection', 'features' => array(), '_source' => 'custom', '_url' => null );
+            }
+            $data['_source'] = 'custom';
+            $data['_url']    = null;
+            return $data;
+        }
+        // Bundle — vráti len _url + _source, JS si fetch-ne file sám
+        $slug = get_post_meta( $post_id, '_mapquiz_dataset_slug', true );
+        if ( ! $slug ) return null;
+        $def = self::get( $slug );
+        if ( ! $def ) return null;
+        return array(
+            '_source' => 'bundle',
+            '_url'    => plugin_dir_url( dirname( __FILE__ ) ) . 'public/data/regions/' . $def['file'],
+            '_slug'   => $slug,
+        );
+    }
+
+    /**
      * Overlay vrstvy per region. Admin v šablóne uvidí len relevantné options.
      * Každý overlay flag má slug (postmeta key), label (UI text), dataset_file.
      */

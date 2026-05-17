@@ -8,6 +8,17 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Added (mapquiz — vlastné kreslenie polygónov / línií v admin editore)
+- **Veľká feature** — admin si môže nakresliť vlastné polygony (area mód) alebo línie (line mód) priamo v admin editore, bez programátora. Doteraz boli polygony/línie možné len cez pre-bundle datasety (pohoria SR, štáty EU…).
+- **Toggle „Zdroj features"** v admin editor: `Bundle dataset` (z registry) vs `Vlastné kreslenie`. Pre vlastné sa zobrazí Leaflet.draw mapa s toolbarom (nakresliť polygon/líniu, upraviť vertexy drag-and-drop, vymazať).
+- Po nakreslení sa otvorí prompt na názov feature. Pri uložení sa features ukladajú do postmeta `_mapquiz_custom_features` (GeoJSON FeatureCollection). Pool features `_mapquiz_feature_pool` sa pri custom sourci automaticky synchronizuje so všetkými nakreslenými.
+- **Edit polish (fáza 2):** drag vertexov, pridanie / odobratie vertexu (cez Leaflet.draw edit tool), vymazanie features (cez delete tool alebo cez ✕ v zozname), premenovanie cez ✎ v zozname.
+- **Validácia** v save handler (`sanitize_custom_features()`): GeoJSON štruktúra, polygon ≥3 vertexy, line ≥2 vertexy, sanitizácia názvov. Nevalid features sa odstránia bez chyby.
+- **Player JS** podporuje obe sources — pre custom nefetch-uje bundle súbor, ale použije inline `window.ekMapaCustomFeatures` z PHP (passnuté pri renderi container-u).
+- Nový postmeta: `_mapquiz_features_source` (`bundle`|`custom`), `_mapquiz_custom_features` (GeoJSON JSON).
+- Nový registry helper `Eventkviz_MapQuiz_Datasets::feature_names_for_template()` — vráti pool podľa source (bundle file vs custom postmeta).
+- Bundle: `public/vendor/leaflet.draw/` — Leaflet.draw v1.0.4 (MIT licensed), local copy (žiadny CDN runtime dep).
+
 ### Fixed (scoring info — centering + margin-bottom)
 - Theme alebo Elementor agresívne CSS pre `p` (text-align: left) prepisovalo moje `.ek-scoring-info` rules — text bol zarovnaný vľavo, nie na strede stránky. Wrap z `<p>` na `<div>` + vyššia specificity (`body .ek-scoring-info`, `.ek-quiz .ek-scoring-info`) s `!important` na auto margin. Zväčšený margin-bottom z 28px na 32px aby bol viac oddelený od ďalšieho obsahu (tries banner / sumár bodov).
 

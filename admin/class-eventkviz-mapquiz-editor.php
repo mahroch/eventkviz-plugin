@@ -38,6 +38,14 @@ class Eventkviz_MapQuiz_Editor {
     // z dataset poolu; hráč dostane N náhodných z výberu).
     const META_FEATURE_POOL  = '_mapquiz_feature_pool';
 
+    // Pre area/line — zdroj features: 'bundle' (z registry GeoJSON file) alebo 'custom'
+    // (vlastné polygony/línie nakreslené adminom cez Leaflet.draw v editore).
+    const META_FEATURES_SOURCE = '_mapquiz_features_source';
+    // Custom GeoJSON FeatureCollection (JSON string) — uložené per template ak
+    // features_source = 'custom'. Každá feature má properties.name + geometry
+    // (Polygon pre area, LineString pre line).
+    const META_CUSTOM_FEATURES = '_mapquiz_custom_features';
+
     const DEFAULT_TIERS = '[{"maxKm":5,"percent":100},{"maxKm":10,"percent":75},{"maxKm":20,"percent":50},{"maxKm":40,"percent":25}]';
 
     public static function init() {
@@ -71,16 +79,34 @@ class Eventkviz_MapQuiz_Editor {
 
         // Plugin admin editor
         $version = defined( 'EVENKVIZ_VERSION' ) ? EVENKVIZ_VERSION : '1.4.x';
+
+        // Leaflet.draw plugin — pre area/line vlastné kreslenie polygónov/línií.
+        // Local bundle v public/vendor/leaflet.draw/ (MIT licensed, v1.0.4).
+        $vendor_url = plugin_dir_url( dirname( __FILE__ ) ) . 'public/vendor/leaflet.draw/';
+        wp_enqueue_style(
+            'leaflet-draw',
+            $vendor_url . 'leaflet.draw.css',
+            array( 'leaflet' ),
+            '1.0.4'
+        );
+        wp_enqueue_script(
+            'leaflet-draw',
+            $vendor_url . 'leaflet.draw.js',
+            array( 'leaflet' ),
+            '1.0.4',
+            true
+        );
+
         wp_enqueue_style(
             'eventkviz-mapquiz-editor',
             plugin_dir_url( __FILE__ ) . 'css/mapquiz-editor.css',
-            array( 'leaflet' ),
+            array( 'leaflet', 'leaflet-draw' ),
             $version
         );
         wp_enqueue_script(
             'eventkviz-mapquiz-editor',
             plugin_dir_url( __FILE__ ) . 'js/mapquiz-editor.js',
-            array( 'leaflet', 'jquery' ),
+            array( 'leaflet', 'leaflet-draw', 'jquery' ),
             $version,
             true
         );
@@ -196,6 +222,13 @@ class Eventkviz_MapQuiz_Editor {
         $available_features = $current_dataset_slug
             ? Eventkviz_MapQuiz_Datasets::load_feature_names( $current_dataset_slug )
             : array();
+
+        // Vlastné features (custom draw): zdroj features per template — 'bundle' (default,
+        // z registry) alebo 'custom' (admin si nakreslí polygony/línie cez Leaflet.draw).
+        $features_source = get_post_meta( $post->ID, self::META_FEATURES_SOURCE, true ) ?: 'bundle';
+        if ( ! in_array( $features_source, array( 'bundle', 'custom' ), true ) ) $features_source = 'bundle';
+        $custom_features_json = get_post_meta( $post->ID, self::META_CUSTOM_FEATURES, true );
+        if ( empty( $custom_features_json ) ) $custom_features_json = '{"type":"FeatureCollection","features":[]}';
         ?>
 
         <div class="ekm-editor-toolbar" style="margin-bottom:14px; padding:10px; background:#eef4fa; border-left:3px solid #2271b1; border-radius:0 4px 4px 0">
@@ -352,48 +385,76 @@ class Eventkviz_MapQuiz_Editor {
         <?php foreach ( array( 'line' => 'Čiarové objekty', 'area' => 'Územia / oblasti' ) as $mode => $mode_label ) : ?>
         <div class="ekm-mode" id="ekm-mode-<?php echo esc_attr( $mode ); ?>" <?php if ( $quiz_type !== $mode ) echo 'style="display:none"'; ?>>
             <div style="margin:14px 0; padding:14px; background:#fff; border:1px solid #ccd0d4; border-radius:4px">
-                <h3 style="margin-top:0"><?php echo esc_html( $mode_label ); ?> — vyber dataset + pool</h3>
+                <h3 style="margin-top:0"><?php echo esc_html( $mode_label ); ?> — zdroj features</h3>
 
                 <p>
-                    <label><strong>Dataset:</strong>
-                        <select name="<?php echo esc_attr( self::META_DATASET_SLUG ); ?>" class="ekm-dataset-select" data-mode="<?php echo esc_attr( $mode ); ?>">
-                            <?php
-                            $mode_datasets = ( $quiz_type === $mode ) ? $available_datasets : Eventkviz_MapQuiz_Datasets::for_mode_and_region( $mode, $region );
-                            if ( empty( $mode_datasets ) ) {
-                                echo '<option value="">— Žiadne datasety pre vybraný región —</option>';
-                            } else {
-                                foreach ( $mode_datasets as $ds_slug => $ds ) {
-                                    printf(
-                                        '<option value="%s"%s>%s</option>',
-                                        esc_attr( $ds_slug ),
-                                        selected( $current_dataset_slug, $ds_slug, false ),
-                                        esc_html( $ds['label'] )
-                                    );
-                                }
-                            }
-                            ?>
-                        </select>
+                    <label style="margin-right:18px">
+                        <input type="radio" name="<?php echo esc_attr( self::META_FEATURES_SOURCE ); ?>" value="bundle" class="ekm-source-radio" data-mode="<?php echo esc_attr( $mode ); ?>" <?php checked( $features_source, 'bundle' ); ?> />
+                        <strong>Bundle dataset</strong> (preddefinovaný v plugine — pohoria SR, štáty EU, atď.)
                     </label>
-                    <span class="description" style="margin-left:8px">Datasety filtrované podľa <strong>regiónu</strong> + <strong>typu kvízu</strong>. Zmeň región vyššie ak chceš iné.</span>
+                    <label>
+                        <input type="radio" name="<?php echo esc_attr( self::META_FEATURES_SOURCE ); ?>" value="custom" class="ekm-source-radio" data-mode="<?php echo esc_attr( $mode ); ?>" <?php checked( $features_source, 'custom' ); ?> />
+                        <strong>Vlastné kreslenie</strong> (nakresli polygony/línie na mape sám)
+                    </label>
                 </p>
 
-                <?php if ( ! empty( $available_features ) && $quiz_type === $mode ) : ?>
-                <p><strong>Vyber features do poolu:</strong></p>
-                <div style="columns:3; max-width:760px; column-gap:24px">
-                    <?php foreach ( $available_features as $fname ) : ?>
-                        <label style="display:block; padding:3px 0">
-                            <input type="checkbox" name="<?php echo esc_attr( self::META_FEATURE_POOL ); ?>[]" value="<?php echo esc_attr( $fname ); ?>" <?php checked( in_array( $fname, $feature_pool, true ) ); ?> />
-                            <?php echo esc_html( $fname ); ?>
+                <!-- Sekcia BUNDLE — dropdown + checkbox pool -->
+                <div class="ekm-source-section ekm-source-bundle" data-mode="<?php echo esc_attr( $mode ); ?>" <?php if ( $features_source !== 'bundle' ) echo 'style="display:none"'; ?>>
+                    <p>
+                        <label><strong>Dataset:</strong>
+                            <select name="<?php echo esc_attr( self::META_DATASET_SLUG ); ?>" class="ekm-dataset-select" data-mode="<?php echo esc_attr( $mode ); ?>">
+                                <?php
+                                $mode_datasets = ( $quiz_type === $mode ) ? $available_datasets : Eventkviz_MapQuiz_Datasets::for_mode_and_region( $mode, $region );
+                                if ( empty( $mode_datasets ) ) {
+                                    echo '<option value="">— Žiadne datasety pre vybraný región —</option>';
+                                } else {
+                                    foreach ( $mode_datasets as $ds_slug => $ds ) {
+                                        printf(
+                                            '<option value="%s"%s>%s</option>',
+                                            esc_attr( $ds_slug ),
+                                            selected( $current_dataset_slug, $ds_slug, false ),
+                                            esc_html( $ds['label'] )
+                                        );
+                                    }
+                                }
+                                ?>
+                            </select>
                         </label>
-                    <?php endforeach; ?>
+                        <span class="description" style="margin-left:8px">Datasety filtrované podľa <strong>regiónu</strong> + <strong>typu kvízu</strong>. Zmeň región vyššie ak chceš iné.</span>
+                    </p>
+
+                    <?php if ( ! empty( $available_features ) && $quiz_type === $mode ) : ?>
+                    <p><strong>Vyber features do poolu:</strong></p>
+                    <div style="columns:3; max-width:760px; column-gap:24px">
+                        <?php foreach ( $available_features as $fname ) : ?>
+                            <label style="display:block; padding:3px 0">
+                                <input type="checkbox" name="<?php echo esc_attr( self::META_FEATURE_POOL ); ?>[]" value="<?php echo esc_attr( $fname ); ?>" <?php checked( in_array( $fname, $feature_pool, true ) ); ?> />
+                                <?php echo esc_html( $fname ); ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <p class="description" style="margin-top:10px">Vyberte aspoň toľko features ako je <em>Počet otázok v sete</em> v evente, inak sa pool capne na zaškrtnuté. Pre uloženie checkboxov treba <strong>Update</strong>; po zmene datasetu/regiónu treba uložiť a feature list sa nahrá.</p>
+                    <?php elseif ( $quiz_type === $mode ) : ?>
+                    <p class="description" style="margin-top:10px">Po uložení vybraného datasetu sa tu zobrazí zoznam features na zaškrtnutie.</p>
+                    <?php endif; ?>
                 </div>
-                <p class="description" style="margin-top:10px">Vyberte aspoň toľko features ako je <em>Počet otázok v sete</em> v evente, inak sa pool capne na zaškrtnuté. Pre uloženie checkboxov treba <strong>Update</strong>; po zmene datasetu/regiónu treba uložiť a feature list sa nahrá.</p>
-                <?php elseif ( $quiz_type === $mode ) : ?>
-                <p class="description" style="margin-top:10px">Po uložení vybraného datasetu sa tu zobrazí zoznam features na zaškrtnutie.</p>
-                <?php endif; ?>
+
+                <!-- Sekcia CUSTOM DRAW — Leaflet.draw mapa + nakreslené features list -->
+                <div class="ekm-source-section ekm-source-custom" data-mode="<?php echo esc_attr( $mode ); ?>" <?php if ( $features_source !== 'custom' ) echo 'style="display:none"'; ?>>
+                    <p class="description" style="margin:0 0 10px">
+                        Nakresli vlastné <strong><?php echo $mode === 'line' ? 'línie' : 'polygony'; ?></strong> priamo na mape. Použi tlačidlá v ľavom hornom rohu: <strong>nakresliť</strong>, <strong>upraviť</strong> (drag vertexov), <strong>vymazať</strong>. Po nakreslení sa otvorí dialóg na pomenovanie feature.
+                    </p>
+                    <div id="ekm-draw-map-<?php echo esc_attr( $mode ); ?>" class="ekm-draw-map" data-mode="<?php echo esc_attr( $mode ); ?>" style="height:480px; width:100%; max-width:1100px; border:1px solid #ccd0d4; border-radius:4px;"></div>
+                    <h4 style="margin:18px 0 6px">Nakreslené features (<span class="ekm-draw-count" data-mode="<?php echo esc_attr( $mode ); ?>">0</span>)</h4>
+                    <ul class="ekm-draw-list" data-mode="<?php echo esc_attr( $mode ); ?>" style="margin:0;padding:0;list-style:none;max-width:540px"></ul>
+                    <p class="description" style="margin-top:8px">Klik na názov vo zozname → fokus na feature na mape. Premenovať: ⏵ ikona. Vymazať: ✕ ikona (alebo cez delete tool v ľavej toolbar).</p>
+                </div>
             </div>
         </div><!-- /ekm-mode-<?php echo esc_attr( $mode ); ?> -->
         <?php endforeach; ?>
+
+        <!-- Hidden inputy pre custom features — JS ich plní pri nakreslení/editovaní -->
+        <input type="hidden" name="<?php echo esc_attr( self::META_CUSTOM_FEATURES ); ?>" id="ekm-custom-features-json" value="<?php echo esc_attr( $custom_features_json ); ?>" />
 
         <?php
     }
@@ -440,6 +501,73 @@ class Eventkviz_MapQuiz_Editor {
         <?php
     }
 
+    /**
+     * Validuje + sanitizuje custom features GeoJSON (z editor draw mapy).
+     * Vráti JSON string FeatureCollection — buď čistý vstup alebo „prázdny".
+     *
+     * Validácia:
+     *   - musí byť FeatureCollection
+     *   - každá feature musí mať properties.name + valid geometry
+     *   - Polygon: min 3 vertexy (4 vrátane closing); MultiPolygon povolené
+     *   - LineString: min 2 vertexy; MultiLineString povolené
+     *   - quiz_type='area' → akceptuje len Polygon/MultiPolygon
+     *   - quiz_type='line' → akceptuje len LineString/MultiLineString
+     *
+     * Nevalid features sa preskočia (silently), výsledok môže mať menej features
+     * ako vstup. Pre quiz_type='pin' vrátime prázdnu collection (custom irrelevant).
+     */
+    public static function sanitize_custom_features( $raw_json, $quiz_type ) {
+        $empty = '{"type":"FeatureCollection","features":[]}';
+        if ( $quiz_type === 'pin' || $raw_json === '' ) return $empty;
+        $data = json_decode( $raw_json, true );
+        if ( ! is_array( $data ) || ( $data['type'] ?? '' ) !== 'FeatureCollection' || ! is_array( $data['features'] ?? null ) ) {
+            return $empty;
+        }
+        $allowed_geom = ( $quiz_type === 'area' )
+            ? array( 'Polygon', 'MultiPolygon' )
+            : array( 'LineString', 'MultiLineString' );
+
+        $clean_features = array();
+        foreach ( $data['features'] as $feat ) {
+            if ( ! is_array( $feat ) ) continue;
+            $geom = $feat['geometry'] ?? null;
+            $name = isset( $feat['properties']['name'] ) ? sanitize_text_field( (string) $feat['properties']['name'] ) : '';
+            if ( $name === '' || ! is_array( $geom ) ) continue;
+            $gtype = $geom['type'] ?? '';
+            if ( ! in_array( $gtype, $allowed_geom, true ) ) continue;
+            $coords = $geom['coordinates'] ?? null;
+            if ( ! is_array( $coords ) ) continue;
+
+            // Min vertex counts
+            $valid = false;
+            if ( $gtype === 'Polygon' ) {
+                $valid = is_array( $coords[0] ?? null ) && count( $coords[0] ) >= 4; // closed ring = 4 (3 unique + dup)
+            } elseif ( $gtype === 'MultiPolygon' ) {
+                foreach ( $coords as $poly ) {
+                    if ( is_array( $poly[0] ?? null ) && count( $poly[0] ) >= 4 ) { $valid = true; break; }
+                }
+            } elseif ( $gtype === 'LineString' ) {
+                $valid = count( $coords ) >= 2;
+            } elseif ( $gtype === 'MultiLineString' ) {
+                foreach ( $coords as $ls ) {
+                    if ( is_array( $ls ) && count( $ls ) >= 2 ) { $valid = true; break; }
+                }
+            }
+            if ( ! $valid ) continue;
+
+            $clean_features[] = array(
+                'type'       => 'Feature',
+                'properties' => array( 'name' => $name ),
+                'geometry'   => array( 'type' => $gtype, 'coordinates' => $coords ),
+            );
+        }
+
+        return wp_json_encode( array(
+            'type'     => 'FeatureCollection',
+            'features' => $clean_features,
+        ), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES );
+    }
+
     public static function save_post( $post_id, $post ) {
         if ( ! isset( $_POST[ self::NONCE_NAME ] ) ) return;
         if ( ! wp_verify_nonce( wp_unslash( $_POST[ self::NONCE_NAME ] ), self::NONCE_ACTION ) ) return;
@@ -478,14 +606,41 @@ class Eventkviz_MapQuiz_Editor {
         }
         update_post_meta( $post_id, self::META_DATASET_SLUG, $dataset_slug );
 
-        // Feature pool (pre area/line — array of feature names z vybraného datasetu)
-        $pool_raw = isset( $_POST[ self::META_FEATURE_POOL ] ) && is_array( $_POST[ self::META_FEATURE_POOL ] ) ? wp_unslash( $_POST[ self::META_FEATURE_POOL ] ) : array();
-        $pool_clean = array();
-        foreach ( $pool_raw as $name ) {
-            $name = sanitize_text_field( (string) $name );
-            if ( $name !== '' ) $pool_clean[] = $name;
+        // Features source — 'bundle' alebo 'custom'. Default 'bundle' (legacy compat).
+        $features_source = isset( $_POST[ self::META_FEATURES_SOURCE ] ) ? sanitize_key( $_POST[ self::META_FEATURES_SOURCE ] ) : 'bundle';
+        if ( ! in_array( $features_source, array( 'bundle', 'custom' ), true ) ) $features_source = 'bundle';
+        // Pre pin mode features source nemá zmysel — clearuj na bundle.
+        if ( $quiz_type === 'pin' ) $features_source = 'bundle';
+        update_post_meta( $post_id, self::META_FEATURES_SOURCE, $features_source );
+
+        // Custom GeoJSON FeatureCollection — validuj štruktúru + sanitizuj názvy.
+        $custom_features_raw = isset( $_POST[ self::META_CUSTOM_FEATURES ] ) ? wp_unslash( (string) $_POST[ self::META_CUSTOM_FEATURES ] ) : '';
+        $custom_features_clean = self::sanitize_custom_features( $custom_features_raw, $quiz_type );
+        update_post_meta( $post_id, self::META_CUSTOM_FEATURES, wp_slash( $custom_features_clean ) );
+
+        // Feature pool — pre bundle source = array of feature names z dataset bundleu;
+        // pre custom source = array všetkých custom feature names (admin vyberá v UI
+        // checkboxom kvôli konzistencii — alebo pri custom default = všetky nakreslené).
+        if ( $features_source === 'custom' ) {
+            // Pri custom source pool = názvy všetkých nakreslených features (autopool).
+            $custom_obj = json_decode( $custom_features_clean, true );
+            $pool_clean = array();
+            if ( is_array( $custom_obj ) && ! empty( $custom_obj['features'] ) ) {
+                foreach ( $custom_obj['features'] as $feat ) {
+                    if ( ! empty( $feat['properties']['name'] ) ) $pool_clean[] = (string) $feat['properties']['name'];
+                }
+            }
+            update_post_meta( $post_id, self::META_FEATURE_POOL, wp_json_encode( $pool_clean, JSON_UNESCAPED_UNICODE ) );
+        } else {
+            // Bundle source — checkbox pool z $_POST
+            $pool_raw = isset( $_POST[ self::META_FEATURE_POOL ] ) && is_array( $_POST[ self::META_FEATURE_POOL ] ) ? wp_unslash( $_POST[ self::META_FEATURE_POOL ] ) : array();
+            $pool_clean = array();
+            foreach ( $pool_raw as $name ) {
+                $name = sanitize_text_field( (string) $name );
+                if ( $name !== '' ) $pool_clean[] = $name;
+            }
+            update_post_meta( $post_id, self::META_FEATURE_POOL, wp_json_encode( $pool_clean, JSON_UNESCAPED_UNICODE ) );
         }
-        update_post_meta( $post_id, self::META_FEATURE_POOL, wp_json_encode( $pool_clean, JSON_UNESCAPED_UNICODE ) );
 
         // Player detail
         $detail = isset( $_POST[ self::META_PLAYER_DETAIL ] ) ? sanitize_key( $_POST[ self::META_PLAYER_DETAIL ] ) : 'outline-only';

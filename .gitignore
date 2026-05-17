@@ -3,3 +3,7 @@
 *.log
 node_modules/
 vendor/
+# Výnimka: public/vendor/ obsahuje vendored frontend assets (Leaflet.draw, …),
+# tie musia byť v repo aby plugin fungoval bez external CDN deps.
+!public/vendor/
+!public/vendor/**
