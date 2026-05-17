@@ -8,6 +8,12 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Fixed (kvízy — scoring info čistejšie + lepší kontrast fail/success boxov)
+- Mapa scoring info: odstránené zátvorky s vysvetľujúcimi príkladmi („(rieky, železnice…)", „(štát, pohorie, národný park…)") — názov šablóny už hráčovi povie o čo ide, opakovať to v scoring info nedávalo zmysel.
+- `.ek-scoring-info` má teraz väčší `margin-bottom: 28px` — predtým bol natlačený na nasledujúce elementy.
+- `.ek-quiz-message--success` a `--fail` boxy: solid pozadie + tmavá farba textu (zelená/oranžová) — zaručená čitateľnosť na ľubovoľnom Elementor background (predtým rgba s alpha 0.12 = na fialovom hero pozadí biele písmo zanikalo, „Je potrebné dosiahnuť aspoň 400 bodov…" bolo nečitateľné).
+- Inline override štýlov pre mapquiz fail box odstránený — používa globálny CSS.
+
 ### Changed (všetky kvízy — human-friendly „scoring info" text nad formulárom + v evale)
 - Pre **všetky druhy kvízov** (music / movies / knowledge / sudoku / mapa) sa zobrazí krátky informačný text v ľudskej reči — vysvetľuje za koľko bodov je čo, koľko ich treba na kód a koľko pokusov má hráč. Text je prispôsobený typu kvízu:
   - **Music:** rôzne body za interpreta vs skladbu vs obe spolu k tej istej ukážke.

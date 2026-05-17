@@ -569,12 +569,24 @@ body .ek-quiz-submit:disabled {
     text-align: center;
 }
 .ek-quiz-message--success {
-    background: rgba(74, 222, 128, 0.15);
-    border: 1px solid rgba(74, 222, 128, 0.4);
+    background: #e8f5e9;
+    border: 2px solid #4caf50;
+    color: #1b3a23;
 }
 .ek-quiz-message--fail {
-    background: rgba(251, 113, 133, 0.12);
-    border: 1px solid rgba(251, 113, 133, 0.35);
+    /* Solid pozadie (žltkavé) + tmavá farba textu — zaručená čitateľnosť
+       na ľubovoľnom Elementor background (fialový gradient, tmavá hero, …).
+       Bývalo rgba(251,113,133,0.12) + dedený text → biely text na svetlom
+       pozadí zanikal. */
+    background: #fff3e0;
+    border: 2px solid #ff9800;
+    color: #3e2723;
+}
+.ek-quiz-message--success p,
+.ek-quiz-message--fail p,
+.ek-quiz-message--success strong,
+.ek-quiz-message--fail strong {
+    color: inherit;
 }
 .ek-quiz-message p {
     margin: 0 0 10px;
@@ -869,6 +881,6 @@ body.eventkviz-page .page-title {
     font-size: 14px;
     line-height: 1.6;
     max-width: 720px;
-    margin: 16px auto;
+    margin: 18px auto 28px;
     text-align: center;
 }

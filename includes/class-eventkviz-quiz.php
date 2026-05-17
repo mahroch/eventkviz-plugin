@@ -628,11 +628,11 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 				} elseif ( $mapa_type === 'area' ) {
 					$sentences[] = $is_eval
 						? sprintf( 'V tomto mapovom kvíze si označoval %d území na mape. Za správnu odpoveď bolo %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp )
-						: sprintf( 'V tomto mapovom kvíze označuješ %d území na mape. Klikni priamo na správnu plochu (štát, pohorie, národný park…). Za správnu odpoveď získaš %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp );
+						: sprintf( 'V tomto mapovom kvíze označuješ %d území na mape. Klikni priamo na správnu plochu. Za správnu odpoveď získaš %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp );
 				} elseif ( $mapa_type === 'line' ) {
 					$sentences[] = $is_eval
-						? sprintf( 'V tomto mapovom kvíze si označoval %d čiarových objektov na mape (rieky, železnice…). Za správnu odpoveď bolo %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp )
-						: sprintf( 'V tomto mapovom kvíze označuješ %d čiarových objektov na mape (rieky, železnice…). Klikni priamo na správnu líniu. Za správnu odpoveď získaš %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp );
+						? sprintf( 'V tomto mapovom kvíze si označoval %d čiarových objektov na mape. Za správnu odpoveď bolo %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp )
+						: sprintf( 'V tomto mapovom kvíze označuješ %d čiarových objektov na mape. Klikni priamo na správnu líniu. Za správnu odpoveď získaš %s bodov, za nesprávnu 0.', $mapa_N, $max_pt_disp );
 				}
 				break;
 		}

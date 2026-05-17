@@ -687,9 +687,9 @@ class Eventkviz_MapaEval_Quiz_Class extends Eventkviz_Quiz_Class {
                 $this->show_geochallenge_return( $gained_credits );
             }
         } else {
-            echo '<div class="ek-quiz-message ek-quiz-message--fail" style="margin-top:20px;padding:16px 20px;background:#fff3e0;border:2px solid #ff9800;border-radius:10px;text-align:center;color:#3e2723;">';
-            echo '<p style="margin:0;font-size:15px;"><strong>Nezískali ste dosť bodov na postup.</strong></p>';
-            echo '<p style="margin:6px 0 0;font-size:14px;">Je potrebné dosiahnuť aspoň <strong>' . esc_html( $min_body ) . '</strong> bodov. Získali ste <strong>' . esc_html( $gained_credits ) . '</strong>.</p>';
+            echo '<div class="ek-quiz-message ek-quiz-message--fail" style="margin-top:24px">';
+            echo '<p><strong>Nezískali ste dosť bodov na postup.</strong></p>';
+            echo '<p>Je potrebné dosiahnuť aspoň <strong>' . esc_html( $min_body ) . '</strong> bodov. Získali ste <strong>' . esc_html( $gained_credits ) . '</strong>.</p>';
             echo '</div>';
         }
 
