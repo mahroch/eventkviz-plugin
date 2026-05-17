@@ -619,7 +619,10 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 				$max_pt    = isset( $extra['mapa_max_per_task'] ) ? (float) $extra['mapa_max_per_task'] : 0;
 				// "12.5" alebo "12" podľa toho či je celé
 				$max_pt_disp = ( fmod( $max_pt, 1.0 ) === 0.0 ) ? (string) (int) $max_pt : rtrim( rtrim( number_format( $max_pt, 1, '.', '' ), '0' ), '.' );
-				$mapa_N = $N > 0 ? $N : (int) ( $extra['mapa_task_count'] ?? 0 );
+				// Pre mapa: preferuj reálny task_count (po cappingu na pool size) pred raw
+				// pocet_otazok_v_sete. Ak admin nastavil 10 ale pool má 5 features, hráč
+				// vidí 5 úloh — text musí byť konzistentný.
+				$mapa_N = isset( $extra['mapa_task_count'] ) ? (int) $extra['mapa_task_count'] : $N;
 
 				if ( $mapa_type === 'pin' ) {
 					$sentences[] = $is_eval

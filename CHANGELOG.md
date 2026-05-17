@@ -8,6 +8,9 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Fixed (mapquiz scoring info — nesprávny počet úloh keď pool < set)
+- Ak admin nastavil `pocet_otazok_v_sete = 10` v evente ale pool template má len 5 features, plugin správne cap-uje na 5 úloh. Scoring info text ale hovoril „označuješ 10 území" (z raw event settings) — nesprávne. Teraz text reflektuje **reálny task count po cappingu** („označuješ 5 území"). max_per_task tiež správne počítaný z reálneho countu.
+
 ### Added (admin „Linky pre hráčov" — generátor tokenizovaných liniek)
 - Pribudla sekcia **„3b. Tokenizované linky pre konkrétny tím"** v admin Event-Links meta box. Admin zadá kód tímu + (voliteľne) hráča, klikne „Generuj" → JS volá REST `/eventkviz/v1/link-token` a vygeneruje **opaque `?t=...` linky** pre všetky kvízy (vrátane mapquiz sub-kvízov). Každý link má vlastné „Kopírovať" tlačidlo.
 - Plain šablóny v sekcii 3 (s `team=TEAM&user=USER` placeholdermi) ostávajú — pre batch ručnú replacement scenarios. Backwards compat zachovaný.
