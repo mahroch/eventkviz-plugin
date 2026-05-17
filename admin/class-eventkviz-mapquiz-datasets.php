@@ -50,6 +50,13 @@ class Eventkviz_MapQuiz_Datasets {
                 'geometry' => 'polygon',
                 'singular' => 'národný park',
             ),
+            'sk-waterbodies' => array(
+                'label'    => 'Vodné nádrže a jazerá SR',
+                'region'   => 'slovakia',
+                'file'     => 'sk-waterbodies.geojson',
+                'geometry' => 'polygon',
+                'singular' => 'vodnú plochu',
+            ),
 
             // ===== Europe =====
             'europe-countries' => array(

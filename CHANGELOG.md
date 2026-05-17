@@ -8,6 +8,15 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Added (mapquiz — šablóna „Vodné nádrže a jazerá SR")
+- 11 najznámejších slovenských vodných plôch — mix umelých priehrad + prírodných plies/sopečných jazier:
+  - **Priehrady:** Oravská priehrada, Liptovská Mara, Zemplínska šírava, Domaša (Veľká), Sĺňava, Ružín, Nosická priehrada, Gabčíkovo (Hrušovská zdrž)
+  - **Tatry plesá:** Štrbské pleso, Popradské pleso
+  - **Vihorlatské sopečné jazero:** Morské oko
+- Fetch z OSM Overpass podľa explicitných OSM IDs (presnejšie než name match — vyhne sa duplicit „Morské oko" / „Malé Morské oko"). Pre plesá menšia simplifikácia (n=2) aby si zachovali aspoň základný tvar viditeľný pri SK zoom-e.
+- Nový dataset `sk-waterbodies` v registry (area, slovakia, singular „vodnú plochu"), bundle 65 KB.
+- Fetch skript: `tools/fetch-sk-waterbodies.py` (idempotentný). Seed skript: `tools/seed-sk-waterbodies.php`.
+
 ### Added (mapquiz — vlastné kreslenie polygónov / línií v admin editore)
 - **Veľká feature** — admin si môže nakresliť vlastné polygony (area mód) alebo línie (line mód) priamo v admin editore, bez programátora. Doteraz boli polygony/línie možné len cez pre-bundle datasety (pohoria SR, štáty EU…).
 - **Toggle „Zdroj features"** v admin editor: `Bundle dataset` (z registry) vs `Vlastné kreslenie`. Pre vlastné sa zobrazí Leaflet.draw mapa s toolbarom (nakresliť polygon/líniu, upraviť vertexy drag-and-drop, vymazať).
