@@ -1868,7 +1868,27 @@ private function render_mapa_tab( $post, $meta ) {
                     var title = $(this).find('option:selected').data('title') || '';
                     if (title) $labelInput.val(title).trigger('input');
                 }
+                ekUpdatePoolWarning($fs);
             });
+            $(document).on('input', '.ek-mapa-quiz-set-input', function() {
+                ekUpdatePoolWarning( $(this).closest('.ek-mapa-quiz-fieldset') );
+            });
+
+            // Update pool warning na zaklade aktualne zvoleneho template + set value.
+            // Volá sa pri zmene template (dropdown) alebo set input (number).
+            function ekUpdatePoolWarning($fs) {
+                var pool = parseInt($fs.find('.ek-mapa-quiz-template-select option:selected').data('pool-size'), 10) || 0;
+                var setVal = parseInt($fs.find('.ek-mapa-quiz-set-input').val(), 10) || 0;
+                $fs.find('.ek-mapa-pool-display').text(pool);
+                $fs.find('.ek-mapa-pool-display-warn').text(pool);
+                $fs.find('.ek-mapa-set-display').text(setVal);
+                $fs.find('.ek-mapa-actual-display').text(Math.min(setVal, pool));
+                if (pool > 0 && setVal > pool) {
+                    $fs.find('.ek-mapa-pool-warning').show();
+                } else {
+                    $fs.find('.ek-mapa-pool-warning').hide();
+                }
+            }
 
             // Tier editor handlers (event delegation aby pokryli aj dynamicky pridané)
             $(document).on('click', '.ek-mapa-tier-add', function() {
@@ -1947,13 +1967,32 @@ private function render_mapa_subquiz_fieldset( $q, $idx, $templates ) {
                 </td>
             </tr>
 
+            <?php
+            // Pool size helper — pre warning ak set > pool. Vypočíta sa pre každý template
+            // (data-pool-size na option) + initial render warning pre aktuálne zvolený.
+            $tpl_pool_size = function ( $tid ) {
+                if ( $tid <= 0 ) return 0;
+                $qt = get_post_meta( $tid, '_mapquiz_quiz_type', true ) ?: 'pin';
+                if ( $qt === 'pin' ) {
+                    $json = get_post_meta( $tid, '_mapquiz_pins', true );
+                    $arr  = is_string( $json ) ? json_decode( $json, true ) : array();
+                } else {
+                    $json = get_post_meta( $tid, '_mapquiz_feature_pool', true );
+                    $arr  = is_string( $json ) ? json_decode( $json, true ) : array();
+                }
+                return is_array( $arr ) ? count( $arr ) : 0;
+            };
+            $current_set      = (int) ( $q['pocet_otazok_v_sete'] ?? 10 );
+            $current_pool     = $tpl_pool_size( $template_id );
+            $initial_warning  = ( $template_id > 0 && $current_pool > 0 && $current_set > $current_pool );
+            ?>
             <tr>
                 <th><label>Šablóna</label></th>
                 <td>
-                    <select class="ek-mapa-quiz-template-select" name="<?php echo esc_attr( $name_prefix ); ?>[template_id]">
-                        <option value="0">— Vyber šablónu —</option>
+                    <select class="ek-mapa-quiz-template-select" name="<?php echo esc_attr( $name_prefix ); ?>[template_id]" data-row-id="<?php echo esc_attr( $idx ); ?>">
+                        <option value="0" data-pool-size="0">— Vyber šablónu —</option>
                         <?php foreach ( $templates as $t ) : ?>
-                            <option value="<?php echo esc_attr( $t->ID ); ?>" data-title="<?php echo esc_attr( $t->post_title ); ?>" <?php selected( $template_id, $t->ID ); ?>>
+                            <option value="<?php echo esc_attr( $t->ID ); ?>" data-title="<?php echo esc_attr( $t->post_title ); ?>" data-pool-size="<?php echo esc_attr( $tpl_pool_size( $t->ID ) ); ?>" <?php selected( $template_id, $t->ID ); ?>>
                                 <?php echo esc_html( $t->post_title ); ?>
                             </option>
                         <?php endforeach; ?>
@@ -1964,8 +2003,16 @@ private function render_mapa_subquiz_fieldset( $q, $idx, $templates ) {
             <tr>
                 <th><label>Počet otázok v sete</label></th>
                 <td>
-                    <input type="number" class="small-text" name="<?php echo esc_attr( $name_prefix ); ?>[pocet_otazok_v_sete]" value="<?php echo esc_attr( $q['pocet_otazok_v_sete'] ?? 10 ); ?>" min="1" max="100" />
-                    <p class="description">Koľko otázok dostane hráč v jednom kole (vyberú sa náhodne zo šablóny).</p>
+                    <input type="number" class="small-text ek-mapa-quiz-set-input" name="<?php echo esc_attr( $name_prefix ); ?>[pocet_otazok_v_sete]" value="<?php echo esc_attr( $current_set ); ?>" min="1" max="100" data-row-id="<?php echo esc_attr( $idx ); ?>" />
+                    <p class="description">
+                        Koľko otázok dostane hráč v jednom kole (vyberú sa náhodne zo šablóny).
+                        <?php if ( $current_pool > 0 ) : ?>
+                            <br>📊 Aktuálna šablóna má <strong><span class="ek-mapa-pool-display" data-row-id="<?php echo esc_attr( $idx ); ?>"><?php echo (int) $current_pool; ?></span></strong> features v poole.
+                        <?php endif; ?>
+                    </p>
+                    <p class="ek-mapa-pool-warning" data-row-id="<?php echo esc_attr( $idx ); ?>" style="<?php echo $initial_warning ? '' : 'display:none;'; ?>color:#d63638;margin-top:6px;font-size:13px">
+                        ⚠ Set <strong><span class="ek-mapa-set-display"><?php echo (int) $current_set; ?></span></strong> otázok je väčší než pool <strong><span class="ek-mapa-pool-display-warn"><?php echo (int) $current_pool; ?></span></strong> features — hráč dostane reálne len <strong><span class="ek-mapa-actual-display"><?php echo (int) $current_pool; ?></span></strong> úloh. Pridaj viac features do šablóny alebo zníž počet otázok.
+                    </p>
                 </td>
             </tr>
 

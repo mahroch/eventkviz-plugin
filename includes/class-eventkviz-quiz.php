@@ -648,24 +648,30 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 		}
 
 		// 3) Pokusy (v evale „zostáva", v form „máš")
+		// Ak je new_questions_on_retry zapnuté, pripoj upozornenie že pri opakovaní
+		// sa otázky vyberú nanovo (= užívateľ nemôže spoľahnúť na opätovné odpovedanie
+		// tej istej sady).
+		$new_qs_on_retry = ! empty( $settings['new_questions_on_retry'] );
+		$retry_note      = $new_qs_on_retry ? ' Pri opakovaní môžu byť otázky iné (vyberú sa nanovo).' : '';
+
 		if ( $is_eval ) {
 			$remaining = isset( $extra['remaining'] ) ? max( 0, (int) $extra['remaining'] ) : null;
 			if ( $remaining === 0 ) {
 				$sentences[] = 'Toto bol tvoj posledný pokus.';
 			} elseif ( $remaining === 1 ) {
-				$sentences[] = 'Zostáva ti 1 pokus.';
+				$sentences[] = 'Zostáva ti 1 pokus.' . $retry_note;
 			} elseif ( $remaining !== null && $remaining >= 2 && $remaining <= 4 ) {
-				$sentences[] = sprintf( 'Zostávajú ti %d pokusy.', $remaining );
+				$sentences[] = sprintf( 'Zostávajú ti %d pokusy.', $remaining ) . $retry_note;
 			} elseif ( $remaining !== null ) {
-				$sentences[] = sprintf( 'Zostáva ti %d pokusov.', $remaining );
+				$sentences[] = sprintf( 'Zostáva ti %d pokusov.', $remaining ) . $retry_note;
 			}
 		} else {
 			if ( $pokusy === 1 ) {
 				$sentences[] = 'Máš 1 pokus.';
 			} elseif ( $pokusy >= 2 && $pokusy <= 4 ) {
-				$sentences[] = sprintf( 'Máš %d pokusy.', $pokusy );
+				$sentences[] = sprintf( 'Máš %d pokusy.', $pokusy ) . $retry_note;
 			} elseif ( $pokusy > 0 ) {
-				$sentences[] = sprintf( 'Máš %d pokusov.', $pokusy );
+				$sentences[] = sprintf( 'Máš %d pokusov.', $pokusy ) . $retry_note;
 			}
 		}
 
