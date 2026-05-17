@@ -666,7 +666,7 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 			}
 		}
 
-		echo '<p class="ek-scoring-info">' . esc_html( implode( ' ', $sentences ) ) . '</p>';
+		echo '<div class="ek-scoring-info">' . esc_html( implode( ' ', $sentences ) ) . '</div>';
 	}
 
 	public function show_seed($user_code='', $akcia='',$place='',$team_code='') {

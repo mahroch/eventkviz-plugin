@@ -8,6 +8,9 @@ Všetky podstatné zmeny v plugine EventKviz.
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.
 - EU mini-mapy: na všetkých štátoch sa zobrazujú permanent labely (názov štátu) ako jemné šedé texty s bielym text-shadow. Pomáha hráčovi orientovať sa („Srbsko je tu, vedľa Maďarsko, Rumunsko, Bulharsko..."). Leaflet renderuje len label-y štátov v aktuálnom viewporte mini-mapy.
 
+### Fixed (scoring info — centering + margin-bottom)
+- Theme alebo Elementor agresívne CSS pre `p` (text-align: left) prepisovalo moje `.ek-scoring-info` rules — text bol zarovnaný vľavo, nie na strede stránky. Wrap z `<p>` na `<div>` + vyššia specificity (`body .ek-scoring-info`, `.ek-quiz .ek-scoring-info`) s `!important` na auto margin. Zväčšený margin-bottom z 28px na 32px aby bol viac oddelený od ďalšieho obsahu (tries banner / sumár bodov).
+
 ### Fixed (Pohoria Európy — polygony prerobené ručne pre geo presnosť)
 - Natural Earth `ne_10m_geography_regions_polys` má pre niektoré pohoria iba **schematické polygóny** (Tatry = úzky obdĺžnik, Sudety = 3 nesúvislé kúsky, Kaukaz nezobrazený v EU viewport-e). Pre kvíz to bolo nepoužiteľné — hráč napríklad nemohol klepnúť na Kaukaz lebo nebol vidieť.
 - Nahradené **ručne definovanými polygónmi** pre 12 top európskych pohorí (Alpy, Karpaty, Pyreneje, Apeniny, Škandinávske vrchy, Tatry, Sudety, Balkán, Dinárske vrchy, Južné Karpaty, Kavkaz, Ural). Polygony sú jednoduché 8-13 bodové aproximácie reálnej rozlohy — geograficky presné + dostatočne veľká plocha na klik.

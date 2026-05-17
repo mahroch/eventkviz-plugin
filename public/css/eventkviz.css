@@ -875,12 +875,22 @@ body.eventkviz-page .page-title {
 /* Scoring info text — human-friendly vysvetlenie ako sa kvíz vyhodnocuje.
    Zobrazuje sa nad formulárom (pred kvízom) aj nad eval výsledkom (po kvíze).
    Decentný italic, neutralna farba — informačný, nie dominantný. */
-.ek-scoring-info {
+/* Force-block + auto margin pre centering aj keď parent má flex/grid.
+   Vyššia specificity (body+class) prebije theme p { text-align: left }. */
+body .ek-scoring-info,
+.ek-quiz .ek-scoring-info,
+.ek-quiz-content .ek-scoring-info {
+    display: block;
+    width: 100%;
+    max-width: 720px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-top: 20px;
+    margin-bottom: 32px;
     color: rgba(255,255,255,0.85);
     font-style: italic;
     font-size: 14px;
     line-height: 1.6;
-    max-width: 720px;
-    margin: 18px auto 28px;
     text-align: center;
+    box-sizing: border-box;
 }
