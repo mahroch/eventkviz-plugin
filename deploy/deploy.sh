@@ -104,11 +104,11 @@ cd "$SCRIPT_DIR"
 # Code Snippets pre-flight: hľadáme aktívne snippets s require_once / include_once
 # na lokálne MAMP/Applications paths. Tieto na proď zhodia WP s fatal error pri
 # loadovaní pluginu (snippet sa eval-uje na každý request).
-DANGEROUS_SNIPPETS=$("$MYSQLDUMP_BIN" -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" "$LOCAL_DB_NAME" pmgonisnippets 2>/dev/null \
+DANGEROUS_SNIPPETS=$("$MYSQLDUMP_BIN" --ssl-mode=DISABLED -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" "$LOCAL_DB_NAME" pmgonisnippets 2>/dev/null \
     | grep -oE "INSERT INTO [^(]+\([^)]+\) VALUES \([^)]*'/Applications/MAMP[^']*'[^)]*\)" || true)
 # Lepší check cez DB query:
 LOCAL_MYSQL="${LOCAL_MYSQL_BIN:-/Applications/MAMP/Library/bin/mysql}"
-DANGEROUS_COUNT=$("$LOCAL_MYSQL" -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" -se "
+DANGEROUS_COUNT=$("$LOCAL_MYSQL" --ssl-mode=DISABLED -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" -se "
     SELECT COUNT(*) FROM pmgonisnippets
     WHERE active=1
     AND (
@@ -119,7 +119,7 @@ DANGEROUS_COUNT=$("$LOCAL_MYSQL" -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*
 if [[ "${DANGEROUS_COUNT:-0}" -gt 0 ]]; then
     echo "❌ Found $DANGEROUS_COUNT aktívnych Code Snippets s require_once na local paths."
     echo "   Tieto pri load na prod hodia fatal error. Deaktivuj ich alebo oprav paths:"
-    "$LOCAL_MYSQL" -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" -e "
+    "$LOCAL_MYSQL" --ssl-mode=DISABLED -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" -e "
         SELECT id, name FROM pmgonisnippets
         WHERE active=1
         AND (code REGEXP '(require_once|include_once|require |include )[[:space:]]*[\\'\"]/Applications/MAMP'
@@ -151,7 +151,7 @@ echo "📦 2/8 Dump local MAMP DB…"
 LOCAL_DUMP="$BACKUP_DIR/local-db-${TS}.sql"
 
 if [[ $DRY_RUN -eq 0 ]]; then
-    "$MYSQLDUMP_BIN" --add-drop-table --skip-lock-tables \
+    "$MYSQLDUMP_BIN" --ssl-mode=DISABLED --add-drop-table --skip-lock-tables \
         -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" \
         -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" \
         "$LOCAL_DB_NAME" > "$LOCAL_DUMP"
