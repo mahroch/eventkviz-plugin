@@ -88,7 +88,7 @@
             var filled = countFilledQuestions($answers);
             var total = totalQuestions($answers);
             if (filled < total) {
-                var msg = 'Vyplnené: ' + filled + ' z ' + total + ' odpovedí.\n\nNaozaj odoslať? Po odoslaní sa už nedá meniť.';
+                var msg = 'Vyplnené: ' + filled + ' z ' + total + ' odpovedí.\n\nNaozaj odoslať tento pokus? (Ak máš ešte pokusy, môžeš kvíz po vyhodnotení opakovať.)';
                 if (!window.confirm(msg)) {
                     e.preventDefault();
                     return false;

@@ -81,6 +81,19 @@ class Eventkviz_Event_Links_Admin {
         $vstup_url = home_url( '/eventkviz-vstup/' );
         $stats_url = home_url( '/eventkviz-statistika/' );
 
+        // Filter — len aktívne kvízy. Postmeta key pattern: event_{type}_{type}_quiz_active
+        // (napr. event_music_music_quiz_active, event_knowledge_knowledge_quiz_active).
+        $active_quizzes = array();
+        foreach ( self::QUIZ_SLUGS as $type => $info ) {
+            $meta_key = 'event_' . $type . '_' . $type . '_quiz_active';
+            if ( ! empty( get_post_meta( $post->ID, $meta_key, true ) ) ) {
+                $active_quizzes[ $type ] = $info;
+            }
+        }
+        if ( empty( $active_quizzes ) ) {
+            echo '<div class="notice notice-warning inline" style="margin:10px 0;padding:10px"><p><strong>⚠ Žiadny kvíz nie je aktívny.</strong> V „Nastavenia eventu" zaškrtni aspoň jeden „Aktívny … kvíz" aby sa tu zobrazili linky.</p></div>';
+        }
+
         // 1. Multi-quiz hub
         echo '<div class="ek-links-section">';
         echo '<h3>1. Hlavný vstup (multi-quiz, hráč si vyberie tím a vidí všetky kvízy)</h3>';
@@ -88,11 +101,11 @@ class Eventkviz_Event_Links_Admin {
         self::render_link( add_query_arg( 'akcia', $akcia, $vstup_url ), '' );
         echo '</div>';
 
-        // 2. Per-quiz hub
+        // 2. Per-quiz hub — len aktívne kvízy
         echo '<div class="ek-links-section">';
         echo '<h3>2. Vstup do konkrétneho kvízu (hráč si vyberie tím, ide rovno do daného kvízu)</h3>';
-        echo '<p class="description">Použi keď chceš poslať link na <em>jeden konkrétny</em> kvíz (napr. „dnes hráme len film kvíz").</p>';
-        foreach ( self::QUIZ_SLUGS as $type => $info ) {
+        echo '<p class="description">Použi keď chceš poslať link na <em>jeden konkrétny</em> kvíz (napr. „dnes hráme len film kvíz"). Zobrazia sa len aktívne kvízy.</p>';
+        foreach ( $active_quizzes as $type => $info ) {
             self::render_link(
                 add_query_arg( array( 'akcia' => $akcia, 'type' => $type ), $vstup_url ),
                 $info['label']
@@ -100,11 +113,11 @@ class Eventkviz_Event_Links_Admin {
         }
         echo '</div>';
 
-        // 3. Direct URLs (skip selector)
+        // 3. Direct URLs (skip selector) — len aktívne kvízy
         echo '<div class="ek-links-section">';
         echo '<h3>3. Priame URL (bez výberu, hráč ide rovno do kvízu)</h3>';
-        echo '<p class="description">Personalizovaný link pre konkrétny tím / hráča. Nahraď <code>TEAM</code> a <code>USER</code> reálnymi kódmi (alebo nech ostane prázdne ak ich nepoužívaš).</p>';
-        foreach ( self::QUIZ_SLUGS as $type => $info ) {
+        echo '<p class="description">Personalizovaný link pre konkrétny tím / hráča. Nahraď <code>TEAM</code> a <code>USER</code> reálnymi kódmi (alebo nech ostane prázdne ak ich nepoužívaš). Zobrazia sa len aktívne kvízy.</p>';
+        foreach ( $active_quizzes as $type => $info ) {
             $url = add_query_arg(
                 array( 'akcia' => $akcia, 'team' => 'TEAM', 'user' => 'USER' ),
                 home_url( '/' . $info['slug'] . '/' )
@@ -141,9 +154,9 @@ class Eventkviz_Event_Links_Admin {
         echo '</div>';
         echo '<div id="ek-tok-results"></div>';
 
-        // Build dataset pre JS — zoznam (slug, label) pre štandardné kvízy + mapquiz sub-quizzes
+        // Build dataset pre JS — len aktívne kvízy + mapquiz sub-quizzes
         $token_links_dataset = array();
-        foreach ( self::QUIZ_SLUGS as $type => $info ) {
+        foreach ( $active_quizzes as $type => $info ) {
             $token_links_dataset[] = array(
                 'slug'  => $info['slug'],
                 'label' => $info['label'],

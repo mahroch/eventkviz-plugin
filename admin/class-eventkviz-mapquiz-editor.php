@@ -242,7 +242,7 @@ class Eventkviz_MapQuiz_Editor {
             </label>
             <p class="description" style="margin:6px 0 0">
                 <strong>Hľadanie miest (pin):</strong> admin definuje konkrétne body (lat/lon), hráč klikne kdekoľvek a body sú podľa vzdialenosti.<br>
-                <strong>Čiara / Územie:</strong> hráč dostane úlohu „nájdi <em>X</em>", musí kliknúť priamo na danú feature. Admin si v dataset dropdowne vyberie zo zoznamu bundleovaných datasetov (pre vybraný región). Binárne hodnotenie.
+                <strong>Čiara / Územie:</strong> hráč dostane úlohu „nájdi <em>X</em>", musí kliknúť priamo na danú feature. Admin si v dataset dropdowne vyberie zo zoznamu bundleovaných datasetov (pre vybraný región). Hodnotenie je „buď trafil — plné body, alebo netrafil — 0 bodov".
             </p>
         </div>
 
@@ -493,7 +493,7 @@ class Eventkviz_MapQuiz_Editor {
             <p class="description">Pri vzdialenosti väčšej než posledný stupeň hráč dostane 0 bodov. Príklad: 0–5 km = 100 %, 5–10 km = 75 %, atď.</p>
         <?php else : ?>
             <div style="padding:10px 12px; background:#f0f6fc; border-left:3px solid #2271b1; color:#1d2327; font-size:13px; max-width:520px">
-                ℹ Pre šablóny typu „<strong><?php echo esc_html( $quiz_type === 'line' ? 'Označenie čiarového objektu' : 'Označenie územia / oblasti' ); ?></strong>" je hodnotenie <strong>binárne</strong>: hráč buď klikne na správnu feature (= max body za úlohu), alebo nie (= 0). Stupne podľa vzdialenosti sa neuplatňujú.
+                ℹ Pre šablóny typu „<strong><?php echo esc_html( $quiz_type === 'line' ? 'Označenie čiarového objektu' : 'Označenie územia / oblasti' ); ?></strong>" je hodnotenie jednoduché: hráč buď klikne na správnu feature (= <strong>plné body</strong> za úlohu), alebo nie (= <strong>0 bodov</strong>). Stupne podľa vzdialenosti sa neuplatňujú.
             </div>
         <?php endif; ?>
 

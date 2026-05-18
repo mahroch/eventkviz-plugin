@@ -312,7 +312,10 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
             $this->render_scoring_info( 'movies', $this->cAkcia->movies_settings, 'eval', array( 'remaining' => $remaining_after ) );
             $this->show_total_credits_gained($gained_credits, $user, $team);
 
-            if($this->cAkcia->movies_settings['min_body_na_postup'] > 0 && $gained_credits >= $this->cAkcia->movies_settings['min_body_na_postup']) {
+            // Threshold check: ak min_body=0, žiadny prah = vždy úspech.
+            $_min_body = (int) $this->cAkcia->movies_settings['min_body_na_postup'];
+            $_passed_threshold = ($_min_body <= 0) || ($gained_credits >= $_min_body);
+            if($_passed_threshold) {
                     $is_gc = !empty($this->cAkcia->all_quizes_settings['geochallenge_integration']);
                     echo '<div class="ek-quiz-message ek-quiz-message--success">';
                     if ($is_gc) {

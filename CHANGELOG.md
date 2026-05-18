@@ -8,7 +8,22 @@ Všetky podstatné zmeny v plugine EventKviz.
 - `generate_geochallenge_code` predtým capoval score na **1295** (max 2-znakového base36 kódu). User v Pohoria kvíze získal 1600 bodov, GeoChallenge dostal kód `ZZF70` = 1295 bodov.
 - Fix: pre score ≤ 1295 ostáva 5-znakový kód (2 score + 3 HMAC, kompatibilita), pre vyšší score 6-znakový (3 score + 3 HMAC, max **46 655**). GeoChallenge `/api/verify-score` decoder (v1.37.0) podporuje obe dĺžky.
 
-## [Unreleased]
+## [1.15.0] - 2026-05-18
+
+### Fixed (kvízy music/movies/knowledge — `min_body_na_postup = 0` ukazoval fail aj pri úspechu)
+- Ak admin nastavil `min_body_na_postup` na **0** (= žiadny prah, každý prejde), evaluation v `class-eventkviz-musicquiz.php`, `class-eventkviz-moviesquiz.php` a `class-eventkviz-knowledgequiz.php` vyhodnotil pokus ako fail (`$gained >= 0` strict comparison nefungoval pri 0-bodovom skóre, plus zlá control-flow vetva). Hráč videl „nezískal si dostatok bodov" aj keď reálne dosiahol kompletné skóre.
+- Fix: explicit `$_passed_threshold = ($_min_body <= 0) || ($gained_credits >= $_min_body);` — pri threshold ≤ 0 vždy passed.
+
+### Changed (admin „Linky pre hráčov" — filter neaktívnych kvízov)
+- V Edit Event meta-boxe „Linky pre hráčov" sa už nezobrazujú linky na kvízy, ktoré nemajú zaškrtnutý `*_quiz_active` toggle. Doteraz admin videl linky napr. na hudobný kvíz aj keď ho v evente nepoužíval — riskoval že omylom zdieľa funkčný-ale-prázdny link.
+- Filter sa aplikuje na sekcie 2 (Linky pre tím), 3 (Plain placeholder linky), 3b (Tokenizované linky pre konkrétny tím). Ak event nemá ani jeden aktívny kvíz, meta-box upozorní textovo.
+
+### Changed (wording — „binárne hodnotenie" prepísané user-friendly)
+- Texty pre admin/hráča v `class-eventkviz-admin.php` + `class-eventkviz-mapquiz-editor.php` už nepoužívajú technický pojem „binárne". Namiesto „Binárne — trafil/netrafil" sa zobrazuje „Hodnotenie je 'buď trafil — plné body, alebo netrafil — 0 bodov'" / „hráč buď klikne na správnu plochu/líniu (= plné body), alebo nie (= 0)".
+- User feedback: „binárne" je nezrozumiteľné pre netechnického klienta.
+
+### Changed (quiz submit — confirm dialog pripomína že po odoslaní sa už nedá opakovať aktuálny pokus)
+- `public/js/eventkviz-quiz-form.js` submit confirm pri nevyplnených odpovediach teraz hovorí: „Vyplnené: X z Y odpovedí. Naozaj odoslať tento pokus? (Ak máš ešte pokusy, môžeš kvíz po vyhodnotení opakovať.)" — hráč vie že odoslanie je finálne pre tento pokus, ale opakovanie kvízu (ak je povolené) je samostatná akcia po vyhodnotení.
 
 ### Changed (mapový kvíz — mini-mapa: jemnejší zoom + názvy štátov v EU)
 - Mini-mapa: zoom je teraz na `featureBounds.pad(0.8)` (= viewport zväčšený o 80% okolo feature) capnutý na region bounds — vidno feature aj okolité štáty/regióny pre geo kontext. Pin mode: bbox ±5° v každom smere.

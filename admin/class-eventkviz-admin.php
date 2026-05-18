@@ -2053,7 +2053,7 @@ private function render_mapa_subquiz_fieldset( $q, $idx, $templates ) {
                         </p>
                     </div>
                     <p class="description">
-                        ⚠ Aplikuje sa LEN pre šablóny typu „Hľadanie miest" (pin). Pre rieku/pohorie je hodnotenie binárne (správne = max body, nesprávne = 0).<br>
+                        ⚠ Aplikuje sa LEN pre šablóny typu „Hľadanie miest" (pin). Pre rieku/pohorie hráč buď klikne na správnu plochu/líniu (= plné body), alebo nie (= 0).<br>
                         Príklad: 0–5 km = 100 %, 5–10 km = 75 %. Pri vzdialenosti väčšej než posledný stupeň → 0 bodov.<br>
                         <strong>Prázdne</strong> = použijú sa default stupne <strong>z mapovej šablóny</strong> (najčastejšie: do 5 km = 100 %, do 10 km = 75 %, do 20 km = 50 %, do 40 km = 25 %). Skutočný default si pozri / nastav v editore vybranej šablóny.
                     </p>
