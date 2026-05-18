@@ -215,10 +215,11 @@ else
     else
         RSYNC_SSH="sshpass -p '$PROD_SSH_PASS' ssh -p ${PROD_SSH_PORT:-22} -o StrictHostKeyChecking=accept-new"
     fi
-    rsync -az --partial --info=stats1,progress2 \
+    # Note: openrsync (macOS default) nepodporuje --info flag — používame -v
+    rsync -avz --partial \
         -e "$RSYNC_SSH" \
         "$LOCAL_WP_PATH/wp-content/uploads/" \
-        "${PROD_SSH_USER}@${PROD_SSH_HOST}:${PROD_WP_PATH}/wp-content/uploads/" 2>&1 | tail -10
+        "${PROD_SSH_USER}@${PROD_SSH_HOST}:${PROD_WP_PATH}/wp-content/uploads/" 2>&1 | tail -8
     echo "   ✅ Uploads synced"
 fi
 echo ""
