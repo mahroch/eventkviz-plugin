@@ -7,3 +7,9 @@ vendor/
 # tie musia byť v repo aby plugin fungoval bez external CDN deps.
 !public/vendor/
 !public/vendor/**
+
+# Deploy credentials — NIKDY do repo
+deploy/.env
+deploy/backups/*.sql
+deploy/backups/*.sql.gz
+deploy/backups/*.tar.gz
