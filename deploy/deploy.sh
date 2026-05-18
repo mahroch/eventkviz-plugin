@@ -98,6 +98,34 @@ if [[ -n "$LOCAL_SHA" && -n "$REMOTE_SHA" && "$LOCAL_SHA" != "$REMOTE_SHA" ]]; t
 fi
 echo "   ✅ Git sync OK (local = GitHub main)"
 cd "$SCRIPT_DIR"
+
+# Code Snippets pre-flight: hľadáme aktívne snippets s require_once / include_once
+# na lokálne MAMP/Applications paths. Tieto na proď zhodia WP s fatal error pri
+# loadovaní pluginu (snippet sa eval-uje na každý request).
+DANGEROUS_SNIPPETS=$("$MYSQLDUMP_BIN" -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" "$LOCAL_DB_NAME" pmgonisnippets 2>/dev/null \
+    | grep -oE "INSERT INTO [^(]+\([^)]+\) VALUES \([^)]*'/Applications/MAMP[^']*'[^)]*\)" || true)
+# Lepší check cez DB query:
+LOCAL_MYSQL="${LOCAL_MYSQL_BIN:-/Applications/MAMP/Library/bin/mysql}"
+DANGEROUS_COUNT=$("$LOCAL_MYSQL" -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" -se "
+    SELECT COUNT(*) FROM pmgonisnippets
+    WHERE active=1
+    AND (
+        code REGEXP '(require_once|include_once|require |include )[[:space:]]*[\\'\"]/Applications/MAMP'
+        OR code REGEXP '(require_once|include_once|require |include )[[:space:]]*[\\'\"]/Users'
+    );
+" "$LOCAL_DB_NAME" 2>/dev/null || echo "0")
+if [[ "${DANGEROUS_COUNT:-0}" -gt 0 ]]; then
+    echo "❌ Found $DANGEROUS_COUNT aktívnych Code Snippets s require_once na local paths."
+    echo "   Tieto pri load na prod hodia fatal error. Deaktivuj ich alebo oprav paths:"
+    "$LOCAL_MYSQL" -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" -e "
+        SELECT id, name FROM pmgonisnippets
+        WHERE active=1
+        AND (code REGEXP '(require_once|include_once|require |include )[[:space:]]*[\\'\"]/Applications/MAMP'
+          OR code REGEXP '(require_once|include_once|require |include )[[:space:]]*[\\'\"]/Users');
+    " "$LOCAL_DB_NAME" 2>/dev/null
+    exit 1
+fi
+echo "   ✅ Žiadne aktívne Code Snippets s local require paths"
 echo ""
 
 # ===== Backup prod =====
@@ -107,7 +135,7 @@ PROD_BACKUP_UPLOADS="$BACKUP_DIR/prod-uploads-${TS}.tar.gz"
 
 if [[ $DRY_RUN -eq 0 ]]; then
     # wp db export číta wp-config.php → žiadne credential parsing (Websupport host:port format)
-    ssh_run "cd '$PROD_WP_PATH' && wp db export - 2>/dev/null" | gzip > "$PROD_BACKUP_DB"
+    ssh_run "cd '$PROD_WP_PATH' && wp --skip-plugins=code-snippets --skip-themes db export - 2>/dev/null" | gzip > "$PROD_BACKUP_DB"
     echo "   ✅ Prod DB backup: $PROD_BACKUP_DB ($(du -h "$PROD_BACKUP_DB" | cut -f1))"
 
     ssh_run "cd '$PROD_WP_PATH/wp-content' && tar czf - uploads 2>/dev/null" > "$PROD_BACKUP_UPLOADS" || echo "   ⚠ uploads tar zlyhal (možno žiadne uploads)"
@@ -163,7 +191,7 @@ echo ""
 
 echo "🗄  4/8 Import local DB do prod (cez WP-CLI)…"
 if [[ $DRY_RUN -eq 0 ]]; then
-    ssh_run "cd '$PROD_WP_PATH' && wp db import $REMOTE_TMP/db.sql"
+    ssh_run "cd '$PROD_WP_PATH' && wp --skip-plugins=code-snippets --skip-themes db import $REMOTE_TMP/db.sql"
     echo "   ✅ DB import OK"
 else
     echo "   [DRY] would: wp db import prod"
@@ -172,7 +200,7 @@ echo ""
 
 echo "🔁 5/8 URL replace ($LOCAL_URL → $PROD_URL)…"
 if [[ $DRY_RUN -eq 0 ]]; then
-    ssh_run "cd '$PROD_WP_PATH' && wp search-replace '$LOCAL_URL' '$PROD_URL' --all-tables --skip-columns=guid --report-changed-only"
+    ssh_run "cd '$PROD_WP_PATH' && wp --skip-plugins=code-snippets --skip-themes search-replace '$LOCAL_URL' '$PROD_URL' --all-tables --skip-columns=guid --report-changed-only"
     echo "   ✅ URL replace (serialization-safe cez WP-CLI)"
 else
     echo "   [DRY] would: wp search-replace $LOCAL_URL → $PROD_URL"
@@ -198,7 +226,7 @@ echo ""
 
 echo "🧹 8/8 Cache + rewrite flush…"
 if [[ $DRY_RUN -eq 0 ]]; then
-    ssh_run "cd '$PROD_WP_PATH' && wp cache flush 2>&1 && wp rewrite flush 2>&1" | tail -5
+    ssh_run "cd '$PROD_WP_PATH' && wp --skip-plugins=code-snippets --skip-themes cache flush 2>&1 && wp --skip-plugins=code-snippets --skip-themes rewrite flush 2>&1" | tail -5
     echo "   ✅ Flushed"
     # Cleanup remote tmp
     ssh_run "rm -rf $REMOTE_TMP"
