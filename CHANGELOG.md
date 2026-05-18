@@ -2,6 +2,12 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.15.0] - 2026-05-18
+
+### Fixed (GeoChallenge kód — skóre nad 1295 sa capovalo)
+- `generate_geochallenge_code` predtým capoval score na **1295** (max 2-znakového base36 kódu). User v Pohoria kvíze získal 1600 bodov, GeoChallenge dostal kód `ZZF70` = 1295 bodov.
+- Fix: pre score ≤ 1295 ostáva 5-znakový kód (2 score + 3 HMAC, kompatibilita), pre vyšší score 6-znakový (3 score + 3 HMAC, max **46 655**). GeoChallenge `/api/verify-score` decoder (v1.37.0) podporuje obe dĺžky.
+
 ## [Unreleased]
 
 ### Changed (mapový kvíz — mini-mapa: jemnejší zoom + názvy štátov v EU)

@@ -689,8 +689,17 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 	}
 	public function generate_geochallenge_code($score, $checkpoint_id = '') {
 		$secret = 'geochallenge-score-key-2026';
-		$score = max(0, min(1295, intval($score)));
-		$scorePart = str_pad(strtoupper(base_convert($score, 10, 36)), 2, '0', STR_PAD_LEFT);
+		// 3 base36 znaky → max parseInt('ZZZ', 36) = 46655. Predtým cap na 1295
+		// (2 znaky) bol bug: user v Pohoria kvíze získal 1600 bodov ale kód
+		// ich obmedzil na 1295. GeoChallenge /api/verify-score decoder
+		// (v1.37.0) podporuje 5-znakový (legacy 2+3) aj 6-znakový (NEW 3+3) kód.
+		// Pre score <= 1295 generujeme 5-znak (kompatibilita), inak 6-znak.
+		$score = max(0, min(46655, intval($score)));
+		if ($score <= 1295) {
+			$scorePart = str_pad(strtoupper(base_convert($score, 10, 36)), 2, '0', STR_PAD_LEFT);
+		} else {
+			$scorePart = str_pad(strtoupper(base_convert($score, 10, 36)), 3, '0', STR_PAD_LEFT);
+		}
 		// HMAC payload includes checkpoint id to bind code to specific checkpoint.
 		// Without it, a code earned at music checkpoint would also unlock video checkpoint
 		// (anti cross-checkpoint reuse). GC /api/verify-score uses the same payload format.
