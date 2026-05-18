@@ -26,10 +26,12 @@ cd "$SCRIPT_DIR"
 
 DRY_RUN=0
 SKIP_CONFIRM=0
+SKIP_UPLOADS=0
 for arg in "$@"; do
     case "$arg" in
-        --dry-run) DRY_RUN=1 ;;
-        --yes|-y)  SKIP_CONFIRM=1 ;;
+        --dry-run)      DRY_RUN=1 ;;
+        --yes|-y)       SKIP_CONFIRM=1 ;;
+        --skip-uploads) SKIP_UPLOADS=1 ;;
     esac
 done
 
@@ -129,27 +131,24 @@ echo "   ✅ Žiadne aktívne Code Snippets s local require paths"
 echo ""
 
 # ===== Backup prod =====
-echo "💾 1/8 Backup prod DB + uploads (cez WP-CLI)…"
+echo "💾 1/8 Backup prod DB (cez WP-CLI)…"
 PROD_BACKUP_DB="$BACKUP_DIR/prod-db-${TS}.sql.gz"
-PROD_BACKUP_UPLOADS="$BACKUP_DIR/prod-uploads-${TS}.tar.gz"
 
 if [[ $DRY_RUN -eq 0 ]]; then
     # wp db export číta wp-config.php → žiadne credential parsing (Websupport host:port format)
     ssh_run "cd '$PROD_WP_PATH' && wp --skip-plugins=code-snippets --skip-themes db export - 2>/dev/null" | gzip > "$PROD_BACKUP_DB"
     echo "   ✅ Prod DB backup: $PROD_BACKUP_DB ($(du -h "$PROD_BACKUP_DB" | cut -f1))"
-
-    ssh_run "cd '$PROD_WP_PATH/wp-content' && tar czf - uploads 2>/dev/null" > "$PROD_BACKUP_UPLOADS" || echo "   ⚠ uploads tar zlyhal (možno žiadne uploads)"
-    [[ -f "$PROD_BACKUP_UPLOADS" && -s "$PROD_BACKUP_UPLOADS" ]] && echo "   ✅ Prod uploads backup: $PROD_BACKUP_UPLOADS ($(du -h "$PROD_BACKUP_UPLOADS" | cut -f1))"
 else
     echo "   [DRY] would: wp db export prod → $PROD_BACKUP_DB"
-    echo "   [DRY] would: tar prod uploads → $PROD_BACKUP_UPLOADS"
 fi
+echo "   ℹ Uploads backup preskočený — rsync je delta sync, prod uploads"
+echo "     sú stratené iba ak admin ručne zmaže local files. Pre full backup"
+echo "     spusti: rsync prod:uploads → deploy/backups/prod-uploads-\$TS/"
 echo ""
 
 # ===== Dump local =====
-echo "📦 2/8 Dump local MAMP DB + uploads…"
+echo "📦 2/8 Dump local MAMP DB…"
 LOCAL_DUMP="$BACKUP_DIR/local-db-${TS}.sql"
-LOCAL_UPLOADS="$BACKUP_DIR/local-uploads-${TS}.tar.gz"
 
 if [[ $DRY_RUN -eq 0 ]]; then
     "$MYSQLDUMP_BIN" --add-drop-table --skip-lock-tables \
@@ -157,13 +156,10 @@ if [[ $DRY_RUN -eq 0 ]]; then
         -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" \
         "$LOCAL_DB_NAME" > "$LOCAL_DUMP"
     echo "   ✅ Local DB dump: $LOCAL_DUMP ($(du -h "$LOCAL_DUMP" | cut -f1))"
-
-    tar czf "$LOCAL_UPLOADS" -C "$LOCAL_WP_PATH/wp-content" uploads 2>/dev/null || echo "   ⚠ uploads tar zlyhal"
-    [[ -f "$LOCAL_UPLOADS" ]] && echo "   ✅ Local uploads: $LOCAL_UPLOADS ($(du -h "$LOCAL_UPLOADS" | cut -f1))"
 else
     echo "   [DRY] would: mysqldump local → $LOCAL_DUMP"
-    echo "   [DRY] would: tar local uploads → $LOCAL_UPLOADS"
 fi
+echo "   ℹ Uploads: rsync (delta sync) v kroku 6 — žiadny tar archív netreba"
 echo ""
 
 # ===== Confirm pre destructive operations =====
@@ -177,15 +173,14 @@ if [[ $SKIP_CONFIRM -eq 0 && $DRY_RUN -eq 0 ]]; then
 fi
 
 # ===== Upload + remote restore =====
-echo "📤 3/8 Upload local dump na prod…"
+echo "📤 3/8 Upload DB dump na prod…"
 REMOTE_TMP="~/eventkviz-deploy-${TS}"
 if [[ $DRY_RUN -eq 0 ]]; then
     ssh_run "mkdir -p $REMOTE_TMP"
     scp_up "$LOCAL_DUMP" "$REMOTE_TMP/db.sql"
-    [[ -f "$LOCAL_UPLOADS" ]] && scp_up "$LOCAL_UPLOADS" "$REMOTE_TMP/uploads.tar.gz"
-    echo "   ✅ Uploaded"
+    echo "   ✅ DB dump uploaded"
 else
-    echo "   [DRY] would: scp dump + uploads → prod:$REMOTE_TMP"
+    echo "   [DRY] would: scp DB dump → prod:$REMOTE_TMP/db.sql"
 fi
 echo ""
 
@@ -207,12 +202,24 @@ else
 fi
 echo ""
 
-echo "🖼  6/8 Extract uploads…"
-if [[ $DRY_RUN -eq 0 && -f "$LOCAL_UPLOADS" ]]; then
-    ssh_run "cd '$PROD_WP_PATH/wp-content' && tar xzf $REMOTE_TMP/uploads.tar.gz"
-    echo "   ✅ Uploads extracted"
+echo "🖼  6/8 Rsync uploads (delta sync, len changed files)…"
+if [[ $SKIP_UPLOADS -eq 1 ]]; then
+    echo "   ⏭  Preskočené (--skip-uploads)"
+elif [[ $DRY_RUN -eq 1 ]]; then
+    echo "   [DRY] would: rsync local uploads → prod uploads"
 else
-    echo "   [DRY/SKIP] uploads"
+    # Rsync over SSH — resume + delta + len changed files
+    # -e nastaví SSH command s našimi opts (port, key/sshpass)
+    if [[ -n "${PROD_SSH_KEY:-}" ]]; then
+        RSYNC_SSH="ssh -p ${PROD_SSH_PORT:-22} -i $PROD_SSH_KEY -o StrictHostKeyChecking=accept-new"
+    else
+        RSYNC_SSH="sshpass -p '$PROD_SSH_PASS' ssh -p ${PROD_SSH_PORT:-22} -o StrictHostKeyChecking=accept-new"
+    fi
+    rsync -az --partial --info=stats1,progress2 \
+        -e "$RSYNC_SSH" \
+        "$LOCAL_WP_PATH/wp-content/uploads/" \
+        "${PROD_SSH_USER}@${PROD_SSH_HOST}:${PROD_WP_PATH}/wp-content/uploads/" 2>&1 | tail -10
+    echo "   ✅ Uploads synced"
 fi
 echo ""
 
