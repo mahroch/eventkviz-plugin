@@ -78,16 +78,17 @@ else
 fi
 echo ""
 
-# 3. MySQL prod
-echo "3️⃣  MySQL prod test…"
-if [[ -z "${PROD_DB_HOST:-}" || -z "${PROD_DB_USER:-}" || -z "${PROD_DB_NAME:-}" ]]; then
-    echo "   ⚠  PROD_DB_* nie sú nastavené v .env — preskakujem (overím cez SSH neskôr)"
+# 3. MySQL prod — cez WP-CLI (číta wp-config.php → žiadne credential parsing)
+echo "3️⃣  MySQL prod test (cez WP-CLI)…"
+if [[ -z "${PROD_WP_PATH:-}" ]]; then
+    echo "   ⚠  PROD_WP_PATH zatiaľ neznáme — preskakujem (doplň po kroku 4)"
+elif [[ "$WPCLI" == "NONE" ]]; then
+    echo "   ⚠  WP-CLI nedostupné — preskakujem"
 else
-    # MySQL test cez SSH (nie z localu — Websupport blokuje external MySQL)
-    if "${SSH_CMD[@]}" "mysql -h '$PROD_DB_HOST' -u '$PROD_DB_USER' -p'$PROD_DB_PASS' -e 'SELECT VERSION();' '$PROD_DB_NAME'" 2>&1 | head -3; then
-        echo "   ✅ MySQL funguje"
+    if "${SSH_CMD[@]}" "cd '$PROD_WP_PATH' && wp db check 2>&1" | head -5; then
+        echo "   ✅ MySQL funguje (WP-CLI vie pripojiť)"
     else
-        echo "   ❌ MySQL spojenie zlyhalo"
+        echo "   ❌ MySQL spojenie zlyhalo (skontroluj wp-config.php credentials)"
     fi
 fi
 echo ""

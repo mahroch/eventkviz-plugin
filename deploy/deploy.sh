@@ -76,23 +76,44 @@ echo "🔍 Pred-flight checks…"
 [[ -x "$MYSQLDUMP_BIN" ]] || { echo "❌ mysqldump binary nenájdený: $MYSQLDUMP_BIN"; exit 1; }
 ssh_run "echo OK" >/dev/null || { echo "❌ SSH zlyhal"; exit 1; }
 echo "   ✅ SSH OK, mysqldump dostupný"
+
+# Git sync check: prod stiahne code z GitHub cez git pull. Ak local plugin má
+# necommitnuté/nepushnuté zmeny, prod by dostal staršiu verziu než local DB
+# očakáva → mismatch. Veriť že local code = GitHub main = prod po deploy.
+PLUGIN_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PLUGIN_DIR"
+if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
+    echo "❌ Plugin má uncommitted zmeny:"
+    git status --short
+    echo "   Najprv commit + push na GitHub, potom spusti deploy."
+    exit 1
+fi
+LOCAL_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+REMOTE_SHA=$(git ls-remote origin main 2>/dev/null | awk '{print $1}' || echo "")
+if [[ -n "$LOCAL_SHA" && -n "$REMOTE_SHA" && "$LOCAL_SHA" != "$REMOTE_SHA" ]]; then
+    echo "❌ Local HEAD ($LOCAL_SHA) ≠ GitHub main ($REMOTE_SHA)"
+    echo "   Buď push najprv: git push origin main"
+    echo "   Alebo pull zaostávajúce: git pull origin main"
+    exit 1
+fi
+echo "   ✅ Git sync OK (local = GitHub main)"
+cd "$SCRIPT_DIR"
 echo ""
 
 # ===== Backup prod =====
-echo "💾 1/8 Backup prod DB + uploads…"
+echo "💾 1/8 Backup prod DB + uploads (cez WP-CLI)…"
 PROD_BACKUP_DB="$BACKUP_DIR/prod-db-${TS}.sql.gz"
 PROD_BACKUP_UPLOADS="$BACKUP_DIR/prod-uploads-${TS}.tar.gz"
 
 if [[ $DRY_RUN -eq 0 ]]; then
-    # Dump prod DB cez SSH (Websupport blokuje external MySQL prístup, takže to robíme remote)
-    ssh_run "mysqldump --add-drop-table --skip-lock-tables -h '$PROD_DB_HOST' -u '$PROD_DB_USER' -p'$PROD_DB_PASS' '$PROD_DB_NAME'" | gzip > "$PROD_BACKUP_DB"
+    # wp db export číta wp-config.php → žiadne credential parsing (Websupport host:port format)
+    ssh_run "cd '$PROD_WP_PATH' && wp db export - 2>/dev/null" | gzip > "$PROD_BACKUP_DB"
     echo "   ✅ Prod DB backup: $PROD_BACKUP_DB ($(du -h "$PROD_BACKUP_DB" | cut -f1))"
 
-    # Tar prod uploads cez SSH (streamed)
     ssh_run "cd '$PROD_WP_PATH/wp-content' && tar czf - uploads 2>/dev/null" > "$PROD_BACKUP_UPLOADS" || echo "   ⚠ uploads tar zlyhal (možno žiadne uploads)"
-    [[ -f "$PROD_BACKUP_UPLOADS" ]] && echo "   ✅ Prod uploads backup: $PROD_BACKUP_UPLOADS ($(du -h "$PROD_BACKUP_UPLOADS" | cut -f1))"
+    [[ -f "$PROD_BACKUP_UPLOADS" && -s "$PROD_BACKUP_UPLOADS" ]] && echo "   ✅ Prod uploads backup: $PROD_BACKUP_UPLOADS ($(du -h "$PROD_BACKUP_UPLOADS" | cut -f1))"
 else
-    echo "   [DRY] would: mysqldump prod → $PROD_BACKUP_DB"
+    echo "   [DRY] would: wp db export prod → $PROD_BACKUP_DB"
     echo "   [DRY] would: tar prod uploads → $PROD_BACKUP_UPLOADS"
 fi
 echo ""
@@ -140,33 +161,19 @@ else
 fi
 echo ""
 
-echo "🗄  4/8 Import local DB do prod…"
+echo "🗄  4/8 Import local DB do prod (cez WP-CLI)…"
 if [[ $DRY_RUN -eq 0 ]]; then
-    ssh_run "mysql -h '$PROD_DB_HOST' -u '$PROD_DB_USER' -p'$PROD_DB_PASS' '$PROD_DB_NAME' < $REMOTE_TMP/db.sql"
+    ssh_run "cd '$PROD_WP_PATH' && wp db import $REMOTE_TMP/db.sql"
     echo "   ✅ DB import OK"
 else
-    echo "   [DRY] would: mysql import prod"
+    echo "   [DRY] would: wp db import prod"
 fi
 echo ""
 
 echo "🔁 5/8 URL replace ($LOCAL_URL → $PROD_URL)…"
 if [[ $DRY_RUN -eq 0 ]]; then
-    # Pokus o wp-cli; fallback na priame SQL UPDATE (rieši hlavné tabuľky, NIE serialized data — riziko!)
-    WPCLI_BIN=$(ssh_run "which wp 2>/dev/null || ls ~/wp-cli.phar 2>/dev/null || echo NONE")
-    if [[ "$WPCLI_BIN" != "NONE" ]]; then
-        WP_CMD="$WPCLI_BIN"
-        [[ "$WP_CMD" == *.phar ]] && WP_CMD="php $WP_CMD"
-        ssh_run "cd '$PROD_WP_PATH' && $WP_CMD search-replace '$LOCAL_URL' '$PROD_URL' --all-tables --skip-columns=guid --report-changed-only"
-        echo "   ✅ URL replace cez WP-CLI (serialization-safe)"
-    else
-        echo "   ⚠  WP-CLI nedostupné — robím raw SQL UPDATE (POZOR: serialized data sa môžu pokaziť!)"
-        ssh_run "mysql -h '$PROD_DB_HOST' -u '$PROD_DB_USER' -p'$PROD_DB_PASS' '$PROD_DB_NAME' -e \"
-            UPDATE pmgonioptions SET option_value=REPLACE(option_value,'$LOCAL_URL','$PROD_URL') WHERE option_name IN ('siteurl','home');
-            UPDATE pmgoniposts SET post_content=REPLACE(post_content,'$LOCAL_URL','$PROD_URL'), guid=REPLACE(guid,'$LOCAL_URL','$PROD_URL');
-            UPDATE pmgonipostmeta SET meta_value=REPLACE(meta_value,'$LOCAL_URL','$PROD_URL') WHERE meta_value LIKE '%$LOCAL_URL%' AND meta_value NOT LIKE '%a:%' AND meta_value NOT LIKE '%s:%';
-        \""
-        echo "   ⚠  Inštaluj WP-CLI na prod pre safe URL replace nabudúce!"
-    fi
+    ssh_run "cd '$PROD_WP_PATH' && wp search-replace '$LOCAL_URL' '$PROD_URL' --all-tables --skip-columns=guid --report-changed-only"
+    echo "   ✅ URL replace (serialization-safe cez WP-CLI)"
 else
     echo "   [DRY] would: wp search-replace $LOCAL_URL → $PROD_URL"
 fi
@@ -191,15 +198,8 @@ echo ""
 
 echo "🧹 8/8 Cache + rewrite flush…"
 if [[ $DRY_RUN -eq 0 ]]; then
-    WPCLI_BIN=$(ssh_run "which wp 2>/dev/null || ls ~/wp-cli.phar 2>/dev/null || echo NONE")
-    if [[ "$WPCLI_BIN" != "NONE" ]]; then
-        WP_CMD="$WPCLI_BIN"
-        [[ "$WP_CMD" == *.phar ]] && WP_CMD="php $WP_CMD"
-        ssh_run "cd '$PROD_WP_PATH' && $WP_CMD cache flush && $WP_CMD rewrite flush"
-        echo "   ✅ Flushed"
-    else
-        echo "   ⚠ Preskakujem (WP-CLI N/A)"
-    fi
+    ssh_run "cd '$PROD_WP_PATH' && wp cache flush 2>&1 && wp rewrite flush 2>&1" | tail -5
+    echo "   ✅ Flushed"
     # Cleanup remote tmp
     ssh_run "rm -rf $REMOTE_TMP"
 else

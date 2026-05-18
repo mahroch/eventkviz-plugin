@@ -65,9 +65,9 @@ ssh_run "mkdir -p $REMOTE_TMP"
 echo "📤 Upload DB backup…"
 gunzip -c "$DB_BACKUP" | ssh_run "cat > $REMOTE_TMP/db.sql"
 
-# Restore DB
+# Restore DB cez WP-CLI (číta wp-config.php)
 echo "🗄  Restore prod DB…"
-ssh_run "mysql -h '$PROD_DB_HOST' -u '$PROD_DB_USER' -p'$PROD_DB_PASS' '$PROD_DB_NAME' < $REMOTE_TMP/db.sql"
+ssh_run "cd '$PROD_WP_PATH' && wp db import $REMOTE_TMP/db.sql"
 
 # Restore uploads
 if [[ -f "$UP_BACKUP" ]]; then
