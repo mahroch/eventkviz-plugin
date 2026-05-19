@@ -112,12 +112,16 @@ echo ""
 
 # 5. Local MAMP MySQL
 echo "5️⃣  Lokálne MAMP MySQL test…"
-MYSQL_BIN="/Applications/MAMP/Library/bin/mysql"
+# Preferuj LOCAL_MYSQL_BIN z .env (default ukazuje na MAMP 7.x mysql80 path).
+# --ssl-mode=DISABLED — MAMP 7.x balí MySQL 8.0 ktorý default-uje na TLS pre
+# TCP spojenia; local MAMP ale nema realny TLS cert -> bez tohto flagu chyba
+# "TLS/SSL error: self-signed certificate in certificate chain".
+MYSQL_BIN="${LOCAL_MYSQL_BIN:-/Applications/MAMP/Library/bin/mysql80/bin/mysql}"
 if [[ ! -x "$MYSQL_BIN" ]]; then
     MYSQL_BIN=$(which mysql 2>/dev/null || echo "")
 fi
 if [[ -n "$MYSQL_BIN" ]]; then
-    if "$MYSQL_BIN" -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" -e "SHOW TABLES;" "$LOCAL_DB_NAME" 2>&1 | head -5; then
+    if "$MYSQL_BIN" --ssl-mode=DISABLED -h "${LOCAL_DB_HOST%:*}" -P "${LOCAL_DB_HOST##*:}" -u "$LOCAL_DB_USER" -p"$LOCAL_DB_PASS" -e "SHOW TABLES;" "$LOCAL_DB_NAME" 2>&1 | head -5; then
         echo "   ✅ Local MySQL funguje"
     else
         echo "   ❌ Local MySQL spojenie zlyhalo"

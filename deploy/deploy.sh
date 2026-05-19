@@ -131,7 +131,7 @@ echo "   ✅ Žiadne aktívne Code Snippets s local require paths"
 echo ""
 
 # ===== Backup prod =====
-echo "💾 1/8 Backup prod DB (cez WP-CLI)…"
+echo "💾 1/9 Backup prod DB (cez WP-CLI)…"
 PROD_BACKUP_DB="$BACKUP_DIR/prod-db-${TS}.sql.gz"
 
 if [[ $DRY_RUN -eq 0 ]]; then
@@ -147,7 +147,7 @@ echo "     spusti: rsync prod:uploads → deploy/backups/prod-uploads-\$TS/"
 echo ""
 
 # ===== Dump local =====
-echo "📦 2/8 Dump local MAMP DB…"
+echo "📦 2/9 Dump local MAMP DB…"
 LOCAL_DUMP="$BACKUP_DIR/local-db-${TS}.sql"
 
 if [[ $DRY_RUN -eq 0 ]]; then
@@ -159,7 +159,7 @@ if [[ $DRY_RUN -eq 0 ]]; then
 else
     echo "   [DRY] would: mysqldump local → $LOCAL_DUMP"
 fi
-echo "   ℹ Uploads: rsync (delta sync) v kroku 6 — žiadny tar archív netreba"
+echo "   ℹ Uploads: rsync (delta sync) v kroku 6/9 — žiadny tar archív netreba"
 echo ""
 
 # ===== Confirm pre destructive operations =====
@@ -173,7 +173,7 @@ if [[ $SKIP_CONFIRM -eq 0 && $DRY_RUN -eq 0 ]]; then
 fi
 
 # ===== Upload + remote restore =====
-echo "📤 3/8 Upload DB dump na prod…"
+echo "📤 3/9 Upload DB dump na prod…"
 REMOTE_TMP="~/eventkviz-deploy-${TS}"
 if [[ $DRY_RUN -eq 0 ]]; then
     ssh_run "mkdir -p $REMOTE_TMP"
@@ -184,7 +184,7 @@ else
 fi
 echo ""
 
-echo "🗄  4/8 Import local DB do prod (cez WP-CLI)…"
+echo "🗄  4/9 Import local DB do prod (cez WP-CLI)…"
 if [[ $DRY_RUN -eq 0 ]]; then
     ssh_run "cd '$PROD_WP_PATH' && wp --skip-plugins=code-snippets --skip-themes db import $REMOTE_TMP/db.sql"
     echo "   ✅ DB import OK"
@@ -193,7 +193,7 @@ else
 fi
 echo ""
 
-echo "🔁 5/8 URL replace ($LOCAL_URL → $PROD_URL)…"
+echo "🔁 5/9 URL replace ($LOCAL_URL → $PROD_URL)…"
 if [[ $DRY_RUN -eq 0 ]]; then
     ssh_run "cd '$PROD_WP_PATH' && wp --skip-plugins=code-snippets --skip-themes search-replace '$LOCAL_URL' '$PROD_URL' --all-tables --skip-columns=guid --report-changed-only"
     echo "   ✅ URL replace (serialization-safe cez WP-CLI)"
