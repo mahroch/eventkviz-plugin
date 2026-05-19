@@ -202,7 +202,7 @@ else
 fi
 echo ""
 
-echo "🖼  6/8 Rsync uploads (delta sync, len changed files)…"
+echo "🖼  6/9 Rsync uploads (delta sync, len changed files)…"
 if [[ $SKIP_UPLOADS -eq 1 ]]; then
     echo "   ⏭  Preskočené (--skip-uploads)"
 elif [[ $DRY_RUN -eq 1 ]]; then
@@ -224,7 +224,46 @@ else
 fi
 echo ""
 
-echo "🔄 7/8 Git pull plugin code z GitHub…"
+echo "🎨 7/9 Rsync wp-content (themes + ostatné pluginy + mu-plugins)…"
+# Rsync celý wp-content/ ale s vylúčeniami:
+# - uploads/         — už syncnuté v 6/9 vlastným rsyncom
+# - plugins/eventkviz/ — vlastný git repo, ide cez git pull v 8/9
+# - cache/, upgrade/, wflogs/ — runtime/cache veci, nedeployovať
+# - *.log, debug.log — log súbory
+# - .git, .DS_Store, node_modules — VCS/IDE/build artefakty
+# - *-cache.php dropins — môžu byť rôzne medzi local/prod
+# Bez --delete: prod-only files (ad-hoc nainštalované pluginy/témy) ostanú.
+if [[ $DRY_RUN -eq 1 ]]; then
+    echo "   [DRY] would: rsync local wp-content/ → prod wp-content/ (themes/plugins/mu-plugins)"
+else
+    if [[ -n "${PROD_SSH_KEY:-}" ]]; then
+        RSYNC_SSH="ssh -p ${PROD_SSH_PORT:-22} -i $PROD_SSH_KEY -o StrictHostKeyChecking=accept-new"
+    else
+        RSYNC_SSH="sshpass -p '$PROD_SSH_PASS' ssh -p ${PROD_SSH_PORT:-22} -o StrictHostKeyChecking=accept-new"
+    fi
+    rsync -avz --partial \
+        -e "$RSYNC_SSH" \
+        --exclude='uploads/' \
+        --exclude='plugins/eventkviz/' \
+        --exclude='cache/' \
+        --exclude='upgrade/' \
+        --exclude='wflogs/' \
+        --exclude='*.log' \
+        --exclude='debug.log' \
+        --exclude='.git/' \
+        --exclude='.DS_Store' \
+        --exclude='node_modules/' \
+        --exclude='object-cache.php' \
+        --exclude='advanced-cache.php' \
+        --exclude='backup*/' \
+        --exclude='backups/' \
+        "$LOCAL_WP_PATH/wp-content/" \
+        "${PROD_SSH_USER}@${PROD_SSH_HOST}:${PROD_WP_PATH}/wp-content/" 2>&1 | tail -15
+    echo "   ✅ wp-content synced (themes/plugins/mu-plugins)"
+fi
+echo ""
+
+echo "🔄 8/9 Git pull plugin code z GitHub…"
 if [[ $DRY_RUN -eq 0 ]]; then
     ssh_run "cd '$PROD_PLUGIN_PATH' && git pull origin main" || echo "   ⚠ git pull zlyhal — možno plugin nie je git repo; treba clone-núť ručne (jednorazovo)"
 else
@@ -232,7 +271,7 @@ else
 fi
 echo ""
 
-echo "🧹 8/8 Cache + rewrite flush…"
+echo "🧹 9/9 Cache + rewrite flush…"
 if [[ $DRY_RUN -eq 0 ]]; then
     ssh_run "cd '$PROD_WP_PATH' && wp --skip-plugins=code-snippets --skip-themes cache flush 2>&1 && wp --skip-plugins=code-snippets --skip-themes rewrite flush 2>&1" | tail -5
     echo "   ✅ Flushed"
