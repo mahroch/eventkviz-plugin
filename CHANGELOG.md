@@ -2,13 +2,17 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.15.1] - 2026-05-20
+
+### Changed (mapový kvíz — viditeľný scrollbar v zozname úloh)
+- User reportoval že mapquiz sa na mobile „ťažko naviguje" — zoznam pohorí (`.ek-mapa-tasks`) má `max-height` + `overflow-y: auto`, čo na touch zariadeniach default skryje scrollbar. User nevidel ktorá časť stránky scrolluje a špekuloval kde chytiť pre page scroll.
+- Fix: vždy-viditeľný scrollbar na `.ek-mapa-tasks` (`scrollbar-width: thin`, `::-webkit-scrollbar` styling, na mobile 12 px hrúbka pre touch). Plus `-webkit-overflow-scrolling: touch` pre smooth iOS scroll. Konzistentný so semi-transparent vzhľadom mapquiz UI.
+
 ## [1.15.0] - 2026-05-18
 
 ### Fixed (GeoChallenge kód — skóre nad 1295 sa capovalo)
 - `generate_geochallenge_code` predtým capoval score na **1295** (max 2-znakového base36 kódu). User v Pohoria kvíze získal 1600 bodov, GeoChallenge dostal kód `ZZF70` = 1295 bodov.
 - Fix: pre score ≤ 1295 ostáva 5-znakový kód (2 score + 3 HMAC, kompatibilita), pre vyšší score 6-znakový (3 score + 3 HMAC, max **46 655**). GeoChallenge `/api/verify-score` decoder (v1.37.0) podporuje obe dĺžky.
-
-## [1.15.0] - 2026-05-18
 
 ### Fixed (kvízy music/movies/knowledge — `min_body_na_postup = 0` ukazoval fail aj pri úspechu)
 - Ak admin nastavil `min_body_na_postup` na **0** (= žiadny prah, každý prejde), evaluation v `class-eventkviz-musicquiz.php`, `class-eventkviz-moviesquiz.php` a `class-eventkviz-knowledgequiz.php` vyhodnotil pokus ako fail (`$gained >= 0` strict comparison nefungoval pri 0-bodovom skóre, plus zlá control-flow vetva). Hráč videl „nezískal si dostatok bodov" aj keď reálne dosiahol kompletné skóre.
