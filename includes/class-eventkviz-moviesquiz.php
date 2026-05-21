@@ -338,27 +338,29 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
                     $this->show_geochallenge_return($gained_credits);
 
             } else {
-                $akcia_tag = $this->akcia_tag;
-
-                $link_to_movies_quiz_url = $this->build_retry_url($team, $user, $akcia_tag, '/merdfghh/');
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->movies_settings['min_body_na_postup']) . '</strong> bodov.</p>';
-
-                $tries_left_after_this = isset($this->zostava_pocet_pokusov) ? ((int) $this->zostava_pocet_pokusov - 1) : 1;
-                if ($tries_left_after_this > 0) {
-                    $highlight_ok = !empty($this->cAkcia->movies_settings['mark_correctness_on_retry'])
-                        && empty($this->cAkcia->movies_settings['new_questions_on_retry'])
-                        && !empty($this->retry_state);
-                    $review_state = $highlight_ok ? $this->retry_state : array();
-                    $pocet_max = (int) ($this->cAkcia->movies_settings['pocet_pokusov'] ?? 0);
-                    $shown = ($pocet_max > 0 && $tries_left_after_this > $pocet_max) ? $pocet_max : $tries_left_after_this;
-                    $label = 'Opakovať kvíz (zostáva ' . $shown . ' '
-                        . self::_n_pokus_label($shown) . ')';
-                    $this->render_retry_button($link_to_movies_quiz_url, $label, $review_state);
-                } else {
-                    echo '<p><em>Toto bol váš posledný povolený pokus pre tento kvíz.</em></p>';
-                }
                 echo '</div>';
+            }
+
+            // Retry button — ponuka mimo passed/failed bloku. Pri min_body=0
+            // by hrac nikdy nedostal retry (vzdy "passes"), aj ked pocet_pokusov
+            // hovori ze ich ma viacero. Mirror logika z mapquizu.
+            $tries_left_after_this = isset($this->zostava_pocet_pokusov) ? ((int) $this->zostava_pocet_pokusov - 1) : 1;
+            if ($tries_left_after_this > 0) {
+                $akcia_tag = $this->akcia_tag;
+                $link_to_movies_quiz_url = $this->build_retry_url($team, $user, $akcia_tag, '/merdfghh/');
+                $highlight_ok = !empty($this->cAkcia->movies_settings['mark_correctness_on_retry'])
+                    && empty($this->cAkcia->movies_settings['new_questions_on_retry'])
+                    && !empty($this->retry_state);
+                $review_state = $highlight_ok ? $this->retry_state : array();
+                $pocet_max = (int) ($this->cAkcia->movies_settings['pocet_pokusov'] ?? 0);
+                $shown = ($pocet_max > 0 && $tries_left_after_this > $pocet_max) ? $pocet_max : $tries_left_after_this;
+                $label = 'Opakovať kvíz (zostáva ' . $shown . ' '
+                    . self::_n_pokus_label($shown) . ')';
+                $this->render_retry_button($link_to_movies_quiz_url, $label, $review_state);
+            } else {
+                echo '<p style="text-align:center;font-style:italic;margin-top:20px;">Toto bol váš posledný povolený pokus pre tento kvíz.</p>';
             }
 
             // zapis do databazy bodove hodnotenie uzivatela

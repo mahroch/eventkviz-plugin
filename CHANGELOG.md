@@ -2,6 +2,13 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.15.3] - 2026-05-21
+
+### Fixed (knowledge/music/movies — retry button sa neponúkal pri `min_body=0`)
+- User na BSD evente reportoval: vedomostný kvíz má v admine nastavené **3 pokusy**, ale po prvom pokuse žiadny retry button. Príčina: `min_body_na_postup=0` v kombinácii s fixom z 1.15.0 (`$min_body <= 0` → vždy passed) spôsobila že hráč vždy padol do success vetvy. Retry button bol ale dostupný **len vo fail vetve** → pri `min_body=0` ho hráč nikdy nedostal, hoci podľa `pocet_pokusov` mal nárok na 2 zvyšné.
+- Fix: presunutý retry button z fail vetvy MIMO success/fail bloku (mirror logika z mapquizu, ktorý to už robil správne). Retry sa teraz ponúka **vždy** keď `tries_left > 0`, bez ohľadu na passed/failed threshold.
+- Aplikované na `class-eventkviz-knowledgequiz.php`, `class-eventkviz-musicquiz.php`, `class-eventkviz-moviesquiz.php`. Mapquiz je nedotknutý (už mal správnu logiku).
+
 ## [1.15.2] - 2026-05-21
 
 ### Added (mapový kvíz — counter „X / N" v hlavičke zoznamu úloh)

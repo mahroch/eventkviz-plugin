@@ -318,30 +318,33 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
                     $this->show_geochallenge_return($gained_credits);
 
             } else {
-                $akcia_tag = $this->akcia_tag;
-
-                $link_to_music_quiz_url = $this->build_retry_url($team, $user, $akcia_tag, '/aqljk/');
                 echo '<div class="ek-quiz-message ek-quiz-message--fail">';
                 echo '<p>Nezískali ste dosť bodov na postup. Je potrebné dosiahnuť aspoň <strong>' . esc_html($this->cAkcia->music_settings['min_body_na_postup']) . '</strong> bodov.</p>';
-
-                // zostava_pocet_pokusov was set by check_number_of_tries to (allowed - already_used)
-                // BEFORE this submission was saved. So ==1 means this was the last allowed attempt.
-                $tries_left_after_this = isset($this->zostava_pocet_pokusov) ? ((int) $this->zostava_pocet_pokusov - 1) : 1;
-                if ($tries_left_after_this > 0) {
-                    // Skip review highlight when "new questions on retry" is on — questions will differ
-                    $highlight_ok = !empty($this->cAkcia->music_settings['mark_correctness_on_retry'])
-                        && empty($this->cAkcia->music_settings['new_questions_on_retry'])
-                        && !empty($this->retry_state);
-                    $review_state = $highlight_ok ? $this->retry_state : array();
-                    $pocet_max = (int) ($this->cAkcia->music_settings['pocet_pokusov'] ?? 0);
-                    $shown = ($pocet_max > 0 && $tries_left_after_this > $pocet_max) ? $pocet_max : $tries_left_after_this;
-                    $label = 'Opakovať kvíz (zostáva ' . $shown . ' '
-                        . self::_n_pokus_label($shown) . ')';
-                    $this->render_retry_button($link_to_music_quiz_url, $label, $review_state);
-                } else {
-                    echo '<p><em>Toto bol váš posledný povolený pokus pre tento kvíz.</em></p>';
-                }
                 echo '</div>';
+            }
+
+            // Retry button — ponuka mimo passed/failed bloku. Pri min_body=0
+            // by hrac nikdy nedostal retry (vzdy "passes"), aj ked pocet_pokusov
+            // setting hovori ze ich ma viacero. Mirror logika z mapquizu.
+            // zostava_pocet_pokusov bol set v check_number_of_tries na (allowed -
+            // already_used) PRED ulozenim tohto pokusu — == 1 znamena ze toto
+            // bol posledny povoleny pokus.
+            $tries_left_after_this = isset($this->zostava_pocet_pokusov) ? ((int) $this->zostava_pocet_pokusov - 1) : 1;
+            if ($tries_left_after_this > 0) {
+                $akcia_tag = $this->akcia_tag;
+                $link_to_music_quiz_url = $this->build_retry_url($team, $user, $akcia_tag, '/aqljk/');
+                // Skip review highlight when "new questions on retry" is on — questions will differ
+                $highlight_ok = !empty($this->cAkcia->music_settings['mark_correctness_on_retry'])
+                    && empty($this->cAkcia->music_settings['new_questions_on_retry'])
+                    && !empty($this->retry_state);
+                $review_state = $highlight_ok ? $this->retry_state : array();
+                $pocet_max = (int) ($this->cAkcia->music_settings['pocet_pokusov'] ?? 0);
+                $shown = ($pocet_max > 0 && $tries_left_after_this > $pocet_max) ? $pocet_max : $tries_left_after_this;
+                $label = 'Opakovať kvíz (zostáva ' . $shown . ' '
+                    . self::_n_pokus_label($shown) . ')';
+                $this->render_retry_button($link_to_music_quiz_url, $label, $review_state);
+            } else {
+                echo '<p style="text-align:center;font-style:italic;margin-top:20px;">Toto bol váš posledný povolený pokus pre tento kvíz.</p>';
             }
 
 
