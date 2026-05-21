@@ -2,6 +2,18 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.15.2] - 2026-05-21
+
+### Added (mapový kvíz — counter „X / N" v hlavičke zoznamu úloh)
+- User na mobile reportoval že keď má 10 úloh a vidí len 5, vyzerá to ako keby vyplnil všetkých 5 — zvyšných 5 jednoducho nevidno. Scrollbar (1.15.1) nestačil — user predsa nevedel že tam zoznam pokračuje.
+- Fix: do hlavičky `.ek-mapa-tasks-header` pridaný pill counter `<span class="ek-mapa-counter">5 / 10</span>` (form mode = placed/total, review mode = total). User okamžite vidí koľko ešte chýba bez nutnosti scrollovať.
+- Header je teraz **sticky** (`position: sticky; top: 0`) — counter ostáva viditeľný aj keď user scrolluje dolu v zozname. Semi-opaque background s backdrop-filter blur, aby content za ním nepresvitol.
+
+### Added (mapový kvíz — submit confirm „vyplnené X z N úloh, naozaj odoslať?")
+- Analogicky s `eventkviz-quiz-form.js` (music/movies/knowledge) pridaný confirm dialog do `eventkviz-mapa-form.js`: ak hráč submituje s placed < total úloh, vyskočí `Vyplnené: X z N úloh. Naozaj odoslať tento pokus? (Ak máš ešte pokusy, môžeš kvíz po vyhodnotení opakovať.)`
+- Counter čerpá z interného `taskMarkers` state (presnejší než DOM input scan — mapquiz nemá vyplniteľné inputy v klasickom slova zmysle, len hidden state).
+- Ak hráč klikne Cancel → submit sa zruší a môže pokračovať. Ak OK → odoslať tak ako predtým.
+
 ## [1.15.1] - 2026-05-20
 
 ### Changed (mapový kvíz — viditeľný scrollbar v zozname úloh)

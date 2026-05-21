@@ -667,7 +667,18 @@
     function renderTaskList() {
         var $list = $('#ek-mapa-tasks').empty();
         var headerTxt = isReview ? 'Výsledky' : 'Úlohy';
-        $list.append($('<h3 class="ek-mapa-tasks-header"></h3>').text(headerTxt));
+        // Counter „placed / total" — silny vizualny signal kolko este chyba,
+        // user nemusi scrollovat zoznam aby zistil ze nesplnil vsetky.
+        // V review mode su placed = tasks ktore mali guess (correctness ide inak).
+        var $header = $('<h3 class="ek-mapa-tasks-header"></h3>');
+        $header.append(document.createTextNode(headerTxt + ' '));
+        if (!isReview) {
+            var placedCount = Object.keys(taskMarkers).length;
+            $header.append($('<span class="ek-mapa-counter"></span>').text(placedCount + ' / ' + tasks.length));
+        } else {
+            $header.append($('<span class="ek-mapa-counter"></span>').text(tasks.length));
+        }
+        $list.append($header);
         // Prefix podľa dataset.singular ("rieku", "pohorie", "štát", …).
         // Pin mode: žiadny prefix (názov pinu je už samonosný).
         var prefix = '';
@@ -1056,6 +1067,27 @@
         });
     }
 
+    // Submit confirm — ak je nesplnenych uloh, opytaj sa pred odoslanim.
+    // Analogicky s eventkviz-quiz-form.js (music/movies/knowledge), ale tam
+    // sa count rata cez DOM input fields — pre mapquiz pouzivame interny
+    // taskMarkers state ktory je presnejsi (markery = placed odpovede).
+    function attachSubmitConfirm() {
+        if (isReview) return;
+        var $form = $container.closest('form.ek-quiz-form');
+        if ($form.length === 0) return;
+        $form.on('submit', function (e) {
+            var placed = Object.keys(taskMarkers).length;
+            var total = tasks.length;
+            if (placed < total) {
+                var msg = 'Vyplnené: ' + placed + ' z ' + total + ' úloh.\n\nNaozaj odoslať tento pokus? (Ak máš ešte pokusy, môžeš kvíz po vyhodnotení opakovať.)';
+                if (!window.confirm(msg)) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+    }
+
     $(function () {
         if (!document.getElementById('ek-mapa-map')) {
             // Aj keď nie je primárna mapa, môžu byť mini-mapy (napr. ak primárny div neexistuje)
@@ -1064,6 +1096,7 @@
         }
         initMap();
         renderTaskList();
+        attachSubmitConfirm();
         if (isReview) {
             setTimeout(renderReviewMarkers, 100);
             setTimeout(initMiniMaps, 300);

@@ -60,10 +60,39 @@
     background: rgba(255,255,255,0.65);
 }
 .ek-mapa-tasks-header {
-    margin: 0 0 8px 0;
+    /* Sticky — counter ostava na vrchu zoznamu aj ked user scrollne dole
+       (= vidi "5 / 10" aj uprostred listu, nemusi sa vratit nahor). */
+    position: sticky;
+    top: -10px;  /* compensate parent padding */
+    z-index: 5;
+    margin: -10px -10px 8px -10px;
+    padding: 10px 10px 8px 10px;
+    background: rgba(40,40,40,0.92);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border-radius: var(--ek-radius-sm, 10px) var(--ek-radius-sm, 10px) 0 0;
     font-size: 14px;
     color: var(--ek-text, #fff);
-    opacity: 0.85;
+    opacity: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+/* Counter „placed / total" — pill badge v hlavicke.
+   Silny signal kolko uloh este chyba (user nemusi scrollovat aby zistil). */
+.ek-mapa-counter {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 999px;
+    color: var(--ek-text, #fff);
+    opacity: 1;
+    line-height: 1.4;
+    white-space: nowrap;
 }
 
 /* --- Map — height responsive --- */
