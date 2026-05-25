@@ -1,7 +1,7 @@
 # 🔗 GeoChallenge × EventKviz BSD HMAC fix — koordinačný dokument
 
 **Autor**: koordinačný agent (Maros, 2026-05-24)
-**Status**: 2026-05-24 — GC + EK implementácie hotové (oba čakajú na joint test pred deployom). GC: PR #5, EK: v1.15.4 (lokálne worktree, neсommitнuté).
+**Status**: **SHIPPED 2026-05-25** — fix je živý na prode. GC: PR #5 (dev) + #6 (dev→main) merged, autodeploy. EK: v1.15.4 commit `989994e` na mahroch/eventkviz-plugin/main, deployovaný cez manual `git pull` (Cesta B, code-only, žiadny DB touch) na eventkviz.sk. Post-deploy verify: OR-check na live súbore r.728 potvrdený, admin notice present, wp cache + rewrite flushed, prod HTTP 200.
 **Vstup**: [`GEOCHALLENGE-BSD-HMAC-INVESTIGATION.md`](./GEOCHALLENGE-BSD-HMAC-INVESTIGATION.md) (GC agent, 2026-05-24).
 
 ---
