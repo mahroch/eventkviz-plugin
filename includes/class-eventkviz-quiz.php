@@ -719,6 +719,20 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 		// binding so the code only verifies at the originating checkpoint.
 		$gc_return = isset($_POST['gc_return']) ? esc_url_raw($_POST['gc_return']) : '';
 		$gc_cp     = isset($_POST['gc_cp']) ? sanitize_text_field(wp_unslash($_POST['gc_cp'])) : '';
+		$gc_id     = isset($_POST['gc_id']) ? sanitize_text_field(wp_unslash($_POST['gc_id'])) : '';
+
+		// BSD 2026 regression guard: ak je akcia GC-integrovaná, oba POST polia
+		// (gc_id + gc_cp) MUSIA byť — inak by generate_geochallenge_code vyrobil
+		// kód s prázdnym HMAC payload bindingom a GC by ho odmietol ako „Invalid
+		// code". Lepšie tvrdo zlyhať s jasnou hláškou ako tichý broken code.
+		if ( empty( $gc_id ) || empty( $gc_cp ) ) {
+			error_log( '[eventkviz] GC integration active but gc_id/gc_cp missing in POST — refusing to generate code' );
+			echo '<div class="eventkviz-gc-error" style="margin-top:30px;padding:20px;background:#ffebee;border:2px solid #c62828;border-radius:10px;text-align:center;color:#7f1d1d;">';
+			echo '<h2 style="margin-top:0;color:#7f1d1d;">Chyba GeoChallenge integrácie</h2>';
+			echo '<p style="color:#7f1d1d;margin:0;">Chyba: QR kód neobsahoval väzbu na konkrétny checkpoint. Kontaktuj organizátora — kód by nebol akceptovaný.</p>';
+			echo '</div>';
+			return;
+		}
 
 		$code = $this->generate_geochallenge_code($gained_credits, $gc_cp);
 

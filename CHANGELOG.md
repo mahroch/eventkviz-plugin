@@ -2,6 +2,23 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.15.4] - 2026-05-24
+
+### Fixed (GeoChallenge integrácia — defenzívna kontrola proti broken HMAC kódu pri chýbajúcom `cp` v QR URL)
+- BSD 2026 live event reprodukcia: hráč naskenoval QR pre „Mapový kvíz BSD - pohoria SR" (`akcia=bsd2026&mq=pohoria-sr`), URL **neobsahovala** `?cp=...&id=...` parametre. EventKviz form vyplnil hidden inputs len ak boli oba GET parametre prítomné → POST nemal `gc_cp` → `generate_geochallenge_code($score, '')` vyrobil HMAC s payload `"XX:"` (prázdne checkpoint id po dvojbodke). Hráč zadal kód v GeoChallenge appke pre real cpId → GC vyhodnotil HMAC pre `"XX:<real-cp-id>"` → mismatch → „Invalid code". Maros musel CP vymazať z aktivity.
+- Fix: `show_geochallenge_return()` v `class-eventkviz-quiz.php` teraz pred volaním `generate_geochallenge_code()` overí konzistenciu — sme za guardom `geochallenge_integration === true`, takže pre validné generovanie kódu OBA POST polia (`$_POST['gc_id']` aj `$_POST['gc_cp']`) musia byť vyplnené. Ak ktorýkoľvek chýba, **NEVOLÁ** generátor kódu. Namiesto kódu renderuje červené chybové UI „Chyba: QR kód neobsahoval väzbu na konkrétny checkpoint. Kontaktuj organizátora — kód by nebol akceptovaný." + `error_log` zápis pre admin debug. Lepšie tvrdo zlyhať s jasnou hláškou ako tichý broken kód v ruke hráča.
+- OR check (nie AND) zámerne — pokrýva aj plný BSD scenár (QR vôbec bez GC parametrov). `class-eventkviz-mapaquiz.php` r. 303 má AND podmienku `!empty($gc_id) && !empty($gc_cp)` pre rendering hidden inputov; ak v GET chýba čokoľvek z dvojice, NEvyrenderujú sa **ani** `gc_id` ani `gc_cp` → POST má oba prázdne → OR check ich oba zachytí.
+- Pôvodná cesta pre validné `gc_cp` + `gc_id` (= GC appka korektne vygenerovala URL s placeholdermi `{cpId}` aj `{challengeId}`) ostáva nedotknutá.
+- `class-eventkviz-mapaquiz.php` (riadky 300-307, čítanie `cp/id/return_url` z GET) ostáva bez zmeny — read-only z GET je správne, problém bol downstream v `show_geochallenge_return()`.
+
+### Added (admin „GeoChallenge integrácia" checkbox — info o povinnom tvare QR URL)
+- Pod `event_general[geochallenge_integration]` checkboxom v Edit Event admin pribudla žltá info-poznámka: pripomienka že QR pre GC-integrovaný event musí mať URL v tvare `?akcia=...&mq=...&cp={cpId}&id={challengeId}`, generuje to GC checkpoint editor cez placeholder substitúciu, plus warning že bez `cp` parametru plugin tvrdo zlyhá (no silent broken code).
+- Eliminuje riziko že admin omylom natlačí QR len so `?akcia=...&mq=...` (= BSD reprodukcia).
+
+### Coordination
+- Pendant zmeny na GeoChallenge strane: per-checkpoint `externalUrl` s placeholder substitúciou (`{cpId}`, `{challengeId}`, `{returnUrl}`) + render „Otvoriť kvíz" tlačidla v `app/map/page.tsx` pre `url-code` task. Joint test plán v `GEOCHALLENGE-BSD-HMAC-COORDINATION.md` (sekcia 3, scenáre 1-4) pred prod deployom.
+- TODO neskôr: admin QR builder v EK (`Mapa` tab → pole „GC cpId / challengeId" + „Generuj QR" tlačidlo) pre adminov ktorí chcú QR mimo GC. Nie súčasť tohto fixu.
+
 ## [1.15.3] - 2026-05-21
 
 ### Fixed (knowledge/music/movies — retry button sa neponúkal pri `min_body=0`)

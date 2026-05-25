@@ -252,3 +252,38 @@ Map kvíz používa **rovnaké spoločné helpery** ako music/movies/knowledge/s
 - `sk-mountains.geojson` — 14 pohorí SR (z OSM Overpass + simplification, ~95 KB)
 
 **Fázy 1-8 hotové.** Plugin je production-ready pre pin / river / mountain quiz typy na Slovensku.
+
+---
+
+## GeoChallenge integrácia — kontrakt URL parametrov + defenzívna kontrola (v1.15.4)
+
+EventKviz vie generovať **HMAC-podpísaný kód** na konci kvízu pre GeoChallenge appku — kód v sebe nesie skóre **+ binding na konkrétny GC checkpoint** (anti cross-checkpoint reuse). Aby HMAC payload sedel na oboch stranách, vyžaduje URL kontrakt:
+
+**Povinné GET parametre na entry URL** (čo GC appka generuje pre `url-code` task):
+- `akcia=<event-slug>` — ktorý EK event
+- `mq=<mapquiz-slug>` — ktorý konkrétny mapový kvíz v evente (pri multi-quiz evente)
+- `cp=<gc-checkpoint-uuid>` — **GeoChallenge checkpoint ID** (binding pre HMAC)
+- `id=<gc-challenge-uuid>` — GC challenge ID (kontext)
+- `return_url=<encoded-url>` — voliteľný deep-link späť do GC appky
+
+Príklad: `https://eventkviz.sk/akcia/?akcia=bsd2026&mq=pohoria-sr&cp=633f3325-ef06-453a-960b-c5b73ebdf790&id=b0000002-0000-0000-0000-000000000002&return_url=https%3A%2F%2Fgeochallenge.sk%2Fmap%2F...`
+
+**Flow:**
+1. `class-eventkviz-mapaquiz.php` (~r. 300-307) prečíta `cp/id/return_url` z `$_GET` a ak sú **oba** `gc_id` aj `gc_cp` set, vyrenderuje hidden inputs `gc_id`, `gc_cp`, `gc_return` do form-u.
+2. Po submit + eval, `Eventkviz_Quiz_Class::show_geochallenge_return($gained_credits)` číta tieto hidden inputs z `$_POST` a volá `generate_geochallenge_code($score, $checkpoint_id)` ktorý vyrobí kód `<scorePart><HMAC>` s payload `"<scorePart>:<gc_cp>"`.
+3. Hráč zadá kód v GC appke pre real cpId → GC volá `/api/verify-score`, prepočíta HMAC nad rovnakým payload-om a kód buď akceptuje alebo odmietne.
+
+**Defenzívna kontrola (BSD 2026 regression guard, v1.15.4):**
+`show_geochallenge_return()` beží len ak event má `geochallenge_integration === true` (early return inak). Sme teda za guardom, takže pre validné generovanie kódu **oba** POST polia `gc_id` aj `gc_cp` musia byť vyplnené. Ak ktorýkoľvek z nich chýba (`empty($gc_id) || empty($gc_cp)`), funkcia **NEvolá** `generate_geochallenge_code` a namiesto kódu vyrenderuje červený error block:
+
+> Chyba: QR kód neobsahoval väzbu na konkrétny checkpoint. Kontaktuj organizátora — kód by nebol akceptovaný.
+
+Plus `error_log('[eventkviz] GC integration active but gc_id/gc_cp missing in POST — refusing to generate code')` do PHP error logu pre admin debug.
+
+OR check (nie AND) zámerne pokrýva aj plný BSD scenár — `class-eventkviz-mapaquiz.php` r. 303 má AND podmienku pre rendering hidden inputov, takže ak v GET URL chýba `cp` aj `id`, **ani jeden** z `gc_id`/`gc_cp` sa nevyrenderuje do formu → POST má oba prázdne. AND defenzíva v `show_geochallenge_return` by to neodhalila, OR áno.
+
+**Prečo to robíme:** počas BSD 2026 live eventu (2026-05-23) hráči naskenovali QR ktorý mal len `?akcia=bsd2026&mq=pohoria-sr` (bez `cp/id`). Plugin tichu vygeneroval kód s HMAC nad payload `"XX:"` (prázdne checkpoint id). GC ho odmietol ako „Invalid code", Maros musel CP vymazať z aktivity. Pôvodne admin musel QR generovať ručne — `class-eventkviz-admin.php` (`geochallenge_integration` checkbox) teraz pod checkboxom zobrazuje žltú info-poznámku o povinnom tvare URL aby admin to nikdy neurobil omylom.
+
+**Open items:**
+- Per Maros plán: admin QR builder v EK (`Mapa` tab → polia „GC cpId / challengeId" + tlačidlo „Generuj QR kód") — eliminuje human error pri printed QR. Nie súčasť v1.15.4 fixu (sledované ako TODO).
+- Žiadne autom. fail-safe na strane GC, ak admin nezadá `externalUrl` s placeholdermi pre `url-code` task — GC strana to rieši v paralelnom fixe (per-checkpoint `externalUrl` substitúcia + render „Otvoriť kvíz" tlačidla v `app/map/page.tsx`). Joint test plán: `GEOCHALLENGE-BSD-HMAC-COORDINATION.md`, sekcia 3 (scenáre 1-4).

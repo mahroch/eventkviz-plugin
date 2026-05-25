@@ -708,6 +708,14 @@ private function render_general_tab( $post, $meta ) {
                         Zapnite ak je tento event prepojený s GeoChallenge appkou.<br>
                         Pri splnení kvízu sa hráčovi vygeneruje 5-znakový kód a návratový link späť do GeoChallenge.
                     </p>
+                    <p class="description" style="margin-top:8px;padding:8px 10px;background:#fff8e1;border-left:3px solid #f5a623;color:#5a4500;">
+                        <strong>Dôležité:</strong> Pre správne fungovanie musí mať QR kód pre túto akciu URL v tvare
+                        <code>?akcia=...&amp;mq=...&amp;cp={cpId}&amp;id={challengeId}</code>.
+                        GeoChallenge checkpoint generuje túto URL automaticky cez placeholder substitúciu — admin
+                        len v GC editore zadá URL šablónu s placeholdermi <code>{cpId}</code>, <code>{challengeId}</code>,
+                        <code>{returnUrl}</code>. Ak by QR neobsahoval <code>cp</code> parameter, plugin tvrdo zlyhá
+                        s chybou (bez tichého broken kódu).
+                    </p>
                 </td>
             </tr>
 
