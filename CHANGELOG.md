@@ -18,6 +18,7 @@ Všetky podstatné zmeny v plugine EventKviz.
 ### Coordination
 - Pendant zmeny na GeoChallenge strane: per-checkpoint `externalUrl` s placeholder substitúciou (`{cpId}`, `{challengeId}`, `{returnUrl}`) + render „Otvoriť kvíz" tlačidla v `app/map/page.tsx` pre `url-code` task. Joint test plán v `GEOCHALLENGE-BSD-HMAC-COORDINATION.md` (sekcia 3, scenáre 1-4) pred prod deployom.
 - TODO neskôr: admin QR builder v EK (`Mapa` tab → pole „GC cpId / challengeId" + „Generuj QR" tlačidlo) pre adminov ktorí chcú QR mimo GC. Nie súčasť tohto fixu.
+- Regression scenáre v `EVENTKVIZ-MAPY-DOKUMENTACIA.md` → sekcia „Test plan / regression scenáre (v1.15.4)" (4 scenáre A-D: happy path, plný BSD repro bez params, partial bind, non-GC event negative control) na manuálne overovanie pred PR mergom do `show_geochallenge_return()` alebo `mapaquiz.php` form renderingu. PHPUnit setup zatiaľ nemáme — manual checklist je tým pádom jediný regression net.
 
 ## [1.15.3] - 2026-05-21
 

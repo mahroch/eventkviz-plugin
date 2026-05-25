@@ -287,3 +287,53 @@ OR check (nie AND) zámerne pokrýva aj plný BSD scenár — `class-eventkviz-m
 **Open items:**
 - Per Maros plán: admin QR builder v EK (`Mapa` tab → polia „GC cpId / challengeId" + tlačidlo „Generuj QR kód") — eliminuje human error pri printed QR. Nie súčasť v1.15.4 fixu (sledované ako TODO).
 - Žiadne autom. fail-safe na strane GC, ak admin nezadá `externalUrl` s placeholdermi pre `url-code` task — GC strana to rieši v paralelnom fixe (per-checkpoint `externalUrl` substitúcia + render „Otvoriť kvíz" tlačidla v `app/map/page.tsx`). Joint test plán: `GEOCHALLENGE-BSD-HMAC-COORDINATION.md`, sekcia 3 (scenáre 1-4).
+
+### Test plan / regression scenáre (v1.15.4)
+
+Plugin **nemá PHPUnit setup** (per projektový stav), preto regressiu pre BSD HMAC defensive check overujeme manuálne v MAMP-e (`http://localhost:8888/eventkviz/`). Pred akoukoľvek úpravou `show_geochallenge_return()` v `includes/class-eventkviz-quiz.php` alebo form renderingu hidden inputov `gc_id`/`gc_cp`/`gc_return` v `includes/class-eventkviz-mapaquiz.php` (~r. 300-307) treba prebehnúť všetky 4 scenáre nižšie. Predpoklad: existuje testovacia akcia so slugom `bsd2026`, mapový kvíz so slugom `49faea`, event má v admine zaškrtnutý toggle „GeoChallenge integrácia" (`event_general[geochallenge_integration] = true`), event má aspoň 1 mapquiz s validnou question pool-ou.
+
+**Príprava pre každý scenár:**
+- `tail -f /Applications/MAMP/logs/php_error.log` v separátnom termináli (sledovať `[eventkviz]` error_log zápisy).
+- Open URL v incognito (alebo po `localStorage.clear()`) aby nešiel resume mód.
+- Vyplniť kvíz „naplno" alebo `min_body_na_postup`-konformne aby `gained_credits > 0` (kontrola red-box vs green-box logiky nezávisí od skóre, ale jasnejšie sa overuje keď kvíz prejde).
+
+#### Scenár A — happy path (full URL contract)
+
+- **URL:** `http://localhost:8888/eventkviz/mapa-quiz/?akcia=bsd2026&mq=49faea&cp=633f3325-ef06-453a-960b-c5b73ebdf790&id=b0000002-0000-0000-0000-000000000002`
+- **Postup:** vyplniť mapquiz → klik „Odoslať odpovede" → potvrdiť confirm dialog ak vyskočí.
+- **DOM check (post-submit page):**
+  - PRÍTOMNÉ: `<div class="geochallenge-return">` so zeleným borderom (`#4caf50`), nadpis „GeoChallenge kód", 6-znakový alfanumerický kód v monospace, optional „Návrat do GeoChallenge" tlačidlo (ak bol `return_url` v GET).
+  - NEPRÍTOMNÉ: `<div class="eventkviz-gc-error">` (red error block).
+- **PHP error_log:** žiadny `[eventkviz] GC integration active but gc_id/gc_cp missing` zápis.
+- **Form sanity (DevTools → Network → POST request body):** `gc_id`, `gc_cp` oba neprázdne, optional `gc_return`.
+
+#### Scenár B — plný BSD repro (no GC params v URL)
+
+- **URL:** `http://localhost:8888/eventkviz/mapa-quiz/?akcia=bsd2026&mq=49faea` (BEZ `cp` a BEZ `id`)
+- **Postup:** vyplniť mapquiz → „Odoslať odpovede".
+- **DOM check:**
+  - PRÍTOMNÉ: `<div class="eventkviz-gc-error">` s červeným borderom (`#c62828`), nadpis „Chyba GeoChallenge integrácie", text „Chyba: QR kód neobsahoval väzbu na konkrétny checkpoint. Kontaktuj organizátora — kód by nebol akceptovaný."
+  - NEPRÍTOMNÉ: `<div class="geochallenge-return">` (žiadny zelený kód-box, žiadny 6-znakový kód, žiadne „Návrat do GeoChallenge" tlačidlo).
+- **PHP error_log:** PRÍTOMNÝ `[eventkviz] GC integration active but gc_id/gc_cp missing in POST — refusing to generate code` (presne 1×).
+- **Form sanity:** POST body NEOBSAHUJE polia `gc_id` ani `gc_cp` (mapaquiz.php r. 303 AND check zabránil renderingu hidden inputov), takže `$_POST['gc_id']` a `$_POST['gc_cp']` sú oba `''` po `sanitize_text_field` → OR check (r. 728) triggeruje red block.
+
+#### Scenár C — partial bind (cp bez id)
+
+- **URL:** `http://localhost:8888/eventkviz/mapa-quiz/?akcia=bsd2026&mq=49faea&cp=633f3325-ef06-453a-960b-c5b73ebdf790` (s `cp`, BEZ `id`)
+- **Postup:** vyplniť mapquiz → „Odoslať odpovede".
+- **DOM check:** identicky ako scenár B — PRÍTOMNÝ red error block, NEPRÍTOMNÝ green code block.
+- **PHP error_log:** PRÍTOMNÝ rovnaký `[eventkviz] GC integration active but gc_id/gc_cp missing` zápis.
+- **Form sanity:** mapaquiz.php r. 303 AND check (`!empty($gc_id) && !empty($gc_cp)`) padá lebo `$gc_id` je prázdny — ani `gc_cp` sa nevyrenderuje do hidden inputu, hoci v URL bol. Symetria fixu: aj keby sa `gc_cp` vyrenderovalo, OR check v `show_geochallenge_return` by ho zachytil.
+- **Variant C' (id bez cp):** rovnaké URL ale `&id=...&` namiesto `&cp=...&` — identický expected output (red error block + error_log).
+
+#### Scenár D — non-GC event (negative control)
+
+- **URL:** `http://localhost:8888/eventkviz/mapa-quiz/?akcia=<INÝ-EVENT-SLUG>&mq=<MQ-SLUG>` kde event NEMÁ zaškrtnutý `geochallenge_integration` checkbox v admine.
+- **Postup:** vyplniť mapquiz → „Odoslať odpovede".
+- **DOM check:**
+  - NEPRÍTOMNÉ: `<div class="geochallenge-return">` (zelený kód-box) AJ `<div class="eventkviz-gc-error">` (red error block) — show_geochallenge_return early-returnuje na r. 712-714 pred OR checkom.
+  - PRÍTOMNÉ: štandardný eval výsledok kvízu („Získal si X bodov..."), žiadny GC reference whatsoever.
+- **PHP error_log:** žiadny `[eventkviz]` zápis (žiaden code path s error_log sa neexekvuje).
+- **Účel:** garantuje že defenzívna kontrola sa NEspúšťa pre non-GC eventy a netriggeruje false-positive red error blocks pre štandardné EK akcie.
+
+**Pri PR-e meniacom `show_geochallenge_return()` alebo `mapaquiz.php` form rendering:** prejdiť všetky 4 scenáre, screenshot z DevTools (Elements panel + Network POST body) priložiť k PR description. Ak ktorýkoľvek scenár padne, fix nie je ready-to-merge.
