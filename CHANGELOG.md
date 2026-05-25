@@ -2,6 +2,16 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.16.0] - 2026-05-25
+
+### Added (REST export endpoint pre GeoChallenge headless port — Fáza 1: MUSIC)
+- Nový read-only REST endpoint **`GET /wp-json/eventkviz/v1/export/<typ>`** (teraz `/export/music`) ktorý exportuje kompletné dáta kvízu pre GeoChallenge headless CMS port. Rozšírené v `includes/class-eventkviz-rest.php` (rovnaký `register_rest_route` pattern ako `/search`).
+- **Auth**: hlavička `X-Eventkviz-Api-Key` (timing-safe `hash_equals`) proti WP option `eventkviz_export_api_key`. Key sa generuje lazy pri prvom prístupe (`wp_generate_password(48)`). Chýbajúci/zlý key → 401. Neznámy typ → 404. Pre debug existuje aj fallback query param `?api_key=`.
+- **Recyklovateľný dizajn**: zdieľaný `export_auth()` + jednotná response obálka (`quiz_type`, `generated_at`, `questions[]`, `scoring`, `lookup_db`) v `export()`. Per-typ data builderi sú v registry `export_builders()` — pridanie movies/knowledge/sudoku/mapquiz = pridať jeden záznam do registry + statickú `build_<typ>_export()` metódu (placeholdery už pripravené v komentári).
+- **Music payload**: `questions` = celý pool CPT `questions-audio` (audio URL z meta `media` → `wp_get_attachment_url()`, správny interpret/pieseň cez JetEngine relations 15=artist, 14=song ako `{id,name}`); `scoring` = default hodnoty (both_correct=100, artist_only=50, song_only=50, secondary_artist=0, secondary_song=0); `lookup_db` = celý obsah CCT `jet_cct_artists` + `jet_cct_songs` ako `[{id,name}]` (pre GC autocomplete).
+- `get_related_ids()` logika je v exporte zopakovaná staticky (`music_related_id()`) aby endpoint nezávisel na inštancii quiz triedy. **Žiadny existujúci endpoint ani quiz logika sa nemenila** — čisto aditívne, read-only.
+- Verify: `php -l` OK, curl localhost:8888 → 200 (validný JSON, 49 otázok / 2722 interpretov / 6068 skladieb), 401 bez/zlý key, 404 neznámy typ.
+
 ## [1.15.4] - 2026-05-24
 
 ### Fixed (GeoChallenge integrácia — defenzívna kontrola proti broken HMAC kódu pri chýbajúcom `cp` v QR URL)
