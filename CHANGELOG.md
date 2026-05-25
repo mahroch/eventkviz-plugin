@@ -2,6 +2,14 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.16.1] - 2026-05-25
+
+### Added (music export — `production` tag per otázka pre GC produkčný filter)
+- Music export (`GET /wp-json/eventkviz/v1/export/music`) teraz vracia v každej otázke pole **`production`** — slug WP taxonómie `production` priradený danému CPT `questions-audio`. GeoChallenge tak vie replikovať pôvodný EK music quiz filter produkcie (všetky / SK-CZ / zahraničné).
+- **Zdroj pravdy** = tá istá taxonómia `production`, podľa ktorej music quiz reálne filtruje pool otázok (`Eventkviz_MusicForm_Quiz_Class::eventkviz_music_form()` → `tax_query` na `taxonomy=production`, `field=slug`). Nie je to runtime heuristika ani odvodenie z krajiny interpreta — je to explicitný term na otázke. Termy: `skcz` (SK a CZ), `zahranicne` (Zahraničné), `rozpravky` (Rozprávky).
+- Implementácia: nová statická helper metóda `music_production($qid)` v `includes/class-eventkviz-rest.php` — `wp_get_post_terms($qid,'production',['fields'=>'slugs'])`, vracia slug prvého termu alebo `null` ak otázka nemá priradenú produkciu. Pridané jedno pole do `music_questions()` builderu; žiadna iná logika sa nemenila.
+- Verify: `php -l` OK, curl localhost:8888 → 200, `production` prítomné vo všetkých 49 otázkach. Rozloženie aktuálneho poolu: **21× `skcz`, 28× `zahranicne`, 0× null** (žiadna otázka bez produkcie).
+
 ## [1.16.0] - 2026-05-25
 
 ### Added (REST export endpoint pre GeoChallenge headless port — Fáza 1: MUSIC)

@@ -1,7 +1,7 @@
 # EventKviz Export API (GeoChallenge headless port — Fáza 1)
 
 Read-only REST API ktoré exportuje dáta kvízov z EventKviz do GeoChallenge.
-Pridané vo verzii **1.16.0**. Zdroj: `includes/class-eventkviz-rest.php`.
+Pridané vo verzii **1.16.0** (music `production` tag od **1.16.1**). Zdroj: `includes/class-eventkviz-rest.php`.
 
 ## Endpoint
 
@@ -46,7 +46,8 @@ X-Eventkviz-Api-Key: <kľúč>
       "id": 167,
       "audio_url": "https://.../23.mp3",
       "correct_artist": { "id": 501, "name": "Daft Punk" },
-      "correct_song":   { "id": 2603, "name": "Around the World" }
+      "correct_song":   { "id": 2603, "name": "Around the World" },
+      "production":     "zahranicne"
     }
   ],
   "scoring": {
@@ -68,6 +69,7 @@ X-Eventkviz-Api-Key: <kľúč>
 - `questions` — celý pool CPT `questions-audio` (status `publish`), zoradené podľa ID.
   - `audio_url` — `wp_get_attachment_url(get_post_meta($qid,'media',true))`; `null` ak chýba.
   - `correct_artist` / `correct_song` — JetEngine relations (15=artist, 14=song) → CCT `{id,name}`; `null` ak chýba väzba.
+  - `production` — slug WP taxonómie `production` priradenej otázke (`wp_get_post_terms($qid,'production',['fields'=>'slugs'])[0]`); `null` ak otázka nemá produkciu. Hodnoty: `skcz` (SK a CZ), `zahranicne` (Zahraničné), `rozpravky` (Rozprávky). **Toto je tá istá taxonómia, podľa ktorej music quiz filtruje pool** (`eventkviz_music_form()` → `tax_query` na `taxonomy=production, field=slug`), takže GC vie repliovať pôvodný produkčný filter (všetky / SK-CZ / zahraničné). Nie je to odvodenie z krajiny interpreta — je to explicitný term na otázke.
 - `scoring` — default hodnoty z music scoring configu (`render_music_tab()`):
   - `both_correct` = correct artist + correct song (default 100)
   - `artist_only` = správny interpret, zlá pieseň (default 50)
@@ -94,8 +96,9 @@ X-Eventkviz-Api-Key: <kľúč>
 
 Auth, routing, obálka aj `generated_at` sú zdieľané — netreba ich znova riešiť.
 
-## Verifikácia (1.16.0, localhost:8888)
+## Verifikácia (1.16.1, localhost:8888)
 
 - `php -l includes/class-eventkviz-rest.php` → OK
 - `200` validný JSON: 49 otázok / 2722 interpretov / 6068 skladieb
+- `production` prítomné vo všetkých 49 otázkach — rozloženie: **21× `skcz`, 28× `zahranicne`, 0× null**
 - `401` bez kľúča aj so zlým kľúčom; `404` pre neznámy typ (`/export/movies`)

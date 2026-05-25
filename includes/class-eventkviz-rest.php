@@ -166,7 +166,7 @@ class Eventkviz_Rest_Search {
 
     /**
      * Music quiz data builder.
-     *  - questions: celý pool CPT questions-audio (audio URL + correct artist/song)
+     *  - questions: celý pool CPT questions-audio (audio URL + correct artist/song + production tag)
      *  - scoring:   default bodové hodnoty z music scoring configu
      *  - lookup_db: celý obsah CCT artists + songs (pre GC autocomplete)
      */
@@ -227,9 +227,25 @@ class Eventkviz_Rest_Search {
                 'audio_url'      => $audio_url ? $audio_url : null,
                 'correct_artist' => self::lookup_entry( 'jet_cct_artists', 'artist', $artist_id ),
                 'correct_song'   => self::lookup_entry( 'jet_cct_songs', 'song', $song_id ),
+                'production'     => self::music_production( $qid ),
             );
         }
         return $out;
+    }
+
+    /**
+     * Production tag otázky z taxonómie `production` na CPT questions-audio.
+     * Zdroj pravdy = rovnaká taxonómia, podľa ktorej music quiz filtruje pool
+     * (Eventkviz_MusicForm_Quiz_Class::eventkviz_music_form, tax_query 'production').
+     * Vracia slug prvého priradeného termu (napr. "skcz" / "zahranicne" /
+     * "rozpravky"), alebo null ak otázka nemá priradenú produkciu.
+     */
+    private static function music_production( $question_id ) {
+        $slugs = wp_get_post_terms( (int) $question_id, 'production', array( 'fields' => 'slugs' ) );
+        if ( is_wp_error( $slugs ) || empty( $slugs ) ) {
+            return null;
+        }
+        return (string) $slugs[0];
     }
 
     /**
