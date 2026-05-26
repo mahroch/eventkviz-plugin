@@ -117,7 +117,7 @@ class Eventkviz_Finalpage_Class extends Eventkviz_Quiz_Class{
         } elseif (!empty($user_code) || !empty($team_code)) {
             // zadal formular over ci su seedy spravne
 
-            $check_result = $this->check_number_of_tries($user_code, $akcia_code,'final',$team_code, '<h1>We are so sorry :( </h1>Limit of tries to enter correct seeds was reached. ');
+            $check_result = $this->check_number_of_tries($user_code, $akcia_code,'final',$team_code, '<div class="ek-quiz-message ek-quiz-message--fail"><p><strong>Vyčerpali ste všetky pokusy.</strong></p><p>Pre zadanie správnych kódov ste využili všetky povolené pokusy. Ďakujeme za hru!</p></div>');
 
             if($check_result) {
 

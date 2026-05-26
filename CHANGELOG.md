@@ -2,6 +2,12 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.16.2] - 2026-05-26
+
+### Changed (hláška o vyčerpaní pokusov v dizajne kvízu)
+- Oznam „limit pokusov vyčerpaný" už nie je holý anglický text na bielom podklade — teraz je v štandardnom dizajne kvízu (zaoblený box `.ek-quiz-message`), zdvorilo a po slovensky: „Vyčerpali ste všetky pokusy."
+- Platí pre všetky kvízy (hudba, filmy, vedomosti, sudoku, mapa) aj pre finálnu stránku so zadávaním kódov.
+
 ## [1.16.1] - 2026-05-25
 
 ### Added (music export — `production` tag per otázka pre GC produkčný filter)

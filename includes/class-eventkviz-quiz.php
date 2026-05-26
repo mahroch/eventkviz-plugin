@@ -541,7 +541,10 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 						echo $alternative_text;
 					} else {
 						//echo 'Limit of tries for this quiz was reached (Allowed:' . $pocet_pokusov . ', Realized: ' . $entries . '). ';
-						echo 'Limit of tries for this quiz was reached (Allowed:' . $pocet_pokusov . '). ';
+						echo '<div class="ek-quiz-message ek-quiz-message--fail">'
+							. '<p><strong>Vyčerpali ste všetky pokusy.</strong></p>'
+							. '<p>Pre tento kvíz ste využili všetky povolené pokusy (' . intval($pocet_pokusov) . '). Ďakujeme za hru!</p>'
+							. '</div>';
 					}
 					
 					

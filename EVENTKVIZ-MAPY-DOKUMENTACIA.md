@@ -337,3 +337,18 @@ Plugin **nemá PHPUnit setup** (per projektový stav), preto regressiu pre BSD H
 - **Účel:** garantuje že defenzívna kontrola sa NEspúšťa pre non-GC eventy a netriggeruje false-positive red error blocks pre štandardné EK akcie.
 
 **Pri PR-e meniacom `show_geochallenge_return()` alebo `mapaquiz.php` form rendering:** prejdiť všetky 4 scenáre, screenshot z DevTools (Elements panel + Network POST body) priložiť k PR description. Ak ktorýkoľvek scenár padne, fix nie je ready-to-merge.
+
+## Hláška o vyčerpaní pokusov (v1.16.2)
+
+Keď hráč/team vyčerpá povolený počet pokusov daného (sub-)kvízu, `Eventkviz_Quiz_Class::check_number_of_tries()` vráti `false` a vypíše oznam. Predtým to bol holý anglický text bez markupu (`Limit of tries for this quiz was reached…`) — vizuálne vytrhnutý z dizajnu kvízu. Od v1.16.2 je oznam obalený do štandardného `.ek-quiz-message ek-quiz-message--fail` boxu (rovnaký dizajn ako success/fail správy ostatných kvízov), slovensky a zdvorilo.
+
+- **Default oznam** (music/movies/knowledge/sudoku/mapa): `class-eventkviz-quiz.php` v `check_number_of_tries()` — „Vyčerpali ste všetky pokusy. Pre tento kvíz ste využili všetky povolené pokusy (N). Ďakujeme za hru!"
+- **Finálna stránka** (zadávanie kódov/seeds): `class-eventkviz-finalpage.php:120` cez `$alternative_text` — analogický text pre „zadanie správnych kódov".
+
+### Test plán (regression)
+
+1. Nastav v admine kvíz s nízkym `pocet_pokusov` (napr. 1).
+2. Odohraj kvíz toľkokrát, aby si limit prekročil (vrátane „posledného pokusu").
+3. Pri ďalšom načítaní/odoslaní očakávaj: zaoblený box v dizajne kvízu (nie holý text), tučný nadpis „Vyčerpali ste všetky pokusy.", zdvorilý slovenský text, čitateľný na fialovom/tmavom Elementor pozadí.
+4. Over default kvíz (hudba/filmy/vedomosti/sudoku/mapa) aj finálnu stránku so seedmi.
+5. Negatívne: hráč s ešte zostávajúcimi pokusmi NESMIE vidieť tento box (vidí normálny formulár/eval).
