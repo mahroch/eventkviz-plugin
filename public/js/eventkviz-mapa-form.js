@@ -252,10 +252,12 @@
                     }
                 }
             }).addTo(map);
-            // V review móde renderujeme overlay so správnym zvýraznením
-            if (isReview) {
-                featureLayer.eachLayer(function (l) { applyFeatureStyle(l); });
-            }
+            // Aplikuj štýl po načítaní vrstvy: v review pre highlight výsledkov,
+            // vo form móde pre obnovené výbery pri opakovaní. restorePrevReview
+            // mohol bežať skôr (setTimeout 100ms), kým featureLayer ešte nebol
+            // načítaný (async fetch GeoJSON) — vtedy by sa výbery nevykreslili.
+            featureLayer.eachLayer(function (l) { applyFeatureStyle(l); });
+            bindCorrectTooltips();
         }).catch(function () {});
     }
 
@@ -283,13 +285,37 @@
     }
 
     function featureSelectedStyle(isCorrect) {
-        // V review móde: green = správne, red = nesprávne
-        if (isReview) {
-            if (isCorrect === true)  return { color: '#43a047', weight: 5, fillColor: '#66bb6a', fillOpacity: 0.55 };
-            if (isCorrect === false) return { color: '#e53935', weight: 5, fillColor: '#ef5350', fillOpacity: 0.55 };
-        }
-        // Form mode: orange = vybraté
+        // green = správne, red = nesprávne. Použité v review móde a tiež pri
+        // opakovaní s "Pri opakovaní označ správnosť" (mark_correctness_on_retry),
+        // kde obnovené výbery nesú uloženú správnosť (prevCorrect).
+        if (isCorrect === true)  return { color: '#43a047', weight: 5, fillColor: '#66bb6a', fillOpacity: 0.55 };
+        if (isCorrect === false) return { color: '#e53935', weight: 5, fillColor: '#ef5350', fillOpacity: 0.55 };
+        // Bez známej správnosti (nový/opravený výber vo form móde): orange = vybraté
         return { color: '#ef6c00', weight: 5, fillColor: '#ff9800', fillOpacity: 0.55 };
+    }
+
+    // Vráti uloženú správnosť (true/false) feature ak je vybraná pri opakovaní,
+    // inak undefined (nový výber alebo bez mark_correctness). Pozri restorePrevReview.
+    function selectedPrevCorrect(featureName) {
+        for (var i = 0; i < tasks.length; i++) {
+            var picked = taskMarkers[i];
+            if (picked && picked.feature === featureName) return picked.prevCorrect;
+        }
+        return undefined;
+    }
+
+    // Pri opakovaní: nad SPRÁVNE určenou feature ukáž názov pri hover — pomôcka
+    // aby user vedel, ktorú už má správne. Len nad správnymi; nesprávne/neurčené
+    // ostávajú bez nápovedy. (Maroš 2026-05-27 stanovil funkcionalitu.)
+    function bindCorrectTooltips() {
+        if (isReview || !featureLayer) return;
+        featureLayer.eachLayer(function (layer) {
+            var name = layer.feature && layer.feature.properties && layer.feature.properties.name;
+            if (!name) return;
+            if (selectedPrevCorrect(name) === true && !layer.getTooltip()) {
+                layer.bindTooltip(name, { sticky: true, direction: 'top' });
+            }
+        });
     }
 
     function applyFeatureStyle(layer) {
@@ -325,8 +351,10 @@
             return;
         }
 
-        // Form mode
-        if (isSelected(name)) layer.setStyle(featureSelectedStyle());
+        // Form mode. Pri opakovaní s "označ správnosť" má vybraná feature
+        // uloženú správnosť (prevCorrect) → ofarbi zeleno/červeno. Nový alebo
+        // opravený výber prevCorrect nemá → oranžová (featureSelectedStyle()).
+        if (isSelected(name)) layer.setStyle(featureSelectedStyle(selectedPrevCorrect(name)));
         else layer.setStyle(featureBaseStyle());
     }
 
@@ -505,6 +533,12 @@
                 existingIdx = i;
                 break;
             }
+        }
+
+        // Klik na správne určenú (zamknutú) feature pri opakovaní — ignoruj,
+        // nech ostane zelená a potvrdená (user ju nemá meniť).
+        if (existingIdx >= 0 && taskMarkers[existingIdx] && taskMarkers[existingIdx].prevCorrect === true) {
+            return;
         }
 
         // Klik na feature ktorá patrí aktívnej úlohe = odznač (toggle off)
@@ -732,7 +766,16 @@
                     }
                 }
             } else {
-                if (placed) {
+                var pickedMarker = taskMarkers[idx];
+                var correctLocked = placed && pickedMarker && pickedMarker.prevCorrect === true;
+                if (correctLocked) {
+                    // Správne určená úloha pri opakovaní — zelená fajka, zamknutá
+                    // (bez × odznač). User dopĺňa len nesprávne/neoznačené úlohy.
+                    $row.addClass('is-review-correct');
+                    var $stLock = $('<span class="ek-mapa-task-status"></span>');
+                    $stLock.append('<span class="ek-mapa-task-check">✓</span>');
+                    $row.append($stLock);
+                } else if (placed) {
                     // Wrap do jedného containera aby ✓ + × obsadili 1 grid cell (col 3),
                     // nie aby × spadla do nového riadku (4. neexistuje).
                     var $status = $('<span class="ek-mapa-task-status"></span>');
@@ -755,8 +798,9 @@
                 }
             }
 
-            // Sidebar klik len v quiz móde — review je read-only
-            if (!isReview) {
+            // Sidebar klik len v quiz móde — review je read-only. Zamknutú
+            // (správne určenú pri opakovaní) úlohu nedá sa fokusovať/prepísať.
+            if (!isReview && !correctLocked) {
                 $row.on('click', function () { focusTask(idx); });
             }
             $list.append($row);
@@ -821,14 +865,24 @@
                 if (!isNaN(lat) && !isNaN(lon)) placeMarker(idx, lat, lon);
             });
         } else {
-            // Feature mode — fill taskMarkers map from prev feature inputs
+            // Feature mode — pri opakovaní s "označ správnosť" obnovíme LEN
+            // SPRÁVNE určené feature (prev_mapaN_correct === '1'): zostanú zelené
+            // a potvrdené. Nesprávne predošlé výbery zahodíme (vyčistíme hidden
+            // input) — user ich hľadá znova, bez nápovedy farbou či polohou.
+            // (Funkcionalitu takto stanovil Maroš 2026-05-27, viď
+            //  EVENTKVIZ-MAPY-DOKUMENTACIA.md → "Opakovanie: označ správnosť".)
             tasks.forEach(function (t, idx) {
                 var hn = idx + 1;
                 var feat = $('#ek-mapa-feature-' + hn).val();
-                if (feat) taskMarkers[idx] = { feature: feat };
+                var pcVal = $('input[name="prev_mapa' + hn + '_correct"]').val();
+                if (feat && pcVal === '1') {
+                    taskMarkers[idx] = { feature: feat, prevCorrect: true };
+                } else if (feat) {
+                    $('#ek-mapa-feature-' + hn).val('');
+                }
             });
             // Re-style features to reflect picks
-            if (featureLayer) featureLayer.eachLayer(applyFeatureStyle);
+            if (featureLayer) { featureLayer.eachLayer(applyFeatureStyle); bindCorrectTooltips(); }
             renderTaskList();
         }
 

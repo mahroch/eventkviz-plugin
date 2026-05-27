@@ -352,3 +352,29 @@ Keď hráč/team vyčerpá povolený počet pokusov daného (sub-)kvízu, `Event
 3. Pri ďalšom načítaní/odoslaní očakávaj: zaoblený box v dizajne kvízu (nie holý text), tučný nadpis „Vyčerpali ste všetky pokusy.", zdvorilý slovenský text, čitateľný na fialovom/tmavom Elementor pozadí.
 4. Over default kvíz (hudba/filmy/vedomosti/sudoku/mapa) aj finálnu stránku so seedmi.
 5. Negatívne: hráč s ešte zostávajúcimi pokusmi NESMIE vidieť tento box (vidí normálny formulár/eval).
+
+## Opakovanie: „Pri opakovaní označ správnosť" (mark_correctness_on_retry)
+
+**⚠️ Túto funkcionalitu stanovil Maroš 2026-05-27 — pri ďalších úpravách rešpektuj toto zadanie, nie skoršie správanie.**
+
+Keď je v admine pre mapový (sub-)kvíz zaškrtnuté **„Pri opakovaní označ správnosť"** (a NIE „Pri opakovaní nový set"), a hráč po vyhodnotení klikne **„Opakovať kvíz"**, opakovací formulár sa správa takto:
+
+- **Správne** určené feature (rieky/plochy) z predošlého pokusu sa **obnovia a sú ZELENÉ** na mape + **zelená fajka** v zozname úloh. Sú **zamknuté** — user ich nemôže odznačiť ani prepísať (kliknutie na ne aj v zozname aj na mape sa ignoruje).
+- **Nesprávne** určené feature sa **NEobnovia** — žiadna farba na mape, žiadna fajka v zozname. Predošlý nesprávny výber sa zahodí (vyčistí sa aj hidden input `mapaN_feature`). User danú úlohu **hľadá znova od nuly**, bez nápovedy farbou či polohou.
+- **Hover** myšou nad **správne** určenou feature ukáže jej **názov** (tooltip). Len nad správnymi — nesprávne/neurčené ostávajú bez nápovedy.
+
+**Rozdiel oproti vyhodnoteniu (eval review):** vyhodnotenie ukazuje OBOJE — zelené správne aj červené nesprávne (hráč vidí ako dopadol). Opakovanie ukazuje LEN zelené správne (nesprávne háda znova). Červená sa pri opakovaní zámerne nepoužíva.
+
+**Kde to žije (JS, `public/js/eventkviz-mapa-form.js`):**
+- `restorePrevReview()` — obnoví do `taskMarkers` len `prev_mapaN_correct === '1'`, nesprávne vyčistí.
+- `applyFeatureStyle()` + `featureSelectedStyle(isCorrect)` — zelená pre správne, oranžová pre nový výber.
+- `bindCorrectTooltips()` — hover názov nad správnymi.
+- `renderTaskList()` — zelená fajka + `is-review-correct`, bez × pre zamknuté správne.
+- PHP (`class-eventkviz-mapaquiz.php`) posiela `mapaN_feature` + `prev_mapaN_correct` v hidden inputoch; logika je čisto na strane JS.
+
+### Test plán (regression)
+1. Mapový kvíz (line/area), v admine zaškrtni „Pri opakovaní označ správnosť", NEzaškrtni „nový set", počet pokusov > 1.
+2. Odohraj: časť úloh urči **správne**, časť **nesprávne**, niektoré nechaj prázdne. Odošli.
+3. Klikni „Opakovať kvíz". Očakávaj: správne = zelené + zelená fajka + zamknuté + hover názov; nesprávne = bez označenia (háda znova); prázdne = bez označenia.
+4. Skús kliknúť na zelenú (správnu) — NESMIE sa odznačiť. Skús nesprávnu úlohu doplniť — nový výber je oranžový.
+5. Pin typ: pri opakovaní sa správanie zatiaľ nemenilo (mimo tohto zadania).

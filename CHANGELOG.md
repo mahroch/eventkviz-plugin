@@ -2,6 +2,13 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.4] - 2026-05-27
+
+### Fixed (mapový kvíz — „Pri opakovaní označ správnosť" nefungovalo pri líniách)
+- Pri opakovaní mapového kvíze sa správne určené rieky/plochy teraz zobrazia **zelené** + zelená fajka v zozname úloh, sú **zamknuté** (nedajú sa odznačiť) a pri hover ukážu **názov**. Predtým sa pri líniách výbery vôbec neobnovili (kreslili sa skôr, než sa načítala vrstva).
+- **Nesprávne** určené sa pri opakovaní neobnovia — hráč ich hľadá znova bez nápovedy farbou či polohou (úmyselne, aby červená neprezrádzala správnu lokalitu).
+- Funkcionalitu stanovil Maroš; popis + test plán v EVENTKVIZ-MAPY-DOKUMENTACIA.md („Opakovanie: označ správnosť").
+
 ## [1.18.3] - 2026-05-27
 
 ### Fixed (vedomostný kvíz — zle čitateľné červené/zelené hodnotenie odpovede)
