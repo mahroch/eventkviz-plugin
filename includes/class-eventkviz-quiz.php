@@ -572,7 +572,12 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 	 */
 	public function render_scoring_info( $quiz_type, $settings, $mode = 'form', $extra = array() ) {
 		$is_eval  = ( $mode === 'eval' );
-		$N        = (int) ( $settings['pocet_otazok_v_sete'] ?? 0 );
+		// Reálny počet otázok môže volajúci odovzdať cez $extra['question_count']
+		// (napr. movies per-production rozdelenie, kde pocet_otazok_v_sete=0 a
+		// skutočný počet je daný súčtom per-produkčných počtov / uloženým setom).
+		$N        = isset( $extra['question_count'] )
+			? (int) $extra['question_count']
+			: (int) ( $settings['pocet_otazok_v_sete'] ?? 0 );
 		$min_body = (int) ( $settings['min_body_na_postup'] ?? 0 );
 		$pokusy   = (int) ( $settings['pocet_pokusov'] ?? 0 );
 

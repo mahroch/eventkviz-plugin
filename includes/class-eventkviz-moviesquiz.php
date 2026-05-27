@@ -104,6 +104,14 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
                 }
             }
 
+            // Pri retry s existujúcim setom (treat_as_new=false) sa $number_of_questions
+            // vyššie neprepočítal a ostal na pocet_otazok_v_sete (pri per-production
+            // rozdelení = 0). Vezmi reálny počet z načítaného uloženého setu, inak by
+            // sa pri opakovaní nezobrazil žiadny film a scoring info by hlásil "0 filmov".
+            if ( !$treat_as_new && is_array($this->questions_set) ) {
+                $number_of_questions = count($this->questions_set);
+            }
+
             $url = home_url('/movies-quiz-dynamic-evaluation/');
 
             $is_review = !empty($_POST['prev_review']);
@@ -112,7 +120,7 @@ class Eventkviz_MoviesForm_Quiz_Class extends Eventkviz_Quiz_Class{
             echo '<div class="ek-quiz-content">';
             echo '<h1 class="ek-quiz-title">Filmový kvíz</h1>';
             echo '<p class="ek-quiz-subtitle">Pozrite si ukážku a uhádnite názov filmu</p>';
-            $this->render_scoring_info( 'movies', $this->cAkcia->movies_settings, 'form' );
+            $this->render_scoring_info( 'movies', $this->cAkcia->movies_settings, 'form', array( 'question_count' => $number_of_questions ) );
             $this->render_tries_remaining_banner('movies');
             if ($is_review) {
                 echo '<div class="ek-review-banner">📝 Vaše predchádzajúce odpovede sú vyplnené — <strong style="color:#6dd58c">zelené</strong> boli správne, <strong style="color:#ff6b6b">červené</strong> nesprávne. Opravte a odošlite znova.</div>';
@@ -309,7 +317,7 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
             }
             if(!$gained_credits) $gained_credits = 0;
             $remaining_after = isset($this->zostava_pocet_pokusov) ? max(0, (int) $this->zostava_pocet_pokusov - 1) : null;
-            $this->render_scoring_info( 'movies', $this->cAkcia->movies_settings, 'eval', array( 'remaining' => $remaining_after ) );
+            $this->render_scoring_info( 'movies', $this->cAkcia->movies_settings, 'eval', array( 'remaining' => $remaining_after, 'question_count' => count($questions) ) );
             $this->show_total_credits_gained($gained_credits, $user, $team);
 
             // Threshold check: ak min_body=0, žiadny prah = vždy úspech.

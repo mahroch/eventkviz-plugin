@@ -2,6 +2,12 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.2] - 2026-05-27
+
+### Fixed (filmový kvíz — opakovanie nenačítalo žiadne filmy pri per-production rozdelení)
+- Pri evente s rozdelením počtu otázok podľa produkcie (napr. „sk = 10", hlavný „Počet otázok" = 0) sa po kliknutí na „Opakovať kvíz" nenačítal žiadny film a scoring info hlásil „0 filmov". Počet otázok sa pri opakovaní berie z uloženej sady hráča/teamu, takže opakovanie zobrazí rovnaké filmy ako prvé hranie.
+- Scoring info filmového kvíze (formulár aj vyhodnotenie) zobrazuje správny počet filmov aj pri per-production rozdelení (predtým „0 filmov").
+
 ## [1.18.1] - 2026-05-27
 
 ### Fixed (zobrazenie indície pri splnení kvízu — hudba + vedomosti)
