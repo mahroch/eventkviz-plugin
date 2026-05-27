@@ -2,6 +2,16 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.17.0] - 2026-05-27
+
+### Added (REST export — Fáza 2/3: MOVIES + KNOWLEDGE typy + dynamické kategórie pre GC ek-quiz integráciu)
+- Rozšírenie read-only REST endpointu **`GET /wp-json/eventkviz/v1/export/<typ>`** o dva nové kvízové typy: **`/export/movies`** a **`/export/knowledge`** (predtým len `/export/music`). Aktivované odkomentovaním v registry `export_builders()` + doimplementovaním builderov v `includes/class-eventkviz-rest.php`.
+- **Movies payload**: builder `build_movies_export()` — pool otázok cez `movies_questions()`, scoring defaulty cez `movies_scoring_defaults()`, výber odpovedí cez `split_choices()`, produkčný tag per otázka cez `movies_production()`. `lookup_db` obsahuje **`productions`** = dynamicky načítané termy WP taxonómie `production` (cez nový helper `taxonomy_terms('production')`).
+- **Knowledge payload**: builder `build_knowledge_export()` — pool otázok cez `knowledge_questions()`, scoring defaulty cez `knowledge_scoring_defaults()`, výber odpovedí cez `split_knowledge_choices()`, varianty správnej odpovede cez `split_answer_variants()`, tematický tag per otázka cez `knowledge_topic()`. `lookup_db` obsahuje **`topics`** = dynamicky načítané termy WP taxonómie `topic` (cez `taxonomy_terms('topic')`).
+- **Dynamické kategórie**: nový statický helper `taxonomy_terms($taxonomy)` vracia všetky termy danej taxonómie ako `[{id, name, slug}]` — GeoChallenge tak dostáva kategórie/filtre dynamicky z WP namiesto hardcodovaného zoznamu (productions pre movies, topics pre knowledge).
+- Konzistentné s Fázou 1 (music): čisto aditívne, read-only, žiadny existujúci endpoint ani quiz logika sa nemenila. Tá istá auth (`X-Eventkviz-Api-Key`) a response obálka.
+- Verify: `php -l` OK (žiadne syntax chyby).
+
 ## [1.16.2] - 2026-05-26
 
 ### Changed (hláška o vyčerpaní pokusov v dizajne kvízu)

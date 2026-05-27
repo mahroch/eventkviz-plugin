@@ -126,9 +126,9 @@ class Eventkviz_Rest_Search {
      */
     private static function export_builders() {
         return array(
-            'music' => array( __CLASS__, 'build_music_export' ),
-            // 'movies'    => array( __CLASS__, 'build_movies_export' ),
-            // 'knowledge' => array( __CLASS__, 'build_knowledge_export' ),
+            'music'  => array( __CLASS__, 'build_music_export' ),
+            'movies' => array( __CLASS__, 'build_movies_export' ),
+            'knowledge' => array( __CLASS__, 'build_knowledge_export' ),
             // 'sudoku'    => array( __CLASS__, 'build_sudoku_export' ),
             // 'mapquiz'   => array( __CLASS__, 'build_mapquiz_export' ),
         );
@@ -174,8 +174,13 @@ class Eventkviz_Rest_Search {
         $questions = self::music_questions();
         $scoring   = self::music_scoring_defaults();
         $lookup_db = array(
-            'artists' => self::cct_lookup( 'jet_cct_artists', 'artist' ),
-            'songs'   => self::cct_lookup( 'jet_cct_songs', 'song' ),
+            'artists'     => self::cct_lookup( 'jet_cct_artists', 'artist' ),
+            'songs'       => self::cct_lookup( 'jet_cct_songs', 'song' ),
+            // Fáza 3: dostupné kategórie (taxonómia `production`) pre GC admin
+            // multi-select. Dynamické — vychádza z reálnych termov, nie z hardcoded
+            // enumu. Maroš pridá SK/CZ/Zahraničné termy neskôr → automaticky sa
+            // objavia bez zmeny kódu.
+            'productions' => self::taxonomy_terms( 'production' ),
         );
 
         return array(
@@ -228,6 +233,298 @@ class Eventkviz_Rest_Search {
                 'correct_artist' => self::lookup_entry( 'jet_cct_artists', 'artist', $artist_id ),
                 'correct_song'   => self::lookup_entry( 'jet_cct_songs', 'song', $song_id ),
                 'production'     => self::music_production( $qid ),
+            );
+        }
+        return $out;
+    }
+
+    /**
+     * Movies quiz data builder.
+     *  - questions: celý pool CPT questions-movies (video URL + correct_movie
+     *               cez JetEngine reláciu 17 + choices/correct_choice + production tag)
+     *  - scoring:   default bodová hodnota za správny film
+     *  - lookup_db: celý obsah CCT movies (original_title) pre GC autocomplete (full režim)
+     *
+     * Export vždy obsahuje OBA tvary (full aj choices), aby GC vedel renderovať
+     * ľubovoľný režim podľa svojej admin konfigurácie — verná parita s EK
+     * movies_quiz_type (full / choices).
+     */
+    public static function build_movies_export() {
+        $questions = self::movies_questions();
+        $scoring   = self::movies_scoring_defaults();
+        $lookup_db = array(
+            'movies'      => self::cct_lookup( 'jet_cct_movies', 'original_title' ),
+            // Fáza 3: dostupné kategórie (taxonómia `production`) pre GC admin
+            // multi-select — rovnaká taxonómia ako music (Maroš zdieľa termy).
+            'productions' => self::taxonomy_terms( 'production' ),
+        );
+
+        return array(
+            'questions' => $questions,
+            'scoring'   => $scoring,
+            'lookup_db' => $lookup_db,
+        );
+    }
+
+    /**
+     * Default movies scoring. Hodnota zhodná s render_movies_tab() defaultom
+     * (admin/class-eventkviz-admin.php: event_movies_credits_corr_movie = 100).
+     */
+    private static function movies_scoring_defaults() {
+        return array(
+            'movie_correct' => 100, // corr_movie — správne určený film
+        );
+    }
+
+    /**
+     * Všetky questions-movies CPT (celý pool) s video URL + správnymi odpoveďami
+     * v oboch tvaroch:
+     *  - correct_movie: { id, name } z CCT jet_cct_movies (original_title) cez
+     *    JetEngine reláciu 17 (parent = film, child = otázka) — full režim.
+     *  - choices + correct_choice: meta choices_for_answer (newline-split) +
+     *    correct_answer_for_choices (string) — choices režim.
+     */
+    private static function movies_questions() {
+        $posts = get_posts( array(
+            'post_type'   => 'questions-movies',
+            'post_status' => 'publish',
+            'numberposts' => -1,
+            'orderby'     => 'ID',
+            'order'       => 'ASC',
+        ) );
+
+        $out = array();
+        foreach ( $posts as $post ) {
+            $qid       = (int) $post->ID;
+            $media_id  = get_post_meta( $qid, 'media', true );
+            $video_url = $media_id ? wp_get_attachment_url( $media_id ) : '';
+
+            // full: film cez reláciu 17 (rovnaké get_parents ako music_related_id)
+            $movie_id = self::music_related_id( $qid, 17 );
+
+            // choices: zoznam možností (newline-split, ako print_form_question)
+            // a správna možnosť (presný string match v evaluate_movie).
+            $choices_raw   = (string) get_post_meta( $qid, 'choices_for_answer', true );
+            $choices       = self::split_choices( $choices_raw );
+            $correct_choice = get_post_meta( $qid, 'correct_answer_for_choices', true );
+
+            $out[] = array(
+                'id'             => $qid,
+                'video_url'      => $video_url ? $video_url : null,
+                'correct_movie'  => self::lookup_entry( 'jet_cct_movies', 'original_title', $movie_id ),
+                'choices'        => $choices,
+                'correct_choice' => ( $correct_choice === '' ? null : (string) $correct_choice ),
+                'production'     => self::movies_production( $qid ),
+            );
+        }
+        return $out;
+    }
+
+    /**
+     * Rozdelí choices_for_answer (textarea, jedna možnosť na riadok) na pole
+     * orezaných reťazcov. Mirror logiky print_form_question() v moviesquiz —
+     * apostrofy sa neodstraňujú (GC renderuje plný label), prázdne riadky out.
+     */
+    private static function split_choices( $raw ) {
+        $raw = trim( (string) $raw );
+        if ( $raw === '' ) {
+            return array();
+        }
+        $parts = preg_split( '/\R/', $raw );
+        $out   = array();
+        foreach ( $parts as $p ) {
+            $p = trim( $p );
+            if ( $p !== '' ) {
+                $out[] = $p;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Production tag otázky questions-movies (taxonómia `production`).
+     * Slug prvého priradeného termu (skcz / zahranicne / rozpravky) alebo null.
+     */
+    private static function movies_production( $question_id ) {
+        $slugs = wp_get_post_terms( (int) $question_id, 'production', array( 'fields' => 'slugs' ) );
+        if ( is_wp_error( $slugs ) || empty( $slugs ) ) {
+            return null;
+        }
+        return (string) $slugs[0];
+    }
+
+    /**
+     * Knowledge quiz data builder.
+     *  - questions: celý pool CPT questions-knowledge (prompt = title,
+     *               prompt_html = content, image_url = featured image, hint,
+     *               choices / correct_variants / explanation / topic)
+     *  - scoring:   { answer_correct: 100 } — body za správnu odpoveď
+     *  - lookup_db: prázdny objekt — knowledge nemá autocomplete lookup
+     *
+     * Pozn.: correct_variants (server-side správne odpovede) a explanation sa
+     * exportujú do GC library (server-only) — GC ich NIKDY neposiela cez
+     * /questions, len cez /score reveal. choices sú verejné možnosti (select).
+     */
+    public static function build_knowledge_export() {
+        $questions = self::knowledge_questions();
+        $scoring   = self::knowledge_scoring_defaults();
+        // Knowledge nemá autocomplete lookup, ale Fáza 3 dodá dostupné kategórie
+        // (taxonómia `topic`) pre GC admin multi-select. Dynamické — z reálnych
+        // termov, nie hardcoded enum.
+        $lookup_db = array(
+            'topics' => self::taxonomy_terms( 'topic' ),
+        );
+
+        return array(
+            'questions' => $questions,
+            'scoring'   => $scoring,
+            'lookup_db' => $lookup_db,
+        );
+    }
+
+    /**
+     * Default knowledge scoring. Hodnota zhodná s knowledge credits['corr_answer']
+     * default (admin/class-eventkviz-admin.php render_knowledge_tab) = 100.
+     */
+    private static function knowledge_scoring_defaults() {
+        return array(
+            'answer_correct' => 100, // corr_answer — správna odpoveď
+        );
+    }
+
+    /**
+     * Všetky questions-knowledge CPT (celý pool, status publish) s prompt,
+     * obrázkom, hintom a správnymi odpoveďami:
+     *  - prompt:           post title (zobrazí GC ako otázku)
+     *  - prompt_html:      post content (HTML — GC sanitizuje pred renderom)
+     *  - image_url:        featured image URL (po syncu prepísané na GC storage)
+     *  - hint:             meta `hint` (voliteľná nápoveda)
+     *  - choices:          meta `choices-for-correct-answer` split na ';' (fallback
+     *                      ',') — ako print_form_question v knowledgequiz triede;
+     *                      null ak prázdne (= voľný text input v GC)
+     *  - correct_variants: zlúčené pipe-splity meta `correct-answer-1` +
+     *                      `correct-answer-2` (server-side správne odpovede)
+     *  - explanation:      meta `explanation-of-correct-answer` (reveal)
+     *  - topic:            slug prvého termu taxonómie `topic`
+     *
+     * Meta kľúče overené v Eventkviz_KnowledgeEval_Quiz_Class::
+     * get_correct_knowledge_answers() / show_knowledge_answer() /
+     * print_form_question().
+     */
+    private static function knowledge_questions() {
+        $posts = get_posts( array(
+            'post_type'   => 'questions-knowledge',
+            'post_status' => 'publish',
+            'numberposts' => -1,
+            'orderby'     => 'ID',
+            'order'       => 'ASC',
+        ) );
+
+        $out = array();
+        foreach ( $posts as $post ) {
+            $qid       = (int) $post->ID;
+            $image_url = get_the_post_thumbnail_url( $qid, 'large' );
+
+            // choices: ';' najprv, ',' fallback (mirror print_form_question).
+            $choices_raw = (string) get_post_meta( $qid, 'choices-for-correct-answer', true );
+            $choices     = self::split_knowledge_choices( $choices_raw );
+
+            // correct_variants: pipe-split correct-answer-1 + correct-answer-2,
+            // zlúčené (mirror get_correct_knowledge_answers).
+            $variants = array_merge(
+                self::split_answer_variants( get_post_meta( $qid, 'correct-answer-1', true ) ),
+                self::split_answer_variants( get_post_meta( $qid, 'correct-answer-2', true ) )
+            );
+
+            $explanation = get_post_meta( $qid, 'explanation-of-correct-answer', true );
+            $hint        = get_post_meta( $qid, 'hint', true );
+
+            $out[] = array(
+                'id'               => $qid,
+                'prompt'           => get_the_title( $qid ),
+                'prompt_html'      => get_post_field( 'post_content', $qid ),
+                'image_url'        => $image_url ? $image_url : null,
+                'hint'             => ( $hint === '' ? null : (string) $hint ),
+                'choices'          => ( empty( $choices ) ? null : $choices ),
+                'correct_variants' => array_values( $variants ),
+                'explanation'      => ( $explanation === '' ? null : (string) $explanation ),
+                'topic'            => self::knowledge_topic( $qid ),
+            );
+        }
+        return $out;
+    }
+
+    /**
+     * Rozdelí choices-for-correct-answer na pole orezaných možností. Mirror
+     * print_form_question() v knowledgequiz: split na ';', ak vyjde 1 prvok →
+     * fallback split na ','. Prázdne prvky vyhodené.
+     */
+    private static function split_knowledge_choices( $raw ) {
+        $raw = trim( (string) $raw );
+        if ( $raw === '' ) {
+            return array();
+        }
+        $parts = explode( ';', $raw );
+        if ( count( $parts ) === 1 ) {
+            $parts = explode( ',', $raw );
+        }
+        $out = array();
+        foreach ( $parts as $p ) {
+            $p = trim( $p );
+            if ( $p !== '' ) {
+                $out[] = $p;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Pipe-split jedného meta poľa na synonymá (Bratislava|BA|hlavné mesto).
+     * Mirror Eventkviz_KnowledgeEval_Quiz_Class::split_answer_variants().
+     */
+    private static function split_answer_variants( $s ) {
+        $s = (string) $s;
+        if ( $s === '' ) {
+            return array();
+        }
+        $parts = array_map( 'trim', explode( '|', $s ) );
+        return array_values( array_filter( $parts, 'strlen' ) );
+    }
+
+    /**
+     * Topic tag otázky questions-knowledge (taxonómia `topic`). Slug prvého
+     * priradeného termu, alebo null.
+     */
+    private static function knowledge_topic( $question_id ) {
+        $slugs = wp_get_post_terms( (int) $question_id, 'topic', array( 'fields' => 'slugs' ) );
+        if ( is_wp_error( $slugs ) || empty( $slugs ) ) {
+            return null;
+        }
+        return (string) $slugs[0];
+    }
+
+    /**
+     * Fáza 3: zoznam dostupných termov taxonómie (`production` / `topic`) pre
+     * GC admin multi-select. Vracia pole { slug, name } všetkých termov vrátane
+     * tých bez priradených príspevkov (hide_empty=false), zoradené podľa názvu.
+     * DYNAMICKÉ — GC admin nemá žiadny hardcoded enum kategórií. Ak taxonómia
+     * neexistuje alebo nemá termy → prázdne pole (graceful).
+     */
+    private static function taxonomy_terms( $taxonomy ) {
+        $terms = get_terms( array(
+            'taxonomy'   => $taxonomy,
+            'hide_empty' => false,
+            'orderby'    => 'name',
+            'order'      => 'ASC',
+        ) );
+        if ( is_wp_error( $terms ) || empty( $terms ) ) {
+            return array();
+        }
+        $out = array();
+        foreach ( $terms as $term ) {
+            $out[] = array(
+                'slug' => (string) $term->slug,
+                'name' => (string) $term->name,
             );
         }
         return $out;
