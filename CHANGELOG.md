@@ -2,6 +2,15 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.1] - 2026-05-27
+
+### Fixed (zobrazenie indície pri splnení kvízu — hudba + vedomosti)
+- Hudobný a vedomostný kvíz pri vyhodnotení ignorovali nastavenie „Formát pri splnení kvízu" — vždy hľadali obrázok-indíciu, aj keď bol zvolený Text. Pri prázdnom obrázku tak ostal mätúci prázdny box s textom „Vaša ďalšia indícia je:". Teraz rešpektujú Formát (Text / Obrázok) rovnako ako filmový kvíz.
+- Ak nie je nastavený žiadny text ani obrázok, prázdna veta „Vaša ďalšia indícia je:" sa už nezobrazí.
+
+### Changed (vyhodnotenie — odstránená nezmyselná motivačná veta)
+- Veta „Skús získať čo najviac bodov." sa už pri vyhodnotení nezobrazuje (zostáva len vo formulári pred hraním).
+
 ## [1.18.0] - 2026-05-27
 
 ### Changed (Music production filter: hardcoded single-select → dynamický multi-select z taxonómie)

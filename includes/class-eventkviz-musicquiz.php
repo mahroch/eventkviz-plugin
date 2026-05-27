@@ -346,10 +346,17 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
                         echo '<p>Získali ste dosť bodov. Použite kód nižšie v GeoChallenge appke.</p>';
                     } else {
                         echo '<p>Získali ste dosť bodov na postup a zobrazenie ďalšej indície.</p>';
-                        echo '<p>Vaša ďalšia indícia je:</p>';
-                        $url = wp_get_attachment_image_src( $this->cAkcia->music_settings['obrazok_pri_splneni_kvizu'],'large' );
-                        if (!empty($url[0])) {
-                            echo "<img src='" . esc_url($url[0]) . "' style='width:100%;border-radius:12px;display:block;margin-top:12px;'>";
+                        $format = $this->cAkcia->music_settings['format_pri_splneni'] ?? 'obrazok';
+                        if ($format === 'text') {
+                            if (!empty($this->cAkcia->music_settings['text_pri_splneni_kvizu'])) {
+                                echo '<div class="eventkviz_splnenie_kvizu">' . wp_kses_post($this->cAkcia->music_settings['text_pri_splneni_kvizu']) . '</div>';
+                            }
+                        } else {
+                            $url = wp_get_attachment_image_src( $this->cAkcia->music_settings['obrazok_pri_splneni_kvizu'] ?? 0, 'large' );
+                            if (!empty($url[0])) {
+                                echo '<p>Vaša ďalšia indícia je:</p>';
+                                echo "<img src='" . esc_url($url[0]) . "' style='width:100%;border-radius:12px;display:block;margin-top:12px;'>";
+                            }
                         }
                     }
                     echo '</div>';

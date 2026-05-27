@@ -644,9 +644,12 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 		}
 
 		// 2) Prah na kód / motivácia
+		// Motivačná veta "Skús získať čo najviac bodov." dáva zmysel len vo
+		// formulári (pred hraním) — v evale (po odohraní) je nezmyselná, preto
+		// sa pri min_body=0 v evale úplne vynechá.
 		if ( $min_body > 0 ) {
 			$sentences[] = sprintf( 'Na získanie kódu musíš dosiahnuť aspoň %d bodov.', $min_body );
-		} else {
+		} elseif ( ! $is_eval ) {
 			$sentences[] = 'Skús získať čo najviac bodov.';
 		}
 
