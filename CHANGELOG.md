@@ -2,6 +2,11 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.6] - 2026-05-27
+
+### Fixed (CSS cache — štýly sa neaktualizovali bez hard refresh)
+- Hlavný `eventkviz.css` sa enqueoval bez verzie → prehliadač ho cachoval natrvalo a zmeny štýlov sa neprejavili (vyžadovali hard refresh). Verzia je teraz `filemtime` súboru, takže cache sa obnoví automaticky pri každej úprave CSS.
+
 ## [1.18.5] - 2026-05-27
 
 ### Changed (stránka Výsledky/štatistika — nový dizajn v štýle kvízov)

@@ -254,7 +254,12 @@ function add_my_var($public_query_vars) {
 
 add_action( 'wp_enqueue_scripts', 'my_plugin_styles' );
 function my_plugin_styles() {
-		wp_enqueue_style( 'eventkviz-css', plugins_url( 'css/eventkviz.css', __FILE__ ) );
+		// Verzia = filemtime CSS súboru → cache sa automaticky obnoví pri každej
+		// zmene eventkviz.css (predtým bez verzie → prehliadač cachoval natrvalo
+		// a úpravy štýlov sa neprejavili bez hard refresh).
+		$css_path = plugin_dir_path( __FILE__ ) . 'css/eventkviz.css';
+		$ver = file_exists( $css_path ) ? filemtime( $css_path ) : ( defined( 'EVENKVIZ_VERSION' ) ? EVENKVIZ_VERSION : false );
+		wp_enqueue_style( 'eventkviz-css', plugins_url( 'css/eventkviz.css', __FILE__ ), array(), $ver );
 	}
 
 // Vráti true ak aktuálny post obsahuje aspoň jeden eventkviz shortcode.
