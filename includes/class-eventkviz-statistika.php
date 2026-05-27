@@ -13,22 +13,87 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
     }
 
     /**
-     * Ikona + slovenský názov pre quiz_type. Fallback pre neznáme typy.
+     * Názov mapovej šablóny podľa mq slug (z nastavení eventu).
      */
-    private function stats_quiz_meta( $type ) {
+    private function mapa_label( $slug ) {
+        if ( empty( $this->cAkcia->mapa_quizzes ) || ! is_array( $this->cAkcia->mapa_quizzes ) ) return '';
+        foreach ( $this->cAkcia->mapa_quizzes as $q ) {
+            if ( isset( $q['slug'] ) && $q['slug'] === $slug && ! empty( $q['label'] ) ) return $q['label'];
+        }
+        return '';
+    }
+
+    /**
+     * Ikona + slovenský názov pre kľúč kvíze. Mapové kľúče majú tvar "mapa:<slug>"
+     * a názov sa berie z konkrétnej mapovej šablóny.
+     */
+    private function stats_quiz_meta( $key ) {
+        if ( strpos( $key, 'mapa:' ) === 0 ) {
+            $label = $this->mapa_label( substr( $key, 5 ) );
+            return array( '🗺️', $label !== '' ? $label : 'Mapový kvíz' );
+        }
         $map = array(
             'music'     => array( '🎵', 'Hudobný kvíz' ),
             'movies'    => array( '🎬', 'Filmový kvíz' ),
             'knowledge' => array( '🧠', 'Vedomostný kvíz' ),
             'sudoku'    => array( '🔢', 'Sudoku' ),
-            'mapa'      => array( '🗺️', 'Mapový kvíz' ),
             'final'     => array( '🏁', 'Finálne miesto' ),
         );
-        return isset( $map[ $type ] ) ? $map[ $type ] : array( '📋', ucfirst( $type ) );
+        return isset( $map[ $key ] ) ? $map[ $key ] : array( '📋', ucfirst( $key ) );
     }
 
     /**
-     * Rebríček (leaderboard). $sorted = [ 'názov' => body ] už zoradené zostupne.
+     * Agreguje výsledky akcie podľa entity ('team' | 'user').
+     * Mapový kvíz rozlišuje jednotlivé šablóny (mq slug z question_set) — každá
+     * šablóna je samostatná súťažná položka. Pre každú položku sa berie najlepší
+     * pokus (MAX), celkové poradie = súčet týchto najlepších pokusov.
+     *
+     * @return array [ $leaderboard (zoradené zostupne), $by_quiz ]
+     */
+    private function build_stats( $akcia, $entity ) {
+        global $wpdb;
+        $col  = $entity === 'team' ? 'team' : 'user';
+        $rows = $wpdb->get_results( $wpdb->prepare( "
+            SELECT quiz_type, points, {$col} as ent, question_set
+            FROM {$wpdb->prefix}jet_cct_results
+            WHERE akcia = %s
+        ", $akcia ) );
+
+        $max = array(); // [itemKey][entita] = najlepší pokus
+        foreach ( (array) $rows as $r ) {
+            $ent = $r->ent;
+            if ( $ent === null || $ent === '' ) continue;
+
+            $key = $r->quiz_type;
+            if ( $r->quiz_type === 'mapa' ) {
+                $qs  = json_decode( (string) $r->question_set, true );
+                $mq  = ( is_array( $qs ) && ! empty( $qs['mq'] ) ) ? sanitize_key( $qs['mq'] ) : 'ine';
+                $key = 'mapa:' . $mq;
+            }
+
+            $p = (int) $r->points;
+            if ( ! isset( $max[ $key ][ $ent ] ) || $p > $max[ $key ][ $ent ] ) {
+                $max[ $key ][ $ent ] = $p;
+            }
+        }
+
+        $leaderboard = array();
+        $by_quiz     = array();
+        foreach ( $max as $key => $ents ) {
+            foreach ( $ents as $ent => $p ) {
+                if ( ! isset( $leaderboard[ $ent ] ) ) $leaderboard[ $ent ] = 0;
+                $leaderboard[ $ent ] += $p;
+                $by_quiz[ $key ][ $ent ] = $p;
+            }
+        }
+        arsort( $leaderboard );
+
+        return array( $leaderboard, $by_quiz );
+    }
+
+    /**
+     * Rebríček. $sorted = [ 'názov' => body ] zoradené zostupne. Poradie = obyčajné
+     * čísla (1., 2., 3. … rovnako pre všetkých).
      */
     private function render_leaderboard( $sorted ) {
         if ( empty( $sorted ) ) {
@@ -39,10 +104,8 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
         $pos = 0;
         foreach ( $sorted as $name => $pts ) {
             $pos++;
-            $medal = $pos === 1 ? '🥇' : ( $pos === 2 ? '🥈' : ( $pos === 3 ? '🥉' : $pos ) );
-            $cls   = $pos <= 3 ? ' ek-stats-rank--' . $pos : '';
-            echo '<li class="ek-stats-rank' . $cls . '">';
-            echo '<span class="ek-stats-rank-badge">' . $medal . '</span>';
+            echo '<li class="ek-stats-rank">';
+            echo '<span class="ek-stats-rank-badge">' . $pos . '</span>';
             echo '<span class="ek-stats-rank-name">' . esc_html( $name ) . '</span>';
             echo '<span class="ek-stats-rank-points">' . intval( $pts ) . ' b</span>';
             echo '</li>';
@@ -51,17 +114,25 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
     }
 
     /**
-     * Karty po kvízoch. $grouped = [ 'quiz_type' => [ 'názov' => body ] ].
+     * Karty po kvízoch. $grouped = [ kľúč => [ 'názov' => body ] ].
+     * Poradie kariet: štandardné kvízy, potom jednotlivé mapové šablóny.
      */
     private function render_by_quiz( $grouped ) {
         if ( empty( $grouped ) ) {
             echo '<p class="ek-stats-empty">Zatiaľ žiadne výsledky po kvízoch.</p>';
             return;
         }
+        $order = array( 'music' => 1, 'movies' => 2, 'knowledge' => 3, 'sudoku' => 4, 'final' => 5 );
+        uksort( $grouped, function( $a, $b ) use ( $order ) {
+            $oa = isset( $order[ $a ] ) ? $order[ $a ] : ( strpos( $a, 'mapa:' ) === 0 ? 10 : 8 );
+            $ob = isset( $order[ $b ] ) ? $order[ $b ] : ( strpos( $b, 'mapa:' ) === 0 ? 10 : 8 );
+            return $oa <=> $ob;
+        } );
+
         echo '<div class="ek-stats-quiz-grid">';
-        foreach ( $grouped as $type => $entries ) {
+        foreach ( $grouped as $key => $entries ) {
             arsort( $entries );
-            list( $icon, $label ) = $this->stats_quiz_meta( $type );
+            list( $icon, $label ) = $this->stats_quiz_meta( $key );
             echo '<div class="ek-stats-quiz-card">';
             echo '<div class="ek-stats-quiz-card-title">' . $icon . ' ' . esc_html( $label ) . '</div>';
             $pos = 0;
@@ -79,8 +150,7 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
     }
 
     /**
-     * Jednoduchý zoznam „štítok → hodnota" v glass štýle (napr. počet hráčov v tíme).
-     * $rows = [ 'štítok' => 'hodnota' ].
+     * Jednoduchý zoznam „štítok → hodnota" (napr. počet hráčov v tíme).
      */
     private function render_kv_list( $rows ) {
         if ( empty( $rows ) ) {
@@ -115,9 +185,6 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             return;
         }
 
-        global $wpdb;
-
-        // load_basic_event_settings() zvláda legacy per-event triedy aj meta-based eventy.
         $this->load_basic_event_settings( $value['akcia'] );
 
         if ( ! isset( $this->cAkcia ) || empty( $this->cAkcia->all_quizes_settings ) ) {
@@ -134,70 +201,17 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
 
         if ( $this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true ) {
 
-            // ----- Identifikácia hráčom (user code) -----
-
-            // Rebríček hráčov — súčet najlepších bodov hráča naprieč kvízmi.
-            $results = $wpdb->get_results( $wpdb->prepare( "
-                SELECT quiz_type, MAX(points) as points, user
-                FROM {$wpdb->prefix}jet_cct_results
-                WHERE akcia = %s
-                GROUP BY quiz_type, user
-            ", $value['akcia'] ) );
-
-            $leaderboard = array();
-            $by_quiz     = array();
-            foreach ( (array) $results as $r ) {
-                if ( $r->user === null || $r->user === '' ) continue;
-                if ( ! isset( $leaderboard[ $r->user ] ) ) $leaderboard[ $r->user ] = 0;
-                $leaderboard[ $r->user ] += (int) $r->points;
-                $by_quiz[ $r->quiz_type ][ $r->user ] = (int) $r->points;
-            }
-            arsort( $leaderboard );
-
-            // Poradie tímov (kumulatívne body tímu naprieč kvízmi).
-            $team_board = array();
-            foreach ( (array) $results as $r ) {
-                if ( $r->team === null || $r->team === '' ) continue;
-                if ( ! isset( $team_board[ $r->team ] ) ) $team_board[ $r->team ] = 0;
-                $team_board[ $r->team ] += (int) $r->points;
-            }
-            arsort( $team_board );
+            // ----- Identifikácia hráčom -----
+            list( $leaderboard, $by_quiz ) = $this->build_stats( $value['akcia'], 'user' );
 
             echo '<h2 class="ek-stats-section-title">Poradie hráčov</h2>';
             $this->render_leaderboard( $leaderboard );
 
-            if ( ! empty( $team_board ) ) {
-                echo '<h2 class="ek-stats-section-title">Poradie tímov</h2>';
-                $this->render_leaderboard( $team_board );
-            }
-
-            echo '<h2 class="ek-stats-section-title">Body po kvízoch (najlepší pokus)</h2>';
+            echo '<h2 class="ek-stats-section-title">Body po kvízoch</h2>';
             $this->render_by_quiz( $by_quiz );
 
-            // Body vrátane opakovaní — súčet bodov hráča cez všetky pokusy daného kvíze.
-            $sum_rows = $wpdb->get_results( $wpdb->prepare( "
-                SELECT r.quiz_type, r.user, SUM(r.points) as total_points
-                FROM (
-                    SELECT quiz_type, user, MAX(points) as points
-                    FROM {$wpdb->prefix}jet_cct_results
-                    WHERE akcia = %s
-                    GROUP BY quiz_type, user
-                ) as m
-                INNER JOIN {$wpdb->prefix}jet_cct_results as r
-                ON m.quiz_type = r.quiz_type AND m.user = r.user AND m.points = r.points
-                GROUP BY r.quiz_type, r.user
-            ", $value['akcia'] ) );
-            $by_quiz_sum = array();
-            foreach ( (array) $sum_rows as $r ) {
-                if ( $r->user === null || $r->user === '' ) continue;
-                $by_quiz_sum[ $r->quiz_type ][ $r->user ] = (int) $r->total_points;
-            }
-            if ( ! empty( $by_quiz_sum ) ) {
-                echo '<h2 class="ek-stats-section-title">Body vrátane opakovaní</h2>';
-                $this->render_by_quiz( $by_quiz_sum );
-            }
-
             // Počet hráčov v jednotlivých tímoch.
+            global $wpdb;
             $team_users = $wpdb->get_results( $wpdb->prepare( "
                 SELECT team, COUNT(DISTINCT user) as unique_users
                 FROM {$wpdb->prefix}jet_cct_results
@@ -220,52 +234,13 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
                 && $this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === false ) {
 
             // ----- Identifikácia tímom -----
-
-            $results = $wpdb->get_results( $wpdb->prepare( "
-                SELECT quiz_type, MAX(points) as points, team
-                FROM {$wpdb->prefix}jet_cct_results
-                WHERE akcia = %s
-                GROUP BY quiz_type, team
-            ", $value['akcia'] ) );
-
-            $leaderboard = array();
-            $by_quiz     = array();
-            foreach ( (array) $results as $r ) {
-                if ( $r->team === null || $r->team === '' ) continue;
-                if ( ! isset( $leaderboard[ $r->team ] ) ) $leaderboard[ $r->team ] = 0;
-                $leaderboard[ $r->team ] += (int) $r->points;
-                $by_quiz[ $r->quiz_type ][ $r->team ] = (int) $r->points;
-            }
-            arsort( $leaderboard );
+            list( $leaderboard, $by_quiz ) = $this->build_stats( $value['akcia'], 'team' );
 
             echo '<h2 class="ek-stats-section-title">Poradie tímov</h2>';
             $this->render_leaderboard( $leaderboard );
 
-            echo '<h2 class="ek-stats-section-title">Body po kvízoch (najlepší pokus)</h2>';
+            echo '<h2 class="ek-stats-section-title">Body po kvízoch</h2>';
             $this->render_by_quiz( $by_quiz );
-
-            // Body vrátane opakovaní — súčet bodov tímu cez všetky pokusy kvíze.
-            $sum_rows = $wpdb->get_results( $wpdb->prepare( "
-                SELECT r.quiz_type, r.team, SUM(r.points) as total_points
-                FROM (
-                    SELECT quiz_type, team, MAX(points) as points
-                    FROM {$wpdb->prefix}jet_cct_results
-                    WHERE akcia = %s
-                    GROUP BY quiz_type, team
-                ) as m
-                INNER JOIN {$wpdb->prefix}jet_cct_results as r
-                ON m.quiz_type = r.quiz_type AND m.team = r.team AND m.points = r.points
-                GROUP BY r.quiz_type, r.team
-            ", $value['akcia'] ) );
-            $by_quiz_sum = array();
-            foreach ( (array) $sum_rows as $r ) {
-                if ( $r->team === null || $r->team === '' ) continue;
-                $by_quiz_sum[ $r->quiz_type ][ $r->team ] = (int) $r->total_points;
-            }
-            if ( ! empty( $by_quiz_sum ) ) {
-                echo '<h2 class="ek-stats-section-title">Body vrátane opakovaní</h2>';
-                $this->render_by_quiz( $by_quiz_sum );
-            }
 
         } else {
             echo '<p class="ek-stats-empty">Pre túto akciu nie je nastavená identifikácia hráčov ani tímov.</p>';

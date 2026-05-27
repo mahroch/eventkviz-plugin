@@ -2,6 +2,14 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.7] - 2026-05-27
+
+### Changed (štatistika — mapové šablóny samostatne, opravené skórovanie, čistka)
+- **Mapový kvíz rozdelený na jednotlivé šablóny** (Hrady, Pohoria, Rieky, Vodné nádrže…) — každá je samostatná karta v „Body po kvízoch" aj samostatná položka v celkovom poradí.
+- **Opravené skórovanie máp:** predtým sa všetky mapové šablóny zlievali do jednej a rátal sa len jeden najlepší pokus → tím, čo hral viac máp, bol ukrátený. Teraz sa najlepší pokus počíta za každú mapu zvlášť a sčítava do poradia (mení sa celkové poradie).
+- Odstránená mätúca sekcia „Body vrátane opakovaní".
+- Rebríček: medaily nahradené jednotnými poradovými číslami (1., 2., 3., … rovnako pre všetkých).
+
 ## [1.18.6] - 2026-05-27
 
 ### Fixed (CSS cache — štýly sa neaktualizovali bez hard refresh)
