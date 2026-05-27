@@ -146,7 +146,7 @@ $this->all_quizes_settings['show_link_back_to_all_quizes'] = false;  // tru/fals
         
         //moznost zvolit si kolko otazok v sete dostane uzivatel
         $this->music_settings['pocet_otazok_v_sete'] = 10; // 0/cislo .... 0 znamena, ze sa vybera podla zadneho mnozstva v production settingu , 
-        $this->music_settings['production'] = 'all'; //skcz/zahranicne/all 
+        $this->music_settings['production'] = array(); // pole slugov produkcie; prazdne = vsetky. Termy: cz/sk/rozpravky/zahranicne
         
         $this->music_settings['poslat_vysledok_usera_mailom'] = false; //moznost poslat aktualny vysledok uzivatela po odoslani  na zadany email
         $this->music_settings['admin_mail'] = $this->all_quizes_settings['admin_mail']; //moznost poslat aktualny vysledok uzivatela po odoslani  na zadany email
@@ -172,7 +172,8 @@ $this->all_quizes_settings['show_link_back_to_all_quizes'] = false;  // tru/fals
         $this->movies_settings['production'] = 'all'; // skcz/zahranicne/all 
         
            $movies_settings['number_question_in_production'] = array ( 
-            'skcz' => 2,
+            'sk' => 1, // 'skcz' term bol vymazany -> rozdelene na sk + cz
+            'cz' => 1,
             'zahranicne' => 8
             );
 
@@ -303,7 +304,7 @@ class Eventkviz_esmt_Class extends Eventkviz_Akcia_Class {
         
         //moznost zvolit si kolko otazok v sete dostane uzivatel
         $this->music_settings['pocet_otazok_v_sete'] = 10; // 0/cislo .... 0 znamena, ze sa vybera podla zadneho mnozstva v production settingu , 
-        $this->music_settings['production'] = 'zahranicne'; //skcz/zahranicne/all 
+        $this->music_settings['production'] = array('zahranicne'); // pole slugov produkcie; prazdne = vsetky
         
         $this->music_settings['poslat_vysledok_usera_mailom'] = true; //moznost poslat aktualny vysledok uzivatela po odoslani  na zadany email
         $this->music_settings['admin_mail'] = 'mahroch@gmail.com'; //moznost poslat aktualny vysledok uzivatela po odoslani  na zadany email
@@ -461,7 +462,7 @@ class Eventkviz_event_Class extends Eventkviz_Akcia_Class {
         
         //moznost zvolit si kolko otazok v sete dostane uzivatel
         $this->music_settings['pocet_otazok_v_sete'] = 10; // 0/cislo .... 0 znamena, ze sa vybera podla zadneho mnozstva v production settingu , 
-        $this->music_settings['production'] = 'all'; //skcz/zahranicne/all 
+        $this->music_settings['production'] = array(); // pole slugov produkcie; prazdne = vsetky. Termy: cz/sk/rozpravky/zahranicne
         
         $this->music_settings['poslat_vysledok_usera_mailom'] = false; //moznost poslat aktualny vysledok uzivatela po odoslani  na zadany email
         $this->music_settings['admin_mail'] = 'mahroch@gmail.com'; //moznost poslat aktualny vysledok uzivatela po odoslani  na zadany email

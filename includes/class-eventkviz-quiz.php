@@ -1402,7 +1402,7 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
             'incorr_art_corr_song_corr_pos'       => 50,
         ),
         'pocet_otazok_v_sete'             => 10,
-        'production'                      => 'all',
+        'production'                      => array(), // multi-select pole slugov; prázdne = všetky
         'poslat_vysledok_usera_mailom'    => false,
         'admin_mail'                      => 'mahroch@gmail.com',
         'zobraz_spravne_odpovede'         => false,

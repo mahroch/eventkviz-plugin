@@ -2,6 +2,18 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.0] - 2026-05-27
+
+### Changed (Music production filter: hardcoded single-select → dynamický multi-select z taxonómie)
+- **Hudobný kvíz – Production (typ hudby)** v admin nastaveniach eventu už nie je hardcoded `<select>` s natvrdo zapísanými hodnotami **all / skcz / zahranicne**. Starý term **skcz** bol z taxonómie **production** vymazaný (aktuálne termy: **CZ, SK, Rozprávky, Zahranicne**), takže pôvodný select ponúkal neexistujúcu hodnotu.
+- Nový UI = **checkboxy generované dynamicky** z `get_terms(['taxonomy'=>'production','hide_empty'=>false])` (rovnaký vzor ako už majú MOVIES/KNOWLEDGE). Možnosť zvoliť viac produkcií naraz (multi-select). Nič zaškrtnuté = všetky produkcie.
+- **Storage**: meta **event_music_production** sa ukladá ako **pole slugov** (predtým single string). Pri save sa sanitizujú len existujúce term slugy (neexistujúce sa zahodia).
+- **Eval** (`Eventkviz_MusicForm_Quiz_Class::eventkviz_music_form()`): production filter z jednej hodnoty na **pole slugov** → `tax_query` `terms => [...]`, `operator => 'IN'` (otázky zo všetkých zvolených setov, union). Prázdne pole = bez filtra. Počet otázok (`pocet_otazok_v_sete`) logika zachovaná.
+- **Spätná kompatibilita** so starými eventmi (nový helper `normalize_production_filter()`): single `'all'`/prázdne → žiadny filter (všetky); `'skcz'` → `['sk','cz']`; `'zahranicne'`/iný slug → `[slug]`; pole slugov → sanitizované pole. Existujúce eventy (uložené `'all'`/`'zahranicne'`) fungujú bez migrácie.
+- Legacy súbor **public/eventkviz-akcie-settings.php** (už nepoužívaný): broken `'skcz' => 2` v movies `number_question_in_production` nahradené `'sk'`/`'cz'`; music `production` zladené na pole formát.
+- Pozn.: MOVIES a KNOWLEDGE production/topic filter už boli dynamické (per-term počty otázok z taxonómie) — nemenili sa. Táto zmena dorovnáva MUSIC.
+- Verify: `php -l` OK na všetkých zmenených súboroch; `get_terms('production')` vracia CZ/SK/Rozprávky/Zahranicne; WP_Query tax_query IN test — `[sk]`→21, `[sk,zahranicne]`→49 (union), bez filtra→49; unit test `normalize_production_filter` (legacy + array vstupy) prešiel.
+
 ## [1.17.0] - 2026-05-27
 
 ### Added (REST export — Fáza 2/3: MOVIES + KNOWLEDGE typy + dynamické kategórie pre GC ek-quiz integráciu)

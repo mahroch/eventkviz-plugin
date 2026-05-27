@@ -443,10 +443,39 @@ public function save_event_meta( $post_id ) {
     foreach ( $quiz_types as $type ) {
         if ( isset( $_POST['event_' . $type] ) && is_array( $_POST['event_' . $type] ) ) {
             foreach ( $_POST['event_' . $type] as $key => $value ) {
+                // 'production' pre music je multi-select (pole slugov) — savne sa nižšie zvlášť.
+                if ( $type === 'music' && $key === 'production' ) {
+                    continue;
+                }
+                if ( is_array( $value ) ) {
+                    // Iné prípadné array polia neukladaj cez sanitize_text_field (rozbilo by sa).
+                    continue;
+                }
                 $sanitized_value = sanitize_text_field( $value );
                 update_post_meta( $post_id, 'event_' . $type . '_' . sanitize_key( $key ), $sanitized_value );
             }
         }
+    }
+
+    // === MUSIC production — multi-select (pole slugov z taxonomie 'production') ===
+    // Ulož len existujúce slugy. Nič zaškrtnuté / nie v POST = prázdne pole = všetky produkcie.
+    if ( isset( $_POST['event_music'] ) && is_array( $_POST['event_music'] ) ) {
+        $valid_prod_slugs = get_terms( array(
+            'taxonomy'   => 'production',
+            'hide_empty' => false,
+            'fields'     => 'id=>slug',
+        ) );
+        $valid_prod_slugs = is_wp_error( $valid_prod_slugs ) ? array() : array_values( $valid_prod_slugs );
+
+        $posted_prod = isset( $_POST['event_music']['production'] ) ? (array) $_POST['event_music']['production'] : array();
+        $clean_prod  = array();
+        foreach ( $posted_prod as $slug ) {
+            $slug = sanitize_key( $slug );
+            if ( $slug !== '' && in_array( $slug, $valid_prod_slugs, true ) && ! in_array( $slug, $clean_prod, true ) ) {
+                $clean_prod[] = $slug;
+            }
+        }
+        update_post_meta( $post_id, 'event_music_production', $clean_prod );
     }
 
     // === MAPA — multi-quiz JSON array ===
@@ -853,12 +882,44 @@ private function render_music_tab( $post, $meta ) {
                 <tr>
                     <th><label>Production (typ hudby)</label></th>
                     <td>
-                        <select name="event_music[production]">
-                            <option value="all" <?php selected( $meta['event_music_production'][0] ?? 'all', 'all' ); ?>>All</option>
-                            <option value="skcz" <?php selected( $meta['event_music_production'][0] ?? 'all', 'skcz' ); ?>>SK/CZ</option>
-                            <option value="zahranicne" <?php selected( $meta['event_music_production'][0] ?? 'all', 'zahranicne' ); ?>>Zahraničné</option>
-                        </select>
-                        <p class="description">skcz/zahranicne/all - výber typu hudobnej produkcie</p>
+                        <?php
+                        // Multi-select checkboxy z taxonomie 'production' (dynamicky).
+                        // Uloží sa ako pole slugov v event_music_production. Prázdne pole = všetky.
+                        $music_prod_terms = get_terms( array( 'taxonomy' => 'production', 'hide_empty' => false ) );
+
+                        // Spätná kompatibilita: stará hodnota mohla byť single string
+                        // ('all'/'skcz'/'zahranicne'/iný slug) alebo už nové pole slugov.
+                        $music_prod_raw = isset( $meta['event_music_production'][0] ) ? maybe_unserialize( $meta['event_music_production'][0] ) : array();
+                        if ( is_array( $music_prod_raw ) ) {
+                            $music_prod_selected = $music_prod_raw;
+                        } else {
+                            $legacy = (string) $music_prod_raw;
+                            if ( $legacy === '' || $legacy === 'all' ) {
+                                $music_prod_selected = array(); // prázdne = všetky
+                            } elseif ( $legacy === 'skcz' ) {
+                                $music_prod_selected = array( 'sk', 'cz' );
+                            } else {
+                                $music_prod_selected = array( $legacy );
+                            }
+                        }
+                        $music_prod_selected = array_map( 'strval', (array) $music_prod_selected );
+
+                        if ( ! is_wp_error( $music_prod_terms ) && ! empty( $music_prod_terms ) ) :
+                        ?>
+                        <fieldset>
+                            <?php foreach ( $music_prod_terms as $term ) :
+                                $checked = in_array( $term->slug, $music_prod_selected, true );
+                            ?>
+                            <label style="display:block; margin-bottom:4px;">
+                                <input type="checkbox" name="event_music[production][]" value="<?php echo esc_attr( $term->slug ); ?>" <?php checked( $checked ); ?> />
+                                <?php echo esc_html( $term->name ); ?>
+                            </label>
+                            <?php endforeach; ?>
+                        </fieldset>
+                        <p class="description">Zaškrtni typy hudobnej produkcie. Otázky sa vyberú zo všetkých zaškrtnutých setov. Nič zaškrtnuté = všetky produkcie.</p>
+                        <?php else : ?>
+                        <p class="description">Žiadne termy taxonomie „production" — pridaj termy aby si mohol filtrovať.</p>
+                        <?php endif; ?>
                     </td>
                 </tr>
 

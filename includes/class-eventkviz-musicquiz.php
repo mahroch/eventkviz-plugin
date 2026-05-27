@@ -64,16 +64,22 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
             
             $number_of_questions = $this->cAkcia->music_settings['pocet_otazok_v_sete'];
 
-            if($this->cAkcia->music_settings['production'] != 'all') {
-                
+            // Multi-select production: hodnota môže byť pole slugov (nový formát),
+            // alebo legacy single string ('all'/'skcz'/'zahranicne'/iný slug).
+            // Prázdne pole / 'all' / prázdne = bez filtra (všetky otázky).
+            $production_filter = $this->normalize_production_filter( $this->cAkcia->music_settings['production'] ?? array() );
+
+            if ( ! empty( $production_filter ) ) {
+
                 $args = array(
                     'post_type'   => 'questions-audio',
                     'numberposts' => -1,
                     'tax_query' => array(
                         array(
-                            'taxonomy' => 'production', 
+                            'taxonomy' => 'production',
                             'field' => 'slug',
-                            'terms' => $this->cAkcia->music_settings['production'] 
+                            'terms' => $production_filter, // pole slugov => WP_Query IN
+                            'operator' => 'IN'
                         )
                     )
                 );
@@ -201,8 +207,41 @@ class Eventkviz_MusicForm_Quiz_Class extends Eventkviz_Quiz_Class{
         echo "</audio></div>";
     }
 
-   
-    
+    /**
+     * Normalizuje music production setting na pole platných slugov pre tax_query.
+     * Podporuje nový formát (pole slugov) aj legacy single string:
+     *   - prázdne / 'all' / prázdne pole -> [] (bez filtra = všetky otázky)
+     *   - 'skcz' (vymazaný term) -> ['sk','cz']
+     *   - 'zahranicne' / iný slug -> [slug]
+     *   - pole slugov -> sanitizované pole (prázdne hodnoty vyradené)
+     *
+     * @param mixed $value
+     * @return array Pole slugov (môže byť prázdne).
+     */
+    protected function normalize_production_filter( $value ) {
+        if ( is_array( $value ) ) {
+            $slugs = $value;
+        } else {
+            $legacy = (string) $value;
+            if ( $legacy === '' || $legacy === 'all' ) {
+                return array();
+            } elseif ( $legacy === 'skcz' ) {
+                $slugs = array( 'sk', 'cz' );
+            } else {
+                $slugs = array( $legacy );
+            }
+        }
+
+        $clean = array();
+        foreach ( $slugs as $slug ) {
+            $slug = sanitize_key( $slug );
+            if ( $slug !== '' && $slug !== 'all' && ! in_array( $slug, $clean, true ) ) {
+                $clean[] = $slug;
+            }
+        }
+        return $clean;
+    }
+
 }
 
 
