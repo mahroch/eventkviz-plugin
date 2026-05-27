@@ -2,9 +2,8 @@
 require_once( plugin_dir_path( __FILE__ ) . 'class-eventkviz-quiz.php' );
 
 class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
-    
-    public function __construct() {
 
+    public function __construct() {
 
     }
 
@@ -13,269 +12,266 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
         add_shortcode( 'statistika', array( $plugin, 'statistika' ) );
     }
 
+    /**
+     * Ikona + slovenský názov pre quiz_type. Fallback pre neznáme typy.
+     */
+    private function stats_quiz_meta( $type ) {
+        $map = array(
+            'music'     => array( '🎵', 'Hudobný kvíz' ),
+            'movies'    => array( '🎬', 'Filmový kvíz' ),
+            'knowledge' => array( '🧠', 'Vedomostný kvíz' ),
+            'sudoku'    => array( '🔢', 'Sudoku' ),
+            'mapa'      => array( '🗺️', 'Mapový kvíz' ),
+            'final'     => array( '🏁', 'Finálne miesto' ),
+        );
+        return isset( $map[ $type ] ) ? $map[ $type ] : array( '📋', ucfirst( $type ) );
+    }
 
-    public function statistika($atts = '') {
+    /**
+     * Rebríček (leaderboard). $sorted = [ 'názov' => body ] už zoradené zostupne.
+     */
+    private function render_leaderboard( $sorted ) {
+        if ( empty( $sorted ) ) {
+            echo '<p class="ek-stats-empty">Zatiaľ žiadne body.</p>';
+            return;
+        }
+        echo '<ol class="ek-stats-leaderboard">';
+        $pos = 0;
+        foreach ( $sorted as $name => $pts ) {
+            $pos++;
+            $medal = $pos === 1 ? '🥇' : ( $pos === 2 ? '🥈' : ( $pos === 3 ? '🥉' : $pos ) );
+            $cls   = $pos <= 3 ? ' ek-stats-rank--' . $pos : '';
+            echo '<li class="ek-stats-rank' . $cls . '">';
+            echo '<span class="ek-stats-rank-badge">' . $medal . '</span>';
+            echo '<span class="ek-stats-rank-name">' . esc_html( $name ) . '</span>';
+            echo '<span class="ek-stats-rank-points">' . intval( $pts ) . ' b</span>';
+            echo '</li>';
+        }
+        echo '</ol>';
+    }
+
+    /**
+     * Karty po kvízoch. $grouped = [ 'quiz_type' => [ 'názov' => body ] ].
+     */
+    private function render_by_quiz( $grouped ) {
+        if ( empty( $grouped ) ) {
+            echo '<p class="ek-stats-empty">Zatiaľ žiadne výsledky po kvízoch.</p>';
+            return;
+        }
+        echo '<div class="ek-stats-quiz-grid">';
+        foreach ( $grouped as $type => $entries ) {
+            arsort( $entries );
+            list( $icon, $label ) = $this->stats_quiz_meta( $type );
+            echo '<div class="ek-stats-quiz-card">';
+            echo '<div class="ek-stats-quiz-card-title">' . $icon . ' ' . esc_html( $label ) . '</div>';
+            $pos = 0;
+            foreach ( $entries as $name => $pts ) {
+                $pos++;
+                echo '<div class="ek-stats-quiz-row">';
+                echo '<span class="ek-stats-quiz-row-pos">' . $pos . '.</span>';
+                echo '<span class="ek-stats-quiz-row-name">' . esc_html( $name ) . '</span>';
+                echo '<span class="ek-stats-quiz-row-pts">' . intval( $pts ) . ' b</span>';
+                echo '</div>';
+            }
+            echo '</div>';
+        }
+        echo '</div>';
+    }
+
+    /**
+     * Jednoduchý zoznam „štítok → hodnota" v glass štýle (napr. počet hráčov v tíme).
+     * $rows = [ 'štítok' => 'hodnota' ].
+     */
+    private function render_kv_list( $rows ) {
+        if ( empty( $rows ) ) {
+            echo '<p class="ek-stats-empty">Žiadne dáta.</p>';
+            return;
+        }
+        echo '<ul class="ek-stats-leaderboard">';
+        foreach ( $rows as $label => $val ) {
+            echo '<li class="ek-stats-rank">';
+            echo '<span class="ek-stats-rank-name">' . esc_html( $label ) . '</span>';
+            echo '<span class="ek-stats-rank-points">' . esc_html( $val ) . '</span>';
+            echo '</li>';
+        }
+        echo '</ul>';
+    }
+
+    public function statistika( $atts = '' ) {
 
         $value = shortcode_atts( array(
-            'type' => '',
-            'akcia' => ''
+            'type'  => '',
+            'akcia' => '',
         ), $atts );
 
-        if (empty($value['akcia']) && get_query_var('akcia')) {
-            $value['akcia'] = sanitize_key(get_query_var('akcia'));
+        if ( empty( $value['akcia'] ) && get_query_var( 'akcia' ) ) {
+            $value['akcia'] = sanitize_key( get_query_var( 'akcia' ) );
         }
 
-        if (empty($value['akcia'])) {
-            echo '<p>Akcia nie je špecifikovaná. Použite <code>?akcia=&lt;slug&gt;</code> v URL.</p>';
+        if ( empty( $value['akcia'] ) ) {
+            echo '<div class="ek-quiz ek-quiz--stats"><div class="ek-quiz-content">';
+            echo '<p class="ek-stats-empty">Akcia nie je špecifikovaná. Použite ?akcia=&lt;slug&gt; v URL.</p>';
+            echo '</div></div>';
             return;
         }
 
         global $wpdb;
 
-        // load_basic_event_settings() handles both legacy per-event classes and meta-based events.
-        // Previously statistika also called $this->all_quizes_settings($value['akcia']) here, which
-        // tried to instantiate Eventkviz_<akcia>_Class — that worked for legacy events (henkel/esmt/...)
-        // but crashes for meta-based events created via the eventkviz_event CPT (Berlin onwards).
-        $this->load_basic_event_settings( $value['akcia']);
+        // load_basic_event_settings() zvláda legacy per-event triedy aj meta-based eventy.
+        $this->load_basic_event_settings( $value['akcia'] );
 
-        if (!isset($this->cAkcia) || empty($this->cAkcia->all_quizes_settings)) {
-            echo '<p>Akcia <code>' . esc_html($value['akcia']) . '</code> sa nenašla, alebo nemá nastavenia.</p>';
+        if ( ! isset( $this->cAkcia ) || empty( $this->cAkcia->all_quizes_settings ) ) {
+            echo '<div class="ek-quiz ek-quiz--stats"><div class="ek-quiz-content">';
+            echo '<p class="ek-stats-empty">Akcia „' . esc_html( $value['akcia'] ) . '" sa nenašla alebo nemá nastavenia.</p>';
+            echo '</div></div>';
             return;
         }
 
-        if ($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true){
+        echo '<div class="ek-quiz ek-quiz--stats">';
+        echo '<div class="ek-quiz-content">';
+        echo '<h1 class="ek-quiz-title">🏆 Výsledky</h1>';
+        echo '<p class="ek-quiz-subtitle">Priebežné poradie a body po kvízoch</p>';
 
-            $results = $wpdb->get_results($wpdb->prepare("
-                SELECT quiz_type, MAX(points) as points, user, team
+        if ( $this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true ) {
+
+            // ----- Identifikácia hráčom (user code) -----
+
+            // Rebríček hráčov — súčet najlepších bodov hráča naprieč kvízmi.
+            $results = $wpdb->get_results( $wpdb->prepare( "
+                SELECT quiz_type, MAX(points) as points, user
                 FROM {$wpdb->prefix}jet_cct_results
                 WHERE akcia = %s
                 GROUP BY quiz_type, user
-            ", $value['akcia']));
+            ", $value['akcia'] ) );
 
-            $cumulative_points = array();
-            $users = array();
-            if(!empty($results)) {
-                foreach ($results as $result) {
-                    //$data = maybe_unserialize($result->akcia);
-                    //$akcia = $data['akcia'];
-                    $team = $result->team;
-                    $points = $result->points;
+            $leaderboard = array();
+            $by_quiz     = array();
+            foreach ( (array) $results as $r ) {
+                if ( $r->user === null || $r->user === '' ) continue;
+                if ( ! isset( $leaderboard[ $r->user ] ) ) $leaderboard[ $r->user ] = 0;
+                $leaderboard[ $r->user ] += (int) $r->points;
+                $by_quiz[ $r->quiz_type ][ $r->user ] = (int) $r->points;
+            }
+            arsort( $leaderboard );
 
-                    // Compute cumulative points for team
-                    if (!isset($cumulative_points[$team])) {
-                        $cumulative_points[$team] = 0;
-                    }
-                    $cumulative_points[$team] += $points;
+            // Poradie tímov (kumulatívne body tímu naprieč kvízmi).
+            $team_board = array();
+            foreach ( (array) $results as $r ) {
+                if ( $r->team === null || $r->team === '' ) continue;
+                if ( ! isset( $team_board[ $r->team ] ) ) $team_board[ $r->team ] = 0;
+                $team_board[ $r->team ] += (int) $r->points;
+            }
+            arsort( $team_board );
 
-                    // Add user to team
-                    if (!isset($users[$team])) {
-                        $users[$team] = array();
-                    }
-                    $users[$team][] = array('user' => $result->user, 'points' => $points);
-                }
+            echo '<h2 class="ek-stats-section-title">Poradie hráčov</h2>';
+            $this->render_leaderboard( $leaderboard );
 
-                // Sort teams by cumulative points in descending order
-                arsort($cumulative_points);
+            if ( ! empty( $team_board ) ) {
+                echo '<h2 class="ek-stats-section-title">Poradie tímov</h2>';
+                $this->render_leaderboard( $team_board );
+            }
 
-                // Sort users in each team by points in descending order
-                foreach ($users as &$team_users) {
-                    usort($team_users, function($a, $b) {
-                        return $b['points'] - $a['points'];
-                    });
-                }
+            echo '<h2 class="ek-stats-section-title">Body po kvízoch (najlepší pokus)</h2>';
+            $this->render_by_quiz( $by_quiz );
 
-                // Display cumulative points for each team
-                echo "<h2>Cumulative points of teams</h2>";
-                echo "<ol>";
-                foreach ($cumulative_points as $team => $points) {
-                    echo "<li>{$team}: {$points} points</li>";
-                }
-                echo "</ol>";
-             }
-            // Display users and their points for each team
-
-            echo "<h2>Teams grouped by quiz</h2>";
-            //$sql = "SELECT quiz_type, MAX(points) as cumulative_points, team FROM {$wpdb->prefix}jet_cct_results WHERE akcia = '" . $value['akcia'] . "' GROUP BY quiz_type, user";
-        $sql = $wpdb->prepare("SELECT quiz_type, user, MAX(points) AS max_points
-        FROM {$wpdb->prefix}jet_cct_results
-        WHERE akcia = %s
-        GROUP BY quiz_type, user", $value['akcia']);
-
-$results = $wpdb->get_results($sql);
-
-// Initialize an empty array to store the cumulative points for each user group by quiz_type
-$cumulative_points = array();
-
-// Loop through the results and calculate the cumulative points for each user group by quiz_type
-foreach ($results as $result) {
-    $quiz_type = $result->quiz_type;
-    $points = $result->max_points;
-    $user = $result->user;
-
-    if (!isset($cumulative_points[$quiz_type])) {
-        $cumulative_points[$quiz_type] = array();
-    }
-
-    if (!isset($cumulative_points[$quiz_type][$user])) {
-        $cumulative_points[$quiz_type][$user] = $points;
-    } else {
-        $cumulative_points[$quiz_type][$user] += $points;
-    }
-}
-
-// Print the cumulative points for each user group by quiz_type
-foreach ($cumulative_points as $quiz_type => $users) {
-    echo "<b>Quiz Type: $quiz_type</b><br>";
-    foreach ($users as $user => $points) {
-        echo "User: $user, Cumulative Points: $points<br>";
-    }
-}
-
-                echo "<h2>Unique users in quiz type</h2>";
-                $results = $wpdb->get_results($wpdb->prepare("
-                    SELECT r.quiz_type, r.user, SUM(r.points) as total_points
-                    FROM (
-                        SELECT quiz_type, user, MAX(points) as points
-                        FROM {$wpdb->prefix}jet_cct_results
-                        WHERE akcia = %s
-                        GROUP BY quiz_type, user
-                    ) as m
-                    INNER JOIN {$wpdb->prefix}jet_cct_results as r
-                    ON m.quiz_type = r.quiz_type
-                    AND m.user = r.user
-                    AND m.points = r.points
-                    GROUP BY r.quiz_type, r.user
-                ", $value['akcia']));
-
-                foreach ($results as $result) {
-                    echo $result->user . ' (' . $result->quiz_type . '): ' . $result->total_points . ' points<br>';
-                }
-
-                echo "<h2>Unique users for each team</h2>";
-
-                $results = $wpdb->get_results($wpdb->prepare("
-                SELECT team, COUNT(DISTINCT user) as unique_users
-                FROM {$wpdb->prefix}jet_cct_results
-                WHERE akcia = %s
-                GROUP BY team
-                ORDER BY unique_users DESC
-                ", $value['akcia']));
-
-                foreach ($results as $result) {
-                    echo $result->team . ': ' . $result->unique_users . ' unique users<br>';
-                }
-
-
-
-                echo "<h2>Users with total points</h2>";
-                    $results = $wpdb->get_results($wpdb->prepare("
-                    SELECT quiz_type, MAX(points) as cumulative_points, user
+            // Body vrátane opakovaní — súčet bodov hráča cez všetky pokusy daného kvíze.
+            $sum_rows = $wpdb->get_results( $wpdb->prepare( "
+                SELECT r.quiz_type, r.user, SUM(r.points) as total_points
+                FROM (
+                    SELECT quiz_type, user, MAX(points) as points
                     FROM {$wpdb->prefix}jet_cct_results
                     WHERE akcia = %s
                     GROUP BY quiz_type, user
-                ", $value['akcia']));
+                ) as m
+                INNER JOIN {$wpdb->prefix}jet_cct_results as r
+                ON m.quiz_type = r.quiz_type AND m.user = r.user AND m.points = r.points
+                GROUP BY r.quiz_type, r.user
+            ", $value['akcia'] ) );
+            $by_quiz_sum = array();
+            foreach ( (array) $sum_rows as $r ) {
+                if ( $r->user === null || $r->user === '' ) continue;
+                $by_quiz_sum[ $r->quiz_type ][ $r->user ] = (int) $r->total_points;
+            }
+            if ( ! empty( $by_quiz_sum ) ) {
+                echo '<h2 class="ek-stats-section-title">Body vrátane opakovaní</h2>';
+                $this->render_by_quiz( $by_quiz_sum );
+            }
 
-                // Initialize an empty array to store the cumulative points for each user
-                $cumulative_points = array();
+            // Počet hráčov v jednotlivých tímoch.
+            $team_users = $wpdb->get_results( $wpdb->prepare( "
+                SELECT team, COUNT(DISTINCT user) as unique_users
+                FROM {$wpdb->prefix}jet_cct_results
+                WHERE akcia = %s AND user IS NOT NULL AND user <> ''
+                GROUP BY team
+                ORDER BY unique_users DESC
+            ", $value['akcia'] ) );
+            $tu_rows = array();
+            foreach ( (array) $team_users as $r ) {
+                if ( $r->team === null || $r->team === '' ) continue;
+                $n = (int) $r->unique_users;
+                $tu_rows[ $r->team ] = $n . ' ' . ( $n === 1 ? 'hráč' : ( $n >= 2 && $n <= 4 ? 'hráči' : 'hráčov' ) );
+            }
+            if ( ! empty( $tu_rows ) ) {
+                echo '<h2 class="ek-stats-section-title">Počet hráčov v tímoch</h2>';
+                $this->render_kv_list( $tu_rows );
+            }
 
-                // Loop through the results and calculate the cumulative points for each user
-                foreach ($results as $result) {
-                    $quiz_type = $result->quiz_type;
-                    $points = $result->cumulative_points;
-                    $user = $result->user;
+        } elseif ( $this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] == true
+                && $this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === false ) {
 
-                    if (!isset($cumulative_points[$user])) {
-                        $cumulative_points[$user] = 0;
-                    }
+            // ----- Identifikácia tímom -----
 
-                    $cumulative_points[$user] += $points;
-                }
-                arsort($cumulative_points);
-                // Print the list of users with their cumulative points
-                echo '<ol>'; 
-                foreach ($cumulative_points as $user => $points) {
-                    echo "<li>User: $user - $points points<br>";
-                }
-                echo '</ol>'; 
-
-        } elseif ($this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] == true && $this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === false){
-            
-            //echo 'toto';
-            
-            $results = $wpdb->get_results($wpdb->prepare("
+            $results = $wpdb->get_results( $wpdb->prepare( "
                 SELECT quiz_type, MAX(points) as points, team
                 FROM {$wpdb->prefix}jet_cct_results
                 WHERE akcia = %s
                 GROUP BY quiz_type, team
-            ", $value['akcia']));
+            ", $value['akcia'] ) );
 
-            $cumulative_points = array();
-            $users = array();
-            foreach ($results as $result) {
-                //$data = maybe_unserialize($result->akcia);
-                //$akcia = $data['akcia'];
-                $team = $result->team;
-                $points = $result->points;
-
-                // Compute cumulative points for team
-                if (!isset($cumulative_points[$team])) {
-                    $cumulative_points[$team] = 0;
-                }
-                $cumulative_points[$team] += $points;
+            $leaderboard = array();
+            $by_quiz     = array();
+            foreach ( (array) $results as $r ) {
+                if ( $r->team === null || $r->team === '' ) continue;
+                if ( ! isset( $leaderboard[ $r->team ] ) ) $leaderboard[ $r->team ] = 0;
+                $leaderboard[ $r->team ] += (int) $r->points;
+                $by_quiz[ $r->quiz_type ][ $r->team ] = (int) $r->points;
             }
+            arsort( $leaderboard );
 
-            // Sort teams by cumulative points in descending order
-            arsort($cumulative_points);
+            echo '<h2 class="ek-stats-section-title">Poradie tímov</h2>';
+            $this->render_leaderboard( $leaderboard );
 
-            // Display cumulative points for each team
-            echo "<h2>Cumulative points of teams</h2>";
-            echo "<ol>";
-            foreach ($cumulative_points as $team => $points) {
-                echo "<li>{$team}: {$points} points</li>";
-            }
-            echo "</ol>";
+            echo '<h2 class="ek-stats-section-title">Body po kvízoch (najlepší pokus)</h2>';
+            $this->render_by_quiz( $by_quiz );
 
-            // Display users and their points for each team
-
-            echo "<h2>Teams grouped by quiz</h2>";
-                $results = $wpdb->get_results($wpdb->prepare("
-                    SELECT quiz_type, MAX(points) as cumulative_points, team
+            // Body vrátane opakovaní — súčet bodov tímu cez všetky pokusy kvíze.
+            $sum_rows = $wpdb->get_results( $wpdb->prepare( "
+                SELECT r.quiz_type, r.team, SUM(r.points) as total_points
+                FROM (
+                    SELECT quiz_type, team, MAX(points) as points
                     FROM {$wpdb->prefix}jet_cct_results
                     WHERE akcia = %s
                     GROUP BY quiz_type, team
-                ", $value['akcia']));
+                ) as m
+                INNER JOIN {$wpdb->prefix}jet_cct_results as r
+                ON m.quiz_type = r.quiz_type AND m.team = r.team AND m.points = r.points
+                GROUP BY r.quiz_type, r.team
+            ", $value['akcia'] ) );
+            $by_quiz_sum = array();
+            foreach ( (array) $sum_rows as $r ) {
+                if ( $r->team === null || $r->team === '' ) continue;
+                $by_quiz_sum[ $r->quiz_type ][ $r->team ] = (int) $r->total_points;
+            }
+            if ( ! empty( $by_quiz_sum ) ) {
+                echo '<h2 class="ek-stats-section-title">Body vrátane opakovaní</h2>';
+                $this->render_by_quiz( $by_quiz_sum );
+            }
 
-                // Initialize an empty array to store the cumulative points for each user group by quiz_type
-                $cumulative_points = array();
-
-                // Loop through the results and calculate the cumulative points for each user group by quiz_type
-                foreach ($results as $result) {
-                    $quiz_type = $result->quiz_type;
-                    $points = $result->cumulative_points;
-                    $team = $result->team;
-
-                    if (!isset($cumulative_points[$quiz_type])) {
-                        $cumulative_points[$quiz_type] = array();
-                    }
-
-                    if (!isset($cumulative_points[$quiz_type][$team])) {
-                        $cumulative_points[$quiz_type][$team] = $points;
-                    } else {
-                        $cumulative_points[$quiz_type][$team] += $points;
-                    }
-                }
-
-                // Print the cumulative points for each user group by quiz_type
-                foreach ($cumulative_points as $quiz_type => $teams) {
-                    echo "<b>Quiz Type: $quiz_type</b><br>";
-                    foreach ($teams as $team => $points) {
-                        echo "Team: $team, Cumulative Points: $points<br>";
-                    }
-                }
-            
-            
         } else {
-            
+            echo '<p class="ek-stats-empty">Pre túto akciu nie je nastavená identifikácia hráčov ani tímov.</p>';
         }
+
+        echo '</div>'; // .ek-quiz-content
+        echo '</div>'; // .ek-quiz
     }
 }

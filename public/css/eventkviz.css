@@ -905,3 +905,109 @@ body .ek-scoring-info,
     text-align: center;
     box-sizing: border-box;
 }
+
+/* ============================================================
+   Štatistika / Výsledky (shortcode [statistika])
+   Rovnaký dizajnový jazyk ako kvízové stránky (ek-quiz glass card).
+   ============================================================ */
+.ek-stats-section-title {
+    font-size: 20px;
+    font-weight: 800;
+    text-align: center;
+    color: var(--ek-text);
+    margin: 28px 0 16px;
+}
+.ek-stats-section-title:first-of-type { margin-top: 8px; }
+
+/* Rebríček tímov/hráčov */
+.ek-stats-leaderboard {
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.ek-stats-rank {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 18px;
+    background: var(--ek-card-bg);
+    border: 1px solid var(--ek-card-border);
+    border-radius: var(--ek-radius-sm);
+    color: var(--ek-text);
+}
+.ek-stats-rank-badge {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.18);
+}
+.ek-stats-rank-name {
+    flex: 1 1 auto;
+    font-weight: 600;
+    font-size: 16px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.ek-stats-rank-points {
+    flex: 0 0 auto;
+    font-weight: 800;
+    font-size: 16px;
+}
+/* Top 3 zvýraznenie */
+.ek-stats-rank--1 { background: rgba(255,215,0,0.22); border-color: rgba(255,215,0,0.55); }
+.ek-stats-rank--2 { background: rgba(192,192,192,0.20); border-color: rgba(192,192,192,0.5); }
+.ek-stats-rank--3 { background: rgba(205,127,50,0.20); border-color: rgba(205,127,50,0.5); }
+.ek-stats-rank--1 .ek-stats-rank-badge,
+.ek-stats-rank--2 .ek-stats-rank-badge,
+.ek-stats-rank--3 .ek-stats-rank-badge { background: transparent; font-size: 22px; }
+
+/* Karty po kvízoch */
+.ek-stats-quiz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+}
+.ek-stats-quiz-card {
+    background: var(--ek-card-bg);
+    border: 1px solid var(--ek-card-border);
+    border-radius: var(--ek-radius-sm);
+    padding: 16px 18px;
+    color: var(--ek-text);
+}
+.ek-stats-quiz-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0 0 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--ek-card-border);
+}
+.ek-stats-quiz-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+    font-size: 15px;
+}
+.ek-stats-quiz-row-pos { flex: 0 0 auto; opacity: 0.7; min-width: 18px; }
+.ek-stats-quiz-row-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ek-stats-quiz-row-pts { flex: 0 0 auto; font-weight: 700; }
+
+.ek-stats-empty {
+    text-align: center;
+    color: var(--ek-text-muted);
+    font-style: italic;
+    padding: 20px;
+}

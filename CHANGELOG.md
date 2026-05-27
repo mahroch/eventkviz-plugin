@@ -2,6 +2,13 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.5] - 2026-05-27
+
+### Changed (stránka Výsledky/štatistika — nový dizajn v štýle kvízov)
+- Štatistika prepracovaná do dizajnu kvízových stránok (fialový gradient + glass karta), po slovensky. Rebríček tímov/hráčov s medailami (🥇🥈🥉, top 3 zvýraznené), body po kvízoch ako prehľadné karty s ikonou a názvom kvíze.
+- Zachované/vrátené všetky metriky: poradie, body po kvízoch (najlepší pokus), body vrátane opakovaní, počet hráčov v tímoch (pri identifikácii hráčom).
+- CSS enqueue je viazaný na verziu pluginu — po tomto bumpe sa nové štýly načítajú bez nutnosti hard refresh.
+
 ## [1.18.4] - 2026-05-27
 
 ### Fixed (mapový kvíz — „Pri opakovaní označ správnosť" nefungovalo pri líniách)
