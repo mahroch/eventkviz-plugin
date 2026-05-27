@@ -484,17 +484,28 @@ body .ek-quiz-submit:disabled {
     line-height: 1.4;
 }
 
-/* show_answer() classes — bright on dark glass */
+/* show_answer() classes — solid chip s tmavým textom, čitateľné na
+   ľubovoľnom Elementor pozadí (svetlý lavender aj tmavý gradient). Bývalo
+   bright #4ade80 / #fb7185 — na svetlom pozadí zanikalo (rovnaký problém
+   ako mal .ek-quiz-message--fail). */
 .ek-quiz-content .eventkviz_correct_answer,
 .ek-quiz-content .eventkviz_gained_points {
-    color: #4ade80 !important; /* bright green */
+    color: #14532d !important; /* dark green */
+    background: #dcfce7;
+    border: 1px solid #4ade80;
+    border-radius: 10px;
+    padding: 8px 14px;
     font-weight: 700;
     margin: 6px 0;
     display: block;
 }
 .ek-quiz-content .eventkviz_incorrect_answer {
-    color: #fb7185 !important; /* bright rose */
-    font-weight: 600;
+    color: #7f1d1d !important; /* dark red */
+    background: #fee2e2;
+    border: 1px solid #f87171;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-weight: 700;
     margin: 6px 0;
     display: block;
 }

@@ -2,6 +2,11 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.3] - 2026-05-27
+
+### Fixed (vedomostný kvíz — zle čitateľné červené/zelené hodnotenie odpovede)
+- Hlášky „Odpoveď nie je správna…" / „Odpoveď je správna…" pri vyhodnotení boli svetločervené/svetlozelené a na svetlom (lavender) pozadí zanikali. Teraz sú v čitateľnom boxe s tmavým textom — čitateľné na ľubovoľnom pozadí (rovnaký princíp ako hlášky úspech/neúspech).
+
 ## [1.18.2] - 2026-05-27
 
 ### Fixed (filmový kvíz — opakovanie nenačítalo žiadne filmy pri per-production rozdelení)
