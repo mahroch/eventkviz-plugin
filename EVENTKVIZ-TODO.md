@@ -13,7 +13,7 @@ Položky vyznačené **(?)** majú otvorené otázky pre špecifikáciu.
 ### ~~A2. Fullscreen browser mód na desktope — startup karta necentrovaná vertikálne~~
 **Hotové vo v1.18.9** — `.ek-startup` má `min-height: 100vh` (+ `100dvh`).
 
-### A4. Označiť v hub-prehľade kvízy, ktoré tím už absolvoval
+### ~~A4. Označiť v hub-prehľade kvízy, ktoré tím už absolvoval~~ — **HOTOVÉ v1.18.11**
 **Stav:** open · **Zapísané:** 2026-05-29
 V hub stránke (`/eventkviz-vstup/?akcia=X&team=Y`) pri zobrazení kariet jednotlivých kvízov (Hudobný / Filmový / Vedomostný / Sudoku / Mapový sub-kvízy) ukázať vizuálny indikátor pri tých, ktoré daný tím už **aspoň raz absolvoval** (napr. zelená fajka v rohu karty, badge „Hraný" / „X b", alebo zmena vzhľadu karty).
 **Dáta:** ide cez `pmgonijet_cct_results` — pre daný `akcia` + `team` (alebo `user`) zistiť, ktoré `quiz_type` (a pri mapách `mq` slug z `question_set`) majú aspoň jeden záznam. Najlepšie odovzdať do JS pri renderovaní hub stránky.

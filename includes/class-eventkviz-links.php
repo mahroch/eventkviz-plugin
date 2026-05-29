@@ -254,6 +254,40 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             echo '</div>'; // .ek-startup-card
             echo '</div>'; // .ek-startup
 
+            // A4: ak je v URL identifikácia (team/user), zisti ktoré kvízy už
+            // tento tím / hráč absolvoval (a najlepšie skóre) → JS zobrazí badge
+            // pri kartách hraných kvízov.
+            $a4_team = isset( $_GET['team'] ) ? sanitize_text_field( wp_unslash( $_GET['team'] ) ) : '';
+            $a4_user = isset( $_GET['user'] ) ? sanitize_text_field( wp_unslash( $_GET['user'] ) ) : '';
+            $a4_played = array();
+            if ( $a4_team !== '' || $a4_user !== '' ) {
+                global $wpdb;
+                if ( $a4_team !== '' ) {
+                    $a4_rows = $wpdb->get_results( $wpdb->prepare(
+                        "SELECT quiz_type, points, question_set FROM {$wpdb->prefix}jet_cct_results WHERE akcia = %s AND team = %s",
+                        $value['akcia'], $a4_team
+                    ) );
+                } else {
+                    $a4_rows = $wpdb->get_results( $wpdb->prepare(
+                        "SELECT quiz_type, points, question_set FROM {$wpdb->prefix}jet_cct_results WHERE akcia = %s AND user = %s",
+                        $value['akcia'], $a4_user
+                    ) );
+                }
+                foreach ( (array) $a4_rows as $r ) {
+                    $key = $r->quiz_type;
+                    if ( $r->quiz_type === 'mapa' ) {
+                        $qs = json_decode( (string) $r->question_set, true );
+                        $mq = ( is_array( $qs ) && ! empty( $qs['mq'] ) ) ? sanitize_key( $qs['mq'] ) : '';
+                        $key = 'mapa:' . $mq;
+                    }
+                    $pts = (int) $r->points;
+                    if ( ! isset( $a4_played[ $key ] ) || $pts > $a4_played[ $key ] ) {
+                        $a4_played[ $key ] = $pts;
+                    }
+                }
+            }
+            echo '<script>window.ekPlayedQuizzes = ' . wp_json_encode( $a4_played ) . ';</script>';
+
             echo '<script>
             function checkFields() {
                 let user = document.getElementById("inputField1")?.value.trim() || "";
@@ -350,19 +384,22 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 }
 
                 const out=document.getElementById("output");
-                out.innerHTML="";';
+                out.innerHTML="";
+                // A4: helper — vráti HTML badge "✓ X b" pre už absolvovaný kvíz (key).
+                const _ekPlayed = window.ekPlayedQuizzes || {};
+                const ekBadge = (key) => (key in _ekPlayed) ? `<span class="ek-quiz-played">✓ ${_ekPlayed[key]} b</span>` : "";';
 
             if ($this->cAkcia->music_settings['music_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="music"){out.innerHTML+=`<a href="${link1}" class="ek-quiz-card ek-quiz-music" target="_blank"><span class="ek-quiz-icon">🎵</span><span class="ek-quiz-label">Hudobný kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="music"){out.innerHTML+=`<a href="${link1}" class="ek-quiz-card ek-quiz-music" target="_blank"><span class="ek-quiz-icon">🎵</span><span class="ek-quiz-label">Hudobný kvíz</span>${ekBadge("music")}<span class="ek-quiz-arrow">→</span></a>`;}';
             }
             if ($this->cAkcia->movies_settings['movies_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="movies"){out.innerHTML+=`<a href="${link2}" class="ek-quiz-card ek-quiz-movies" target="_blank"><span class="ek-quiz-icon">🎬</span><span class="ek-quiz-label">Filmový kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="movies"){out.innerHTML+=`<a href="${link2}" class="ek-quiz-card ek-quiz-movies" target="_blank"><span class="ek-quiz-icon">🎬</span><span class="ek-quiz-label">Filmový kvíz</span>${ekBadge("movies")}<span class="ek-quiz-arrow">→</span></a>`;}';
             }
             if ($this->cAkcia->knowledge_settings['knowledge_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="knowledge"){out.innerHTML+=`<a href="${link3}" class="ek-quiz-card ek-quiz-knowledge" target="_blank"><span class="ek-quiz-icon">🧠</span><span class="ek-quiz-label">Vedomostný kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="knowledge"){out.innerHTML+=`<a href="${link3}" class="ek-quiz-card ek-quiz-knowledge" target="_blank"><span class="ek-quiz-icon">🧠</span><span class="ek-quiz-label">Vedomostný kvíz</span>${ekBadge("knowledge")}<span class="ek-quiz-arrow">→</span></a>`;}';
             }
             if ($this->cAkcia->sudoku_settings['sudoku_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="sudoku"){out.innerHTML+=`<a href="${link4}" class="ek-quiz-card ek-quiz-sudoku" target="_blank"><span class="ek-quiz-icon">🔢</span><span class="ek-quiz-label">Sudoku kvíz</span><span class="ek-quiz-arrow">→</span></a>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="sudoku"){out.innerHTML+=`<a href="${link4}" class="ek-quiz-card ek-quiz-sudoku" target="_blank"><span class="ek-quiz-icon">🔢</span><span class="ek-quiz-label">Sudoku kvíz</span>${ekBadge("sudoku")}<span class="ek-quiz-arrow">→</span></a>`;}';
             }
             // Multi-mapa: pre každý sub-kvíz jedna karta s vlastným mq slug + admin label.
             // Render je async (fetch tokenized URL pre každú karu paralelne).
@@ -371,7 +408,7 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                     $slug  = isset( $sq['slug'] ) ? sanitize_key( $sq['slug'] ) : '';
                     $label = isset( $sq['label'] ) ? (string) $sq['label'] : 'Mapový kvíz';
                     if ( $slug === '' ) continue;
-                    echo 'if(!singleQuiz){const mqLink = await ekTokUrl("mapa-quiz", akcia, team, user, "' . esc_js( $slug ) . '"); out.innerHTML+=`<a href="${mqLink}" class="ek-quiz-card ek-quiz-mapa" target="_blank"><span class="ek-quiz-icon">🗺️</span><span class="ek-quiz-label">' . esc_js( $label ) . '</span><span class="ek-quiz-arrow">→</span></a>`;}';
+                    echo 'if(!singleQuiz){const mqLink = await ekTokUrl("mapa-quiz", akcia, team, user, "' . esc_js( $slug ) . '"); out.innerHTML+=`<a href="${mqLink}" class="ek-quiz-card ek-quiz-mapa" target="_blank"><span class="ek-quiz-icon">🗺️</span><span class="ek-quiz-label">' . esc_js( $label ) . '</span>${ekBadge("mapa:' . esc_js( $slug ) . '")}<span class="ek-quiz-arrow">→</span></a>`;}';
                 }
             }
 

@@ -1016,3 +1016,16 @@ body .ek-scoring-info,
     font-style: italic;
     padding: 20px;
 }
+
+/* A4: badge na karte kvízu, ktorý tím/hráč už absolvoval (zobrazené v hub-prehľade) */
+.ek-quiz-card .ek-quiz-played {
+    margin-left: auto;
+    padding: 4px 10px;
+    background: rgba(76, 175, 80, 0.28);
+    border: 1px solid rgba(76, 175, 80, 0.6);
+    border-radius: 999px;
+    color: var(--ek-text);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}

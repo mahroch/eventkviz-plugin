@@ -2,6 +2,11 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.11] - 2026-05-29
+
+### Added (hub-prehľad — badge ✓ X b pri kvízoch, ktoré tím už absolvoval)
+- V hub-prehľade kvízov sa pri kartách, ktoré tím (alebo hráč v režime identifikácie hráčom) **už aspoň raz absolvoval**, zobrazí zelený badge **„✓ X b"** s najlepším dosiahnutým skóre. Pre mapové sub-kvízy podľa konkrétneho `mq` slug → každá mapová šablóna sa kontroluje samostatne.
+
 ## [1.18.10] - 2026-05-29
 
 ### Added (mapový kvíz — hover nad vybranou plochou/líniou ukáže názov úlohy)
