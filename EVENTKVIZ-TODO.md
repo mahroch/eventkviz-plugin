@@ -79,7 +79,8 @@ Aktuálne málo jednotlivých spevákov. Maroš navrhuje pridať: **Habera, Hame
 
 ## C. Nové funkcionality
 
-### C1. Polygóny — okresy SR ako nová mapová šablóna
+### ~~C1. Polygóny — okresy SR ako nová mapová šablóna~~ — **DATASET HOTOVÝ v1.18.13**
+**Stav:** dataset registrovaný (79 okresov, geoBoundaries ADM2 → ručne mapované SK mená). Maroš teraz môže v admine vytvoriť `mapquiz_template` typu „plocha" s datasetom **„Okresy SR"** — bude fungovať identicky ako Pohoria/Národné parky/Vodné nádrže.
 **Stav:** open · **Zapísané:** 2026-05-29
 Pridať novú šablónu typu **area** (polygón) — určovanie **okresov Slovenska**.
 **Postup:**

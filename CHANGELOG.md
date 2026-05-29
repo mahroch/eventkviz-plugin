@@ -2,6 +2,11 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.13] - 2026-05-29
+
+### Added (mapový kvíz — nový dataset „Okresy SR")
+- Pridaný dataset `sk-districts` (79 polygónov okresov SR, geoBoundaries ADM2 → ručne mapované SK mená). Registrovaný v `class-eventkviz-mapquiz-datasets.php`. Maroš môže vytvoriť `mapquiz_template` typu „plocha" s týmto datasetom cez admin UI — bude fungovať identicky ako Pohoria/Národné parky/Vodné nádrže.
+
 ## [1.18.12] - 2026-05-29
 
 ### Added (štatistika — filter pre jeden tím / hráča s zlatým zvýraznením)

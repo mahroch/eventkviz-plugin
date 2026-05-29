@@ -58,6 +58,14 @@ class Eventkviz_MapQuiz_Datasets {
                 'singular' => 'vodnú plochu',
             ),
 
+            'sk-districts' => array(
+                'label'    => 'Okresy SR',
+                'region'   => 'slovakia',
+                'file'     => 'sk-districts.geojson',
+                'geometry' => 'polygon',
+                'singular' => 'okres',
+            ),
+
             // ===== Europe =====
             'europe-countries' => array(
                 'label'    => 'Štáty Európy',
