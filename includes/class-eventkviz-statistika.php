@@ -92,20 +92,24 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
     }
 
     /**
-     * Rebríček. $sorted = [ 'názov' => body ] zoradené zostupne. Poradie = obyčajné
-     * čísla (1., 2., 3. … rovnako pre všetkých). $highlight = názov ktorý sa má
-     * zvýrazniť (zlatý border / pozadie) — pre filter ?team=X / ?user=X.
+     * Rebríček. $sorted = [ 'názov' => body ] zoradené zostupne. Pri $highlight !== ''
+     * zobrazí IBA jeden riadok pre daný tím/hráč so správnou pozíciou v celkovom
+     * poradí (napr. "6. miesto z 8"). Bez highlight = celý rebríček.
      */
     private function render_leaderboard( $sorted, $highlight = '' ) {
         if ( empty( $sorted ) ) {
             echo '<p class="ek-stats-empty">Zatiaľ žiadne body.</p>';
             return;
         }
+        $total = count( $sorted );
         echo '<ol class="ek-stats-leaderboard">';
         $pos = 0;
         foreach ( $sorted as $name => $pts ) {
             $pos++;
-            $hl_cls = ( $highlight !== '' && $highlight === $name ) ? ' ek-stats-rank--highlight' : '';
+            if ( $highlight !== '' && $highlight !== $name ) {
+                continue; // filter na jeden tím/hráč
+            }
+            $hl_cls = $highlight !== '' ? ' ek-stats-rank--highlight' : '';
             echo '<li class="ek-stats-rank' . $hl_cls . '">';
             echo '<span class="ek-stats-rank-badge">' . $pos . '</span>';
             echo '<span class="ek-stats-rank-name">' . esc_html( $name ) . '</span>';
@@ -113,6 +117,9 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             echo '</li>';
         }
         echo '</ol>';
+        if ( $highlight !== '' ) {
+            echo '<p class="ek-stats-context">z celkového počtu <strong>' . $total . '</strong> tímov / hráčov</p>';
+        }
     }
 
     /**
@@ -139,14 +146,22 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             echo '<div class="ek-stats-quiz-card">';
             echo '<div class="ek-stats-quiz-card-title">' . $icon . ' ' . esc_html( $label ) . '</div>';
             $pos = 0;
+            $rendered_any = false;
             foreach ( $entries as $name => $pts ) {
                 $pos++;
-                $hl_cls = ( $highlight !== '' && $highlight === $name ) ? ' ek-stats-quiz-row--highlight' : '';
+                if ( $highlight !== '' && $highlight !== $name ) {
+                    continue;
+                }
+                $hl_cls = $highlight !== '' ? ' ek-stats-quiz-row--highlight' : '';
                 echo '<div class="ek-stats-quiz-row' . $hl_cls . '">';
                 echo '<span class="ek-stats-quiz-row-pos">' . $pos . '.</span>';
                 echo '<span class="ek-stats-quiz-row-name">' . esc_html( $name ) . '</span>';
                 echo '<span class="ek-stats-quiz-row-pts">' . intval( $pts ) . ' b</span>';
                 echo '</div>';
+                $rendered_any = true;
+            }
+            if ( $highlight !== '' && ! $rendered_any ) {
+                echo '<div class="ek-stats-empty" style="margin:6px 0 0;text-align:center;font-size:13px;">Neabsolvoval</div>';
             }
             echo '</div>';
         }
@@ -212,11 +227,12 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
 
         echo '<div class="ek-quiz ek-quiz--stats">';
         echo '<div class="ek-quiz-content">';
-        echo '<h1 class="ek-quiz-title">🏆 Výsledky</h1>';
         if ( $highlight !== '' ) {
-            $kind = $value['team'] !== '' ? 'tím' : 'hráč';
-            echo '<p class="ek-quiz-subtitle">Pohľad pre ' . $kind . ' <strong>' . esc_html( $highlight ) . '</strong> — zvýraznený v poradí aj po kvízoch</p>';
+            $kind = $value['team'] !== '' ? 'tímu' : 'hráča';
+            echo '<h1 class="ek-quiz-title">🏆 Výsledky ' . $kind . ': ' . esc_html( $highlight ) . '</h1>';
+            echo '<p class="ek-quiz-subtitle">Tvoja pozícia v celkovom poradí a body po jednotlivých kvízoch</p>';
         } else {
+            echo '<h1 class="ek-quiz-title">🏆 Výsledky</h1>';
             echo '<p class="ek-quiz-subtitle">Priebežné poradie a body po kvízoch</p>';
         }
 

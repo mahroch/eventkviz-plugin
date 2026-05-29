@@ -1,78 +1,97 @@
-# Návrh — rozšírenie autocomplete poolu spevákov
+# Návrh — 100 najznámejších slovenských spevákov a speváčok
 
-**Účel:** Maroš spomínal, že v hudobnom kvíze je málo *jednotlivých* spevákov ktorých autocomplete ponúka. Tento súbor je **návrh 100 najznámejších slovenských a českých sólo-spevákov** (s niekoľkými legendárnymi frontmanmi skupín) na zaradenie do `pmgonijet_cct_artists`.
+**Účel:** Rozšírenie autocomplete poolu *sólo* spevákov v hudobnom kvíze. Tu je 100 mien **čisto slovenských** interpretov (sólo + zopár legendárnych frontmanov skupín, kde sú dlhodobo známi pod vlastným menom).
 
 **Postup:**
-1. **Maroš tento súbor prejde** — pri menách ktoré tam **NEchce**, vymaže riadok alebo doplní `❌`.
-2. Pri sporných (slovenský diakritický variant, prezývka vs. plné meno, …) môže meno **upraviť** priamo v súbore.
-3. Pri kontroverzných (skupiny napriek tomu, že sa rátajú ako „sólo") môže pridať `(skupina)` alebo vymazať.
-4. Keď je súbor pre Maroša OK → povie mi „importuj" a vložím všetky **✅ povolené** mená do DB jediným SQL INSERT.
+1. **Maroš tento súbor prejde** — pri menách ktoré nechce, vymaže riadok alebo doplní `❌`.
+2. Sporné mená (diakritický variant, prezývka vs. plné meno) môže priamo **upraviť**.
+3. Keď je súbor pre Maroša OK → povie mi „importuj" a vložím všetky **✅ ponechané** mená do `pmgonijet_cct_artists` jediným SQL INSERT.
 
-**Pravidlo:** ÚPLNE nové mená. Tie, ktoré sú už v DB (kontroloval som proti exportu z `pmgonijet_cct_artists`), tu nie sú.
+**Pravidlo:** všetky tieto mená sú **úplne nové** voči DB (kontroloval som proti `pmgonijet_cct_artists`).
 
 ---
 
-## SK — klasici 60.–80. roky
+## Klasici 60.–70. roky
 
 - [ ] Karol Duchoň
 - [ ] Eva Kostolányiová
 - [ ] Eva Sepešiová
 - [ ] Anka Repková
 - [ ] Jana Kocianová
-- [ ] Janka Lehotská
 - [ ] Marcela Laiferová
 - [ ] Dušan Grúň
 - [ ] Karol Konárik
-- [ ] Karol Pádivý
+- [ ] Karol Polák
+- [ ] Janko Lehotský
 
-## SK — pop/rock 80.–90. roky
+## Pop / rock 80.–90. roky
 
 - [ ] Marika Gombitová
 - [ ] Pavol Habera
 - [ ] Pavol Hammel
-- [ ] Janko Lehotský
 - [ ] Vašo Patejdl
 - [ ] Jožo Ráž
 - [ ] Robo Grigorov
 - [ ] Maťo Ďurinda
 - [ ] Ivan Tásler
 - [ ] Igor Timko
-- [ ] Yxo (Hex)
+- [ ] Beáta Dubasová
+- [ ] Robo Mikla
+- [ ] Soňa Skoncová
+- [ ] Janka Hospodárová
 - [ ] Daniel Heriban
 - [ ] Peter Bič
+- [ ] Marián Geišberg
+- [ ] Robo Šebek
+- [ ] Tomáš Tarr
+- [ ] Andy Hryc
+- [ ] Boby Krištofovič
 
-## SK — pop 2000.–2010.
+## Pop 2000.–2010.
 
-- [ ] Tina (Tatiana Okapcová)
-- [ ] Kristína Peláková
-- [ ] Adam Ďurica
-- [ ] Tomáš Bezdeda
-- [ ] Sima Martausová
-- [ ] Celeste Buckingham
-- [ ] Sisa Sklovska
-- [ ] Mária Čírová
-- [ ] Dara Rolins
-- [ ] Lina Mayer
-- [ ] Robo Opatovský
-- [ ] Otto Weiter
-- [ ] Roman Méry
-- [ ] Helena Krajčiová
-- [ ] Mária Podhradská
-
-## SK — folk / world / spirituál
-
-- [ ] Hana Hegerová
-- [ ] Janka Guzová
-- [ ] Sláva Štochlová
 - [ ] Zuzana Smatanová
 - [ ] Katka Knechtová
 - [ ] Jana Kirschner
-- [ ] Beáta Dubasová
-- [ ] Zuzana Mauréry
+- [ ] Sisa Sklovska
+- [ ] Mária Čírová
+- [ ] Dara Rolins
+- [ ] Tina (Tatiana Okapcová)
+- [ ] Kristína Peláková
+- [ ] Tomáš Bezdeda
+- [ ] Adam Ďurica
+- [ ] Sima Martausová
+- [ ] Celeste Buckingham
+- [ ] Lina Mayer
+- [ ] Helena Krajčiová
+- [ ] Robo Opatovský
+- [ ] Otto Weiter
+- [ ] Roman Méry
+- [ ] Mária Podhradská
+- [ ] Adriana Bartošová
+- [ ] Petra Polnišová
+
+## Folk / spirituál / world
+
+- [ ] Hana Hegerová
+- [ ] Janka Guzová
 - [ ] Marián Čekovský
 - [ ] Ondrej Kandráč
+- [ ] Mária Mračnová
+- [ ] Sláva Štochlová
+- [ ] Vlasta Mudríková
+- [ ] Štefan Skrúcaný
+- [ ] Pavol Tonkovič
+- [ ] Karol Pádivý
 
-## SK — hip-hop / urban
+## Šansón / muzikál
+
+- [ ] Zuzana Mauréry
+- [ ] Mariana Ďurianová
+- [ ] Sisa Lelkes Sklovska
+- [ ] Eva Pavlíková
+- [ ] Andrea Somorovská
+
+## Hip-hop / rap / urban
 
 - [ ] Patrik Vrbovský (Rytmus)
 - [ ] Vec
@@ -81,70 +100,43 @@
 - [ ] Separ
 - [ ] Ego
 - [ ] Majk Spirit
-- [ ] Mirka Partlová
+- [ ] Kali
+- [ ] Peter Pann
+- [ ] DJ Wich
+- [ ] Igor Kmeťo
+- [ ] Sajfa
+- [ ] Boy Wonder
+- [ ] Moja Reč
 
-## CZ — klasici
+## Rock / indie / alt
 
-- [ ] Karel Gott
-- [ ] Helena Vondráčková
-- [ ] Hana Zagorová
-- [ ] Václav Neckář
-- [ ] Karel Kryl
-- [ ] Karel Plíhal
-- [ ] Marie Rottrová
-- [ ] Eva Pilarová
-- [ ] Petra Janů
-- [ ] Naďa Urbánková
-- [ ] Pavel Bobek
-- [ ] Petr Spálený
-- [ ] Karel Černoch
-- [ ] Yvonne Přenosilová
-- [ ] Jitka Zelenková
-- [ ] Vladimír Mišík
-- [ ] Petr Hapka
+- [ ] Peter Lipa (jazz/blues)
+- [ ] Juraj Benetin (Korben Dallas)
+- [ ] Yxo (Hex)
+- [ ] Maťo Greško (Para)
+- [ ] Pavol Bystrický
+- [ ] Karol Komenda
+- [ ] Adam Fenix
 
-## CZ — pop/rock 80.–2000.
+## Mladšia generácia / 2015+
 
-- [ ] Lucie Bílá
-- [ ] Iveta Bartošová
-- [ ] Jiří Korn
-- [ ] Daniel Hůlka
-- [ ] Daniel Landa
-- [ ] Petr Janda
-- [ ] Aleš Brichta
-- [ ] Vlasta Redl
-- [ ] Jaromír Nohavica
-- [ ] Jarek Nohavica (alias?)
-- [ ] Janek Ledecký
-- [ ] Tomáš Klus
-- [ ] Pokáč
+- [ ] Karmen Pál-Baláž
+- [ ] Karin Mičkanin Šibík
+- [ ] Aless (Alexandra Hrabovská)
+- [ ] Robert Janíček
+- [ ] Wilda
+- [ ] Sebastian
+- [ ] Sára Berkešová
+- [ ] Diana Hopta
+- [ ] Annet X
+- [ ] Lenny Ibizarre
 
-## CZ — mladšia generácia
+## Country / folklór
 
-- [ ] Marek Ztracený
-- [ ] Adam Mišík
-- [ ] Vojtěch Dyk
-- [ ] Ben Cristovao
-- [ ] Aneta Langerová
-- [ ] Ewa Farna
-- [ ] Mirai Navrátil
-- [ ] Calin
-- [ ] Pavel Callta
-
-## SK + CZ — folkové / etno / svetová sféra
-
-- [ ] Iva Bittová
-- [ ] Vlasta Třešňák
-- [ ] Petr Skoumal
-- [ ] Karel Vepřek
-
-## Iní (zvážiť — niektorí sú prevažne na hraniciach žánru)
-
-- [ ] Marián Geišberg
-- [ ] Marián Lapšanský (klavirista — možno preč)
-- [ ] Robo Papp
-- [ ] Anna K (CZ)
-- [ ] Olga Lounová (CZ)
+- [ ] Vladimír Smetana
+- [ ] Karol Černý
+- [ ] Janko Hraška
+- [ ] Marián Bango
 
 ---
 

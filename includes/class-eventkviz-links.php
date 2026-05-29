@@ -288,6 +288,17 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             }
             echo '<script>window.ekPlayedQuizzes = ' . wp_json_encode( $a4_played ) . ';</script>';
 
+            // A5: sumárny počet bodov + URL na samostatnú štatistiku tímu/hráča.
+            $a5_total = array_sum( $a4_played );
+            $a5_stats_args = array( 'akcia' => $value['akcia'] );
+            if ( $a4_team !== '' ) $a5_stats_args['team'] = $a4_team;
+            if ( $a4_user !== '' ) $a5_stats_args['user'] = $a4_user;
+            $a5_stats_url = add_query_arg( $a5_stats_args, home_url( '/eventkviz-statistika/' ) );
+            echo '<script>'
+                . 'window.ekPlayedTotal = ' . (int) $a5_total . ';'
+                . 'window.ekStatsLink = ' . wp_json_encode( $a5_stats_url ) . ';'
+                . '</script>';
+
             echo '<script>
             function checkFields() {
                 let user = document.getElementById("inputField1")?.value.trim() || "";
@@ -411,6 +422,19 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                     echo 'if(!singleQuiz){const mqLink = await ekTokUrl("mapa-quiz", akcia, team, user, "' . esc_js( $slug ) . '"); out.innerHTML+=`<a href="${mqLink}" class="ek-quiz-card ek-quiz-mapa" target="_blank"><span class="ek-quiz-icon">🗺️</span><span class="ek-quiz-label">' . esc_js( $label ) . '</span>${ekBadge("mapa:' . esc_js( $slug ) . '")}<span class="ek-quiz-arrow">→</span></a>`;}';
                 }
             }
+
+            // A5: pod kartami pridať sumár bodov + button na samostatnú štatistiku.
+            // Zobrazí sa len ak tím/hráč už niečo absolvoval (ekPlayedTotal > 0).
+            echo 'if (!singleQuiz && window.ekPlayedTotal > 0 && window.ekStatsLink) {'
+                . '  const sub = (team || user || "");'
+                . '  out.innerHTML += `<div class="ek-stats-summary">'
+                . '      <div class="ek-stats-summary-row">'
+                . '        <span class="ek-stats-summary-label">Tvoje skóre zatiaľ</span>'
+                . '        <span class="ek-stats-summary-pts">${window.ekPlayedTotal} b</span>'
+                . '      </div>'
+                . '      <a href="${window.ekStatsLink}" class="ek-stats-summary-btn" target="_blank">📊 Pozri celú štatistiku${sub ? ` (${sub})` : ""} →</a>'
+                . '  </div>`;'
+                . '}';
 
             echo '}
             document.addEventListener("DOMContentLoaded", function(){

@@ -2,6 +2,16 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.15] - 2026-05-29
+
+### Changed (štatistika filter ?team=/?user= — IBA daný tím/hráč, nie celý rebríček)
+- Pri `?team=X` (alebo `?user=X`) sa zobrazí **iba** daný tím/hráč — jeho riadok v rebríčku tímov s pozíciou + jeho riadok v každej karte „Body po kvízoch". Ostatné tímy sa nezobrazujú. Nadpis sa zmenil na „🏆 Výsledky tímu: X". Pod jeho riadkom kontext „z celkového počtu N tímov / hráčov". (Predtým sa zobrazoval celý rebríček s daným tímom zvýrazneným — Maroš jasne chcel iba ten tím.)
+
+## [1.18.14] - 2026-05-29
+
+### Added (hub — sumár bodov + button na samostatnú štatistiku)
+- Pod kartami absolvovaných kvízov sa zobrazí **sumár tvojho skóre** (súčet najlepších bodov zo všetkých už absolvovaných kvízov) a **button „📊 Pozri celú štatistiku"** vedúci na `/eventkviz-statistika/?akcia=X&team=Y` (alebo `&user=Y`). Zobrazí sa len ak tím/hráč už niečo absolvoval.
+
 ## [1.18.13] - 2026-05-29
 
 ### Added (mapový kvíz — nový dataset „Okresy SR")
