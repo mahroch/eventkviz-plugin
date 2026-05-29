@@ -376,7 +376,14 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             }
 
             echo '}
-            document.addEventListener("DOMContentLoaded",checkFields);
+            document.addEventListener("DOMContentLoaded", function(){
+                checkFields();
+                // Auto-skip startup form pri návrate z kvízu: ak sú údaje
+                // predvyplnené z URL (?team=X&user=Y), button je rovno enabled →
+                // priamo zobraz linky bez nutnosti klikať "Pokračovať".
+                var btn = document.getElementById("submitBtn");
+                if (btn && !btn.disabled) submitClicked();
+            });
 
             (function(){
                 var dropdown = document.getElementById("ekDropdown");

@@ -7,10 +7,8 @@ Položky vyznačené **(?)** majú otvorené otázky pre špecifikáciu.
 
 ## A. UI / UX fixy (krátke, jasné)
 
-### A1. Klik „Späť na linky s kvízmi" zmaže meno tímu a všetko
-**Stav:** open · **Zapísané:** 2026-05-29
-Po kliknutí na „Späť na linky s kvízmi" (z eval / form stránky kvízu) sa stratí meno tímu a všetky URL parametre → hráč musí znova zadávať tím. Návrat má zachovať identifikáciu (`team`/`user`/`akcia`).
-**Kde:** odkaz „Späť na linky s kvízmi" je v jednotlivých kvíz triedach (music/movies/knowledge/mapa eval) — treba zjednotiť cez helper a vždy zachovať team/user query params.
+### ~~A1. Klik „Späť na linky s kvízmi" zmaže meno tímu a všetko~~
+**Hotové vo v1.18.8** — hub stránka pri load-e auto-skip-uje startup formulár ak sú údaje predvyplnené z URL → linky sa zobrazia hneď.
 
 ### A2. Fullscreen browser mód na desktope — startup karta necentrovaná vertikálne
 **Stav:** open · **Zapísané:** 2026-05-29

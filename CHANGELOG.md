@@ -2,6 +2,11 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.8] - 2026-05-29
+
+### Fixed (návrat „Späť na linky s kvízmi" — netreba znova klikať Pokračovať)
+- Po kliknutí na „Späť na linky s kvízmi" sa hráč vrátil na hub stránku a aj keď bola identifikácia (tím/meno) v URL, formulár ho nútil znova kliknúť Pokračovať. Hub stránka pri load-e teraz automaticky preskočí startup, ak sú údaje predvyplnené z URL — linky na kvízy sa zobrazia hneď, identifikácia ostane zachovaná.
+
 ## [1.18.7] - 2026-05-27
 
 ### Changed (štatistika — mapové šablóny samostatne, opravené skórovanie, čistka)
