@@ -2,6 +2,11 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.16] - 2026-05-29
+
+### Fixed (Rieky SR — Ondava a Topľa boli na východe vizuálne rozdelené)
+- V GeoJSON `sk-rivers.geojson` mali rieky **Ondava** (37 segmentov → 3 geograficky nesúvislé klastre) a **Topľa** (15 segmentov → 3 klastre) gapy v dátach — Leaflet ich kreslil ako 2 paralelné línie, hoci je to jedna rieka. Algoritmus spojil klastre pridaním krátkych konektorov medzi najbližšie endpointy susedných klastrov. Po fixe: Ondava aj Topľa = 1 súvislý klaster.
+
 ## [1.18.15] - 2026-05-29
 
 ### Changed (štatistika filter ?team=/?user= — IBA daný tím/hráč, nie celý rebríček)
