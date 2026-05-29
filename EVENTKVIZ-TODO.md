@@ -22,7 +22,7 @@ V hub stránke (`/eventkviz-vstup/?akcia=X&team=Y`) pri zobrazení kariet jednot
 - Mali by sme ukazovať aj **najlepšie skóre** tímu na danom kvíze? (motivačné — vidí čo už má, môže ho prekonať pri ďalšom pokuse)
 - Pre režim hráčov (`identifikacia_kodom_usera`) analogicky.
 
-### A3. Mapový kvíz (line/area) — hover nad vybranou plochou má ukazovať názov úlohy
+### ~~A3. Mapový kvíz (line/area) — hover nad vybranou plochou má ukazovať názov úlohy~~ — **HOTOVÉ v1.18.10**
 **Stav:** open · **Zapísané:** 2026-05-29
 Vo formulári, počas hrania (pred submit), keď hráč klikne na nejakú oblasť / líniu (priradí ju k aktívnej úlohe → ofarbí sa oranžovo), pri hover myšou nad **vybranou** featurou má vyskočiť tooltip s **názvom úlohy** (napr. `Vihorlat`), nie skutočným názvom feature (napr. `Malá Fatra`) — to by bola nápoveda správnosti.
 

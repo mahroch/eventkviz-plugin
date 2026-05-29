@@ -24,6 +24,10 @@
         try { overlaysCfg = JSON.parse(overlaysCfg); } catch (e) { overlaysCfg = {}; }
     }
     overlaysCfg = overlaysCfg || {};
+    // Feature labels overlay flag — globálny v IIFE scope, aby ho videli aj
+    // funkcie mimo loadFeatureLayer (napr. applyFeatureStyle pre A3 tooltip).
+    var showLabels      = !!overlaysCfg.feature_labels || !!overlaysCfg.feature_labels_permanent;
+    var labelsPermanent = !!overlaysCfg.feature_labels_permanent;
     var map = null;
     var taskMarkers = {};   // taskIdx → L.Marker (form mode: guess pin)
     var correctMarkers = {}; // review mode only: green correct pin
@@ -224,8 +228,7 @@
             // feature_labels_permanent (silnejšia pomôcka): label je vždy
             // viditeľný priamo na polygone/čiare — implicitne zapína labels aj
             // bez hover toggle (inak by flag nemal efekt).
-            var showLabels = !!overlaysCfg.feature_labels || !!overlaysCfg.feature_labels_permanent;
-            var labelsPermanent = !!overlaysCfg.feature_labels_permanent;
+            // showLabels + labelsPermanent sú deklarované v IIFE scope (viď začiatok).
             featureLayer = L.geoJSON(data, {
                 style: featureBaseStyle,
                 // V review je feature layer čisto vizuálny — žiadny click ani hover handler.
@@ -354,8 +357,42 @@
         // Form mode. Pri opakovaní s "označ správnosť" má vybraná feature
         // uloženú správnosť (prevCorrect) → ofarbi zeleno/červeno. Nový alebo
         // opravený výber prevCorrect nemá → oranžová (featureSelectedStyle()).
-        if (isSelected(name)) layer.setStyle(featureSelectedStyle(selectedPrevCorrect(name)));
-        else layer.setStyle(featureBaseStyle());
+        if (isSelected(name)) {
+            layer.setStyle(featureSelectedStyle(selectedPrevCorrect(name)));
+            // A3: hover nad vybranou feature ukáže názov ÚLOHY (čo tam hráč
+            // priradil), nie reálny názov plochy (= bola by to nápoveda).
+            // Výnimka: pri opakovaní s mark_correctness sú správne určené
+            // už bindnuté s reálnym názvom (bindCorrectTooltips) — necháme.
+            if (selectedPrevCorrect(name) !== true) {
+                var taskName = '';
+                for (var i = 0; i < tasks.length; i++) {
+                    if (taskMarkers[i] && taskMarkers[i].feature === name) {
+                        taskName = (tasks[i] && tasks[i].name) || '';
+                        break;
+                    }
+                }
+                if (taskName) {
+                    if (layer.getTooltip()) layer.unbindTooltip();
+                    layer.bindTooltip(taskName, { sticky: true, direction: 'top' });
+                }
+            }
+        } else {
+            layer.setStyle(featureBaseStyle());
+            // A3: feature nie je vybratá — odbinduj prípadný task-name tooltip
+            // (zostal po predošlom picku/unpicku) a obnov pôvodný len ak
+            // showLabels overlay (reálny názov pre vodítka).
+            if (layer.getTooltip()) {
+                layer.unbindTooltip();
+                if (showLabels) {
+                    layer.bindTooltip(name, {
+                        permanent: labelsPermanent,
+                        direction: labelsPermanent ? 'center' : 'top',
+                        sticky: !labelsPermanent,
+                        className: labelsPermanent ? 'ek-mapa-feature-label--perm' : ''
+                    });
+                }
+            }
+        }
     }
 
     function loadOverlays() {

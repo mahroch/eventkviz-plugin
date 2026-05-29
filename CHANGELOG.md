@@ -2,6 +2,11 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.10] - 2026-05-29
+
+### Added (mapový kvíz — hover nad vybranou plochou/líniou ukáže názov úlohy)
+- V mapovom kvíze (line/area) sa pri hover myšou nad vybranou plochou/líniou zobrazí **názov úlohy** (`Vihorlat`), nie skutočný názov plochy (`Malá Fatra`) — aby to nebola nápoveda, čo tam hráč naozaj umiestnil. Analógia s pinmi, kde to už fungovalo cez `placeMarker` tooltip. Pri odznačení sa tooltip odbinduje (a obnoví sa reálny názov len ak je zapnutý overlay „feature labels").
+
 ## [1.18.9] - 2026-05-29
 
 ### Fixed (startup karta na desktope/fullscreene — vertikálne necentrovaná)
