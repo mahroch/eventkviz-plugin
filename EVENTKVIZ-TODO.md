@@ -1,30 +1,100 @@
 # EventKviz — TODO / backlog
 
-Odložené veci na vyriešenie. Pridávaj nové na začiatok, hotové presúvaj do CHANGELOG.md s príslušnou verziou.
+Odložené veci. Hotové presúvať do CHANGELOG.md s príslušnou verziou.
+Položky vyznačené **(?)** majú otvorené otázky pre špecifikáciu.
 
 ---
 
-## Fullscreen browser mód na desktope — nepekný layout (vertikálne necentrované)
+## A. UI / UX fixy (krátke, jasné)
 
+### A1. Klik „Späť na linky s kvízmi" zmaže meno tímu a všetko
 **Stav:** open · **Zapísané:** 2026-05-29
+Po kliknutí na „Späť na linky s kvízmi" (z eval / form stránky kvízu) sa stratí meno tímu a všetky URL parametre → hráč musí znova zadávať tím. Návrat má zachovať identifikáciu (`team`/`user`/`akcia`).
+**Kde:** odkaz „Späť na linky s kvízmi" je v jednotlivých kvíz triedach (music/movies/knowledge/mapa eval) — treba zjednotiť cez helper a vždy zachovať team/user query params.
 
-Pri fullscreen prehliadači na desktope (a pravdepodobne aj v normálne vysokom okne) **startup karta** „Pripravte sa na kvíz" sedí v hornej polovici obrazovky a pod ňou ostáva veľký prázdny fialový pruh. Malo by byť **vycentrované aj horizontálne aj vertikálne** — karta v strede viewportu.
+### A2. Fullscreen browser mód na desktope — startup karta necentrovaná vertikálne
+**Stav:** open · **Zapísané:** 2026-05-29
+Pri vysokom okne / fullscreene startup karta („Pripravte sa na kvíz") sedí v hornej polovici, pod ňou prázdny fialový pruh.
+**Pravdepodobná príčina:** `.ek-startup` má `min-height: 70vh` → `align-items: center` centruje len v rámci 70 % výšky.
+**Návrh fixu:** `min-height: 100vh` (alebo `100dvh`). Skontrolovať Elementor kontajner a malé obrazovky.
 
-**Pravdepodobná príčina:** `.ek-startup` má `min-height: 70vh` (v `public/css/eventkviz.css`). Pri vysokom okne / fullscreene 70vh nestačí a obal nezaplní celú výšku, takže `align-items: center` centruje len v rámci tých 70vh.
-
-**Návrh fixu:** prepnúť `min-height` na `100vh` (alebo `100dvh` kvôli mobilom). Skontrolovať, či to nerozbije obal na malých obrazovkách / v Elementor kontajneri (lebo `.ek-startup` môže byť vložený v Elementor sekcii s vlastnou výškou).
+### A3. Mapový kvíz — pri opakovaní zobraziť aj NESPRÁVNE označené (?) ⚠️ konflikt so špecifikáciou
+**Stav:** open · **Zapísané:** 2026-05-29
+Maroš teraz hovorí: „na mape malo byť vidieť čo označili — aj keď zle, aj rieky. V pinoch to funguje." Pri line/area pri opakovaní (form-retry) som ale podľa **Marošovej špecifikácie z 2026-05-27** (viď [[feedback_eventkviz_map_retry_correctness]] + EVENTKVIZ-MAPY-DOKUMENTACIA.md) nesprávne výbery NEZobrazoval (zámerne — aby červená neprezrádzala správnu lokalitu, user háda znova).
+**Otvorené otázky:**
+- Mení sa špecifikácia (zobrazovať aj nesprávne)? Akou farbou — červená (prezrádza polohu) alebo neutrálna (sivá, šedá), aby hráč videl „klikol som sem, je to zle, opravím"?
+- Pin retry sa pre porovnanie chová ako? (overiť — pravdepodobne ukazuje aj nesprávne pinky podľa správnosti)
+- Eval (vyhodnotenie) toto už ukazuje (plná zelená/červená + čiarkovaná zelená pre nezvolené správne) — to ostáva tak.
 
 ---
 
-## Štatistika pre jeden konkrétny tím
+## B. Obsahové úpravy v existujúcich dátach (DB / GeoJSON)
 
+### B1. Rieky SR — jedna rieka rozdelená na východe (?)
 **Stav:** open · **Zapísané:** 2026-05-29
+Niektorá rieka v mapovej šablóne **Rieky SR** je v GeoJSON rozdelená na dva kúsky → vyzerá ako dva objekty.
+**Otvorená otázka:** ktorá rieka konkrétne? Spojiť dva segmenty do jedného `MultiLineString` / `LineString` v `public/data/regions/sk-rivers*.geojson`.
 
-Potrebujeme vedieť zobraziť **štatistiku len pre jeden vybraný tím** (nie celý event so všetkými tímami). Use-case: napr. po skončení eventu poslať každému tímu link s jeho výsledkami / pozícia tímu medzi ostatnými + jeho body po kvízoch.
+### B2. Hudobný kvíz — premenovať „rnb soul" → „RNB Soul", odstrániť „Bambulka"
+**Stav:** open · **Zapísané:** 2026-05-29
+- Pesnička s názvom „rnb soul" má byť **„RNB Soul"** (lower → správne kapitalizácia).
+- Interpret/skladba **„Bambulka"** je mätúca (nie je to spevák/speváčka).
+**Kde:** WP CCT `pmgonijet_cct_songs` (skladby), `pmgonijet_cct_artists` (interpreti). Vyhľadať záznamy → upraviť/odstrániť cez WP admin alebo SQL.
 
-**Otvorené otázky pre špecifikáciu:**
-- Ako sa tím vyberá? URL param `?team=<slug>`, shortcode atribút `[statistika team="budmerici"]`, dropdown v UI?
-- Čo presne ukázať: len rebríček s týmto tímom zvýrazneným + body po kvízoch jeho tímu? Alebo všetko ostatné skryť?
-- Aj pre režim „identifikácia hráčom" — analógia pre jedného hráča (`?user=...`)?
+### B3. Pridať interpretov do audio kvíze
+**Stav:** open · **Zapísané:** 2026-05-29
+Aktuálne málo jednotlivých spevákov. Maroš navrhuje pridať: **Habera, Hamel, Ptejdl, Gombitová, Ďurica, Tomeček, Čmorík, …**
+**Postup:** pridať do `pmgonijet_cct_artists` cez admin alebo SQL/import, prepojiť s existujúcimi `questions-audio` CPT (kde má každá otázka súbor + správneho artistu/song).
+**Otvorené:** Maroš zatiaľ návrh zoznamu — môže ešte dopĺňať. Treba aj otázky (audio súbory) k novým interpretom, alebo len rozšíriť autocomplete pool?
 
-**Kde to žije:** `includes/class-eventkviz-statistika.php` (po redizajne v1.18.7) — `build_stats()` agreguje cez všetky entity, treba pridať filter.
+### B4. Hrady SR — odstrániť detailný popis polohy (je to veľká nápoveda)
+**Stav:** open · **Zapísané:** 2026-05-29
+V mapquiz šablóne **Hrady SR** (mq slug `da93ee`, template_id 1974) pri zobrazení úlohy je popis hradu, ktorý napovedá kde presne sa nachádza → ľahké riešenie.
+**Kde:** `_mapquiz_pins` meta na template 1974 — pri každom pine je `description` / `hint`. Buď úplne vymazať `description` (eventuálne nechať `hint`, ale stručnejší), alebo skryť v hráčskom view.
+**Otvorené:** chceš popisy úplne preč pre Hrady, alebo len skrátiť (necitujúce polohu)?
+
+### B5. Rieky SR — pridať ďalšie (menšie) rieky
+**Stav:** open · **Zapísané:** 2026-05-29
+Maroš navrhuje pridať: **Belá, Laborec, …** + chce, aby som navrhol ďalšie menšie zmysluplné rieky.
+**Návrh ďalších slovenských riek (na schválenie):** Latorica, Uh, Ondava (už je?), Cirocha, Sekčov, Torysa, Olšava, Kysuca, Orava, Vlára, Myjava, Rajčianka, Turiec, Revúca, Štiavnica, Žitava, Lehota, Roňava, Slatina, Krupinica, Ipeľ, Rimava, Slaná (už je?), Muráň, Hron-pritoky.
+**Postup:** zdroj GeoJSON pre rieky (Natural Earth / OpenStreetMap river polylines), pridať feature do `public/data/regions/sk-rivers.geojson` alebo dataset registry.
+
+### B6. Pohoria SR — chýba Inovec, otázka Beskydy + ďalšie menšie
+**Stav:** open · **Zapísané:** 2026-05-29
+- **Inovec** v šablóne nie je — pridať.
+- **Beskydy** sú na hranici, je polygon na SR? Overiť.
+- Ďalšie menšie pohoria — Maroš sa pýta čo ešte by zmyslelo pridať.
+**Návrh ďalších pohorí (na schválenie):** Považský Inovec, Tribeč, Vtáčnik, Žiar, Kremnické vrchy, Štiavnické vrchy (už je?), Krupinská planina, Cerová vrchovina, Volovské vrchy, Čierna hora, Branisko, Levočské vrchy, Bachureň, Spišská Magura, Pieniny, Čergov, Bukovské vrchy, Vihorlatské vrchy, Slanské vrchy, Javorníky, Malé Karpaty (už je?), Biele Karpaty (už je?).
+
+---
+
+## C. Nové funkcionality
+
+### C1. Polygóny — okresy SR ako nová mapová šablóna
+**Stav:** open · **Zapísané:** 2026-05-29
+Pridať novú šablónu typu **area** (polygón) — určovanie **okresov Slovenska**.
+**Postup:**
+1. GeoJSON okresov SR (Natural Earth, alebo data.gov.sk admin levels).
+2. Pridať dataset do `class-eventkviz-mapquiz-datasets.php` (slug, label, geojson path, singular).
+3. Vytvoriť template (`mapquiz_template` CPT) typu `area` s týmto datasetom.
+**Otvorené:** všetky okresy (79) alebo výber? Body za správnu odpoveď?
+
+### C2. Štatistika len pre jeden konkrétny tím
+**Stav:** open · **Zapísané:** 2026-05-29
+Zobrazenie štatistiky len pre jeden tím (po-eventový link tímu).
+**Otvorené:**
+- Selektor: `?team=<slug>` URL param, shortcode atribút `[statistika team="..."]`, alebo dropdown v UI?
+- Čo ukázať: rebríček s týmto tímom zvýrazneným + jeho body po kvízoch? Alebo všetko iné skryť?
+- Analógia pre režim hráčov (`?user=...`)?
+
+---
+
+## Návrh poradia (na diskusiu)
+
+1. **A1, A2** — najľahšie UX fixy (1–2 hodiny každý)
+2. **A3** — ujasniť konflikt so špecifikáciou
+3. **B2, B4** — rýchle obsahové úpravy v DB
+4. **B3, B5, B6** — pridávanie obsahu, potrebuje Marošovo schválenie zoznamov
+5. **B1** — vyžaduje identifikáciu konkrétnej rozdelenej rieky
+6. **C2** — štatistika pre jeden tím (po dohode špecifikácie)
+7. **C1** — okresy ako nová šablóna (najväčšia úloha)
