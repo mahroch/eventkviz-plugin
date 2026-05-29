@@ -10,11 +10,17 @@ Položky vyznačené **(?)** majú otvorené otázky pre špecifikáciu.
 ### ~~A1. Klik „Späť na linky s kvízmi" zmaže meno tímu a všetko~~
 **Hotové vo v1.18.8** — hub stránka pri load-e auto-skip-uje startup formulár ak sú údaje predvyplnené z URL → linky sa zobrazia hneď.
 
-### A2. Fullscreen browser mód na desktope — startup karta necentrovaná vertikálne
+### ~~A2. Fullscreen browser mód na desktope — startup karta necentrovaná vertikálne~~
+**Hotové vo v1.18.9** — `.ek-startup` má `min-height: 100vh` (+ `100dvh`).
+
+### A4. Označiť v hub-prehľade kvízy, ktoré tím už absolvoval
 **Stav:** open · **Zapísané:** 2026-05-29
-Pri vysokom okne / fullscreene startup karta („Pripravte sa na kvíz") sedí v hornej polovici, pod ňou prázdny fialový pruh.
-**Pravdepodobná príčina:** `.ek-startup` má `min-height: 70vh` → `align-items: center` centruje len v rámci 70 % výšky.
-**Návrh fixu:** `min-height: 100vh` (alebo `100dvh`). Skontrolovať Elementor kontajner a malé obrazovky.
+V hub stránke (`/eventkviz-vstup/?akcia=X&team=Y`) pri zobrazení kariet jednotlivých kvízov (Hudobný / Filmový / Vedomostný / Sudoku / Mapový sub-kvízy) ukázať vizuálny indikátor pri tých, ktoré daný tím už **aspoň raz absolvoval** (napr. zelená fajka v rohu karty, badge „Hraný" / „X b", alebo zmena vzhľadu karty).
+**Dáta:** ide cez `pmgonijet_cct_results` — pre daný `akcia` + `team` (alebo `user`) zistiť, ktoré `quiz_type` (a pri mapách `mq` slug z `question_set`) majú aspoň jeden záznam. Najlepšie odovzdať do JS pri renderovaní hub stránky.
+**Otvorené:**
+- Forma indikácie — ikona ✓, badge „Hraný", percento, počet bodov, niečo iné?
+- Mali by sme ukazovať aj **najlepšie skóre** tímu na danom kvíze? (motivačné — vidí čo už má, môže ho prekonať pri ďalšom pokuse)
+- Pre režim hráčov (`identifikacia_kodom_usera`) analogicky.
 
 ### A3. Mapový kvíz (line/area) — hover nad vybranou plochou má ukazovať názov úlohy
 **Stav:** open · **Zapísané:** 2026-05-29
@@ -91,10 +97,11 @@ Zobrazenie štatistiky len pre jeden tím (po-eventový link tímu).
 
 ## Návrh poradia (na diskusiu)
 
-1. **A1, A2** — najľahšie UX fixy (1–2 hodiny každý)
+1. ~~**A1** (v1.18.8)~~ + ~~**A2** (v1.18.9)~~ — hotové
 2. **A3** — hover-tooltip s názvom úlohy nad vybranou plochou/líniou (analógia pinov)
-3. **B2** — rýchle obsahové úpravy v DB (RNB Soul + Bambulka)
-4. **B3, B5, B6** — pridávanie obsahu (interpreti, rieky, pohoria) — schválenie zoznamov
-5. **B1** — vyžaduje identifikáciu konkrétnej rozdelenej rieky na východe
-6. **C2** — štatistika pre jeden tím (po dohode špecifikácie)
-7. **C1** — okresy ako nová šablóna (najväčšia úloha)
+3. **A4** — označenie absolvovaných kvízov v hub-prehľade tímu
+4. **B2** — rýchle obsahové úpravy v DB (RNB Soul + Bambulka)
+5. **B3, B5, B6** — pridávanie obsahu (interpreti, rieky, pohoria) — schválenie zoznamov
+6. **B1** — vyžaduje identifikáciu konkrétnej rozdelenej rieky na východe
+7. **C2** — štatistika pre jeden tím (po dohode špecifikácie)
+8. **C1** — okresy ako nová šablóna (najväčšia úloha)

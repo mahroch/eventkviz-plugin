@@ -87,7 +87,12 @@
     overflow: hidden;
 }
 .ek-startup {
-    min-height: 70vh;
+    /* 100vh aby sa karta vertikálne vycentrovala na full-height viewport
+       (fullscreen browser, vysoké okno). 100dvh berie do úvahy dynamickú výšku
+       (mobil toolbary) — moderné prehliadače ho použijú, ostatné fallback na 100vh. */
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;

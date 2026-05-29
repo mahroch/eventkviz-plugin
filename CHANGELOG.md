@@ -2,6 +2,11 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.9] - 2026-05-29
+
+### Fixed (startup karta na desktope/fullscreene — vertikálne necentrovaná)
+- Startup karta („Pripravte sa na kvíz") pri vysokom okne alebo fullscreene sedela v hornej tretine s prázdnym fialovým pruhom dole. `.ek-startup` má teraz `min-height: 100vh` (+ `100dvh` pre moderné prehliadače, kvôli mobilným toolbarom) → karta sa vycentruje vertikálne aj horizontálne na celej výške viewportu.
+
 ## [1.18.8] - 2026-05-29
 
 ### Fixed (návrat „Späť na linky s kvízmi" — netreba znova klikať Pokračovať)
