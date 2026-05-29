@@ -18,13 +18,18 @@ Pri vysokom okne / fullscreene startup karta („Pripravte sa na kvíz") sedí v
 **Pravdepodobná príčina:** `.ek-startup` má `min-height: 70vh` → `align-items: center` centruje len v rámci 70 % výšky.
 **Návrh fixu:** `min-height: 100vh` (alebo `100dvh`). Skontrolovať Elementor kontajner a malé obrazovky.
 
-### A3. Mapový kvíz — pri opakovaní zobraziť aj NESPRÁVNE označené (?) ⚠️ konflikt so špecifikáciou
+### A3. Mapový kvíz (line/area) — hover nad vybranou plochou má ukazovať názov úlohy
 **Stav:** open · **Zapísané:** 2026-05-29
-Maroš teraz hovorí: „na mape malo byť vidieť čo označili — aj keď zle, aj rieky. V pinoch to funguje." Pri line/area pri opakovaní (form-retry) som ale podľa **Marošovej špecifikácie z 2026-05-27** (viď [[feedback_eventkviz_map_retry_correctness]] + EVENTKVIZ-MAPY-DOKUMENTACIA.md) nesprávne výbery NEZobrazoval (zámerne — aby červená neprezrádzala správnu lokalitu, user háda znova).
-**Otvorené otázky:**
-- Mení sa špecifikácia (zobrazovať aj nesprávne)? Akou farbou — červená (prezrádza polohu) alebo neutrálna (sivá, šedá), aby hráč videl „klikol som sem, je to zle, opravím"?
-- Pin retry sa pre porovnanie chová ako? (overiť — pravdepodobne ukazuje aj nesprávne pinky podľa správnosti)
-- Eval (vyhodnotenie) toto už ukazuje (plná zelená/červená + čiarkovaná zelená pre nezvolené správne) — to ostáva tak.
+Vo formulári, počas hrania (pred submit), keď hráč klikne na nejakú oblasť / líniu (priradí ju k aktívnej úlohe → ofarbí sa oranžovo), pri hover myšou nad **vybranou** featurou má vyskočiť tooltip s **názvom úlohy** (napr. `Vihorlat`), nie skutočným názvom feature (napr. `Malá Fatra`) — to by bola nápoveda správnosti.
+
+**V pinoch už funguje:** `placeMarker` v `public/js/eventkviz-mapa-form.js` bindne `marker.bindTooltip(tasks[taskIdx].name, ...)` (názov úlohy) → hráč vidí, čo na pin priradil.
+
+**Pre line/area chýba ekvivalent.** Treba doplniť:
+- `onFeaturePick` (po `taskMarkers[currentTaskIdx] = { feature: featureName }`) → `layer.bindTooltip(tasks[currentTaskIdx].name, { sticky: true })`
+- `unpickFeature` → `layer.unbindTooltip()` (alebo z mapy hľadať príslušný layer cez `featureLayer.eachLayer` a nájsť ten s `feature.properties.name === picked.feature`)
+- Pri load existujúcich pickov v `restorePrevReview` (opakovanie) — analogicky bindnúť, ale **pozor:** pre správne určené pri opakovaní (mark_correctness) už `bindCorrectTooltips` bindne **skutočný názov feature** — tam je to OK (Maroš to chcel — vie, že to má správne). Pre nesprávne / nové výbery sa skutočný názov nesmie ukázať.
+
+**Bez konfliktu s feedback_eventkviz_map_retry_correctness** — tá špecifikácia bola o tom, čo sa zobrazuje vo VYHODNOTENÍ/OPAKOVANÍ, nie o hover-tooltipoch vo formulári.
 
 ---
 
@@ -47,11 +52,8 @@ Aktuálne málo jednotlivých spevákov. Maroš navrhuje pridať: **Habera, Hame
 **Postup:** pridať do `pmgonijet_cct_artists` cez admin alebo SQL/import, prepojiť s existujúcimi `questions-audio` CPT (kde má každá otázka súbor + správneho artistu/song).
 **Otvorené:** Maroš zatiaľ návrh zoznamu — môže ešte dopĺňať. Treba aj otázky (audio súbory) k novým interpretom, alebo len rozšíriť autocomplete pool?
 
-### B4. Hrady SR — odstrániť detailný popis polohy (je to veľká nápoveda)
-**Stav:** open · **Zapísané:** 2026-05-29
-V mapquiz šablóne **Hrady SR** (mq slug `da93ee`, template_id 1974) pri zobrazení úlohy je popis hradu, ktorý napovedá kde presne sa nachádza → ľahké riešenie.
-**Kde:** `_mapquiz_pins` meta na template 1974 — pri každom pine je `description` / `hint`. Buď úplne vymazať `description` (eventuálne nechať `hint`, ale stručnejší), alebo skryť v hráčskom view.
-**Otvorené:** chceš popisy úplne preč pre Hrady, alebo len skrátiť (necitujúce polohu)?
+### ~~B4. Hrady SR — odstrániť detailný popis polohy~~
+**Stav:** Maroš si urobí sám cez admin (poznámka pre seba, nepotrebuje implementáciu).
 
 ### B5. Rieky SR — pridať ďalšie (menšie) rieky
 **Stav:** open · **Zapísané:** 2026-05-29
@@ -92,9 +94,9 @@ Zobrazenie štatistiky len pre jeden tím (po-eventový link tímu).
 ## Návrh poradia (na diskusiu)
 
 1. **A1, A2** — najľahšie UX fixy (1–2 hodiny každý)
-2. **A3** — ujasniť konflikt so špecifikáciou
-3. **B2, B4** — rýchle obsahové úpravy v DB
-4. **B3, B5, B6** — pridávanie obsahu, potrebuje Marošovo schválenie zoznamov
-5. **B1** — vyžaduje identifikáciu konkrétnej rozdelenej rieky
+2. **A3** — hover-tooltip s názvom úlohy nad vybranou plochou/líniou (analógia pinov)
+3. **B2** — rýchle obsahové úpravy v DB (RNB Soul + Bambulka)
+4. **B3, B5, B6** — pridávanie obsahu (interpreti, rieky, pohoria) — schválenie zoznamov
+5. **B1** — vyžaduje identifikáciu konkrétnej rozdelenej rieky na východe
 6. **C2** — štatistika pre jeden tím (po dohode špecifikácie)
 7. **C1** — okresy ako nová šablóna (najväčšia úloha)
