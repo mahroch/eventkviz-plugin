@@ -93,9 +93,10 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
 
     /**
      * Rebríček. $sorted = [ 'názov' => body ] zoradené zostupne. Poradie = obyčajné
-     * čísla (1., 2., 3. … rovnako pre všetkých).
+     * čísla (1., 2., 3. … rovnako pre všetkých). $highlight = názov ktorý sa má
+     * zvýrazniť (zlatý border / pozadie) — pre filter ?team=X / ?user=X.
      */
-    private function render_leaderboard( $sorted ) {
+    private function render_leaderboard( $sorted, $highlight = '' ) {
         if ( empty( $sorted ) ) {
             echo '<p class="ek-stats-empty">Zatiaľ žiadne body.</p>';
             return;
@@ -104,7 +105,8 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
         $pos = 0;
         foreach ( $sorted as $name => $pts ) {
             $pos++;
-            echo '<li class="ek-stats-rank">';
+            $hl_cls = ( $highlight !== '' && $highlight === $name ) ? ' ek-stats-rank--highlight' : '';
+            echo '<li class="ek-stats-rank' . $hl_cls . '">';
             echo '<span class="ek-stats-rank-badge">' . $pos . '</span>';
             echo '<span class="ek-stats-rank-name">' . esc_html( $name ) . '</span>';
             echo '<span class="ek-stats-rank-points">' . intval( $pts ) . ' b</span>';
@@ -116,8 +118,9 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
     /**
      * Karty po kvízoch. $grouped = [ kľúč => [ 'názov' => body ] ].
      * Poradie kariet: štandardné kvízy, potom jednotlivé mapové šablóny.
+     * $highlight = názov ktorý sa má zvýrazniť (riadok v každej karte).
      */
-    private function render_by_quiz( $grouped ) {
+    private function render_by_quiz( $grouped, $highlight = '' ) {
         if ( empty( $grouped ) ) {
             echo '<p class="ek-stats-empty">Zatiaľ žiadne výsledky po kvízoch.</p>';
             return;
@@ -138,7 +141,8 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             $pos = 0;
             foreach ( $entries as $name => $pts ) {
                 $pos++;
-                echo '<div class="ek-stats-quiz-row">';
+                $hl_cls = ( $highlight !== '' && $highlight === $name ) ? ' ek-stats-quiz-row--highlight' : '';
+                echo '<div class="ek-stats-quiz-row' . $hl_cls . '">';
                 echo '<span class="ek-stats-quiz-row-pos">' . $pos . '.</span>';
                 echo '<span class="ek-stats-quiz-row-name">' . esc_html( $name ) . '</span>';
                 echo '<span class="ek-stats-quiz-row-pts">' . intval( $pts ) . ' b</span>';
@@ -172,11 +176,23 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
         $value = shortcode_atts( array(
             'type'  => '',
             'akcia' => '',
+            'team'  => '',
+            'user'  => '',
         ), $atts );
 
         if ( empty( $value['akcia'] ) && get_query_var( 'akcia' ) ) {
             $value['akcia'] = sanitize_key( get_query_var( 'akcia' ) );
         }
+
+        // C2: filter rebríčka pre jeden konkrétny tím/hráča.
+        // Atribút shortcode → query var → $_GET; sanitizuj text.
+        if ( $value['team'] === '' ) {
+            $value['team'] = isset( $_GET['team'] ) ? sanitize_text_field( wp_unslash( $_GET['team'] ) ) : '';
+        }
+        if ( $value['user'] === '' ) {
+            $value['user'] = isset( $_GET['user'] ) ? sanitize_text_field( wp_unslash( $_GET['user'] ) ) : '';
+        }
+        $highlight = $value['team'] !== '' ? $value['team'] : $value['user'];
 
         if ( empty( $value['akcia'] ) ) {
             echo '<div class="ek-quiz ek-quiz--stats"><div class="ek-quiz-content">';
@@ -197,7 +213,12 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
         echo '<div class="ek-quiz ek-quiz--stats">';
         echo '<div class="ek-quiz-content">';
         echo '<h1 class="ek-quiz-title">🏆 Výsledky</h1>';
-        echo '<p class="ek-quiz-subtitle">Priebežné poradie a body po kvízoch</p>';
+        if ( $highlight !== '' ) {
+            $kind = $value['team'] !== '' ? 'tím' : 'hráč';
+            echo '<p class="ek-quiz-subtitle">Pohľad pre ' . $kind . ' <strong>' . esc_html( $highlight ) . '</strong> — zvýraznený v poradí aj po kvízoch</p>';
+        } else {
+            echo '<p class="ek-quiz-subtitle">Priebežné poradie a body po kvízoch</p>';
+        }
 
         if ( $this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true ) {
 
@@ -205,10 +226,10 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             list( $leaderboard, $by_quiz ) = $this->build_stats( $value['akcia'], 'user' );
 
             echo '<h2 class="ek-stats-section-title">Poradie hráčov</h2>';
-            $this->render_leaderboard( $leaderboard );
+            $this->render_leaderboard( $leaderboard, $highlight );
 
             echo '<h2 class="ek-stats-section-title">Body po kvízoch</h2>';
-            $this->render_by_quiz( $by_quiz );
+            $this->render_by_quiz( $by_quiz, $highlight );
 
             // Počet hráčov v jednotlivých tímoch.
             global $wpdb;
@@ -237,10 +258,10 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             list( $leaderboard, $by_quiz ) = $this->build_stats( $value['akcia'], 'team' );
 
             echo '<h2 class="ek-stats-section-title">Poradie tímov</h2>';
-            $this->render_leaderboard( $leaderboard );
+            $this->render_leaderboard( $leaderboard, $highlight );
 
             echo '<h2 class="ek-stats-section-title">Body po kvízoch</h2>';
-            $this->render_by_quiz( $by_quiz );
+            $this->render_by_quiz( $by_quiz, $highlight );
 
         } else {
             echo '<p class="ek-stats-empty">Pre túto akciu nie je nastavená identifikácia hráčov ani tímov.</p>';

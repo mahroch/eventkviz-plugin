@@ -2,6 +2,11 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.12] - 2026-05-29
+
+### Added (štatistika — filter pre jeden tím / hráča s zlatým zvýraznením)
+- Shortcode `[statistika]` má teraz atribúty `team="..."` a `user="..."` (alebo cez URL `?team=...` / `?user=...`). Pri filtri sa cieľový tím/hráč **zvýrazní zlato** v rebríčku aj v každej karte „Body po kvízoch", subtitle hlavičky uvedie pre koho je pohľad. Použitie: pošli tímu po-eventový link s jeho štatistikou, vidí svoju pozíciu a body v kontexte ostatných.
+
 ## [1.18.11] - 2026-05-29
 
 ### Added (hub-prehľad — badge ✓ X b pri kvízoch, ktoré tím už absolvoval)

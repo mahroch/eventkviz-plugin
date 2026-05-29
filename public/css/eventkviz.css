@@ -1029,3 +1029,17 @@ body .ek-scoring-info,
     font-weight: 700;
     white-space: nowrap;
 }
+
+/* C2: highlight pre filter ?team=X / ?user=X v štatistike */
+.ek-stats-rank.ek-stats-rank--highlight {
+    background: rgba(255, 215, 0, 0.25);
+    border-color: rgba(255, 215, 0, 0.7);
+    box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.5) inset;
+}
+.ek-stats-quiz-row.ek-stats-quiz-row--highlight {
+    background: rgba(255, 215, 0, 0.18);
+    border-radius: 8px;
+    padding: 5px 8px;
+    margin: 2px -8px;
+    font-weight: 800;
+}
