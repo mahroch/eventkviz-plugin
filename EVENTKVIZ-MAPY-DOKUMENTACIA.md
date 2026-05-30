@@ -248,7 +248,7 @@ Map kvíz používa **rovnaké spoločné helpery** ako music/movies/knowledge/s
 - `czechia.geojson` — outline 232 bodov
 - `sk-cities.geojson` — 34 miest (8 krajských tier=1 + 26 okresných tier=2), hand-curated
 - `sk-regions.geojson` — 8 administratívnych krajov SR (z NE)
-- `sk-rivers.geojson` — 8 hlavných riek (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec; z NE master + europe, clip na SK bbox)
+- `sk-rivers.geojson` — **28 riek** (od v1.18.17). Pôvodných 13 (Dunaj, Váh, Hron, Hornád, Slaná, Ipeľ, Morava, Dunajec, Nitra, Topľa, Ondava, Bodrog, Poprad) z NE/OSM. V1.18.17 dopnené **15 ďalších** z OSM Overpass (`waterway=river` + area.sk, simplify N=5, round 4 dp): **Tier 1** — Laborec, Latorica, Torysa, Orava, Kysuca, Bodva, Belá. **Tier 2** — Rimava, Turiec, Žitava, Myjava, Uh, Cirocha, Rajčianka, Slatina. Rajčianka v OSM ako „Rajčanka", v datasete pod preferovanou SK formou. Tool: `tools/extend-sk-rivers-tier1-2.py`.
 - `sk-mountains.geojson` — 14 pohorí SR (z OSM Overpass + simplification, ~95 KB)
 
 **Fázy 1-8 hotové.** Plugin je production-ready pre pin / river / mountain quiz typy na Slovensku.

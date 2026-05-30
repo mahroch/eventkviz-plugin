@@ -2,6 +2,16 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.17] - 2026-05-30
+
+### Added (Rieky SR — rozšírenie datasetu o 15 nových riek, Tier 1+2)
+- Mapová šablóna **Rieky SR** rozšírená z 13 na **28 riek**. Pridané (zdroj OSM Overpass, `waterway=river` v SK area, simplify každý 5. bod, súradnice round na 4 dp):
+  - **Tier 1 (7):** Laborec, Latorica, Torysa, Orava, Kysuca, Bodva, Belá.
+  - **Tier 2 (8):** Rimava, Turiec, Žitava, Myjava, Uh, Cirocha, Rajčianka, Slatina.
+- Rajčianka stiahnutá pod OSM menom „Rajčanka" (variant), uložená pod preferovanou slovenskou formou „Rajčianka".
+- Nový tool `tools/extend-sk-rivers-tier1-2.py` (analógia k existujúcemu `extend-rieky.php`) — bezpečné re-run, preskakuje rieky ktoré už v geojson existujú.
+- Súbor `public/data/regions/sk-rivers.geojson` narástol z ~50 KB na ~141 KB (28 features).
+
 ## [1.18.16] - 2026-05-29
 
 ### Fixed (Rieky SR — Ondava a Topľa boli na východe vizuálne rozdelené)
