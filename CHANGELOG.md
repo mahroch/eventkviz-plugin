@@ -2,6 +2,17 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.18] - 2026-05-30
+
+### Added (Pohoria SR — rozšírenie datasetu o 15 nových pohorí, Tier 1+2)
+- Mapová šablóna **Pohoria SR** rozšírená z 16 na **31 pohorí**. Pridané (zdroj OSM Overpass, relation s `natural=mountain_range` alebo `boundary=geomorphological-unit` v SK area, outer ways assembled do polygon ringov, simplify každý 3. bod, round 5 dp):
+  - **Tier 1 (7):** Považský Inovec, Vtáčnik, Kremnické vrchy, Volovské vrchy, Pieniny, Čergov, Javorníky.
+  - **Tier 2 (8):** Bukovské vrchy, Vihorlatské vrchy, Spišská Magura, Krupinská planina, Cerová vrchovina, Čierna hora, Kysucké Beskydy, Žiar.
+- Nový tool `tools/extend-sk-mountains-tier1-2.py` (multipolygon-assembly z OSM relation members → uzavretý ring).
+- Súbor `public/data/regions/sk-mountains.geojson` narástol z ~116 KB na ~229 KB (31 features).
+- Pool template **Pohoria SR** (post 1978) `_mapquiz_feature_pool` updatnutý zo 16 na 31 pohorí.
+- **Poznámka „Beskydy":** Moravsko-sliezske Beskydy sú v ČR/PL — pridali sme **Kysucké Beskydy** ako SR ekvivalent (Tier 2).
+
 ## [1.18.17] - 2026-05-30
 
 ### Added (Rieky SR — rozšírenie datasetu o 15 nových riek, Tier 1+2)
