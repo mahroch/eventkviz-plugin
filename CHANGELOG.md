@@ -2,6 +2,17 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.19] - 2026-05-30
+
+### Changed (Okresy SR — zlúčené mestské okresy Bratislavy a Košíc)
+- 5 mestských okresov Bratislavy (Bratislava I, II, III, IV, V) zlúčených do **jednej** položky **„Bratislava"** (MultiPolygon, 5 sub-polygons).
+- 4 mestské okresy Košíc (Košice I, II, III, IV) zlúčené do **jednej** položky **„Košice"** (MultiPolygon, 4 sub-polygons).
+- **Košice-okolie** ostáva ako samostatný (vidiecky) okres — netýka sa zlúčenia.
+- Dôvod: pri kvíze bolo 79 okresov zbytočne podrobné, hráč nerozlišuje mestské okresy.
+- Pool template **Okresy SR** (post 2140) updatnutý zo 79 na 72 položiek.
+- Súbor `public/data/regions/sk-districts.geojson`: 79 → 72 features.
+- Nový tool `tools/merge-bratislava-kosice-districts.py` (idempotentný re-run safe).
+
 ## [1.18.18] - 2026-05-30
 
 ### Added (Pohoria SR — rozšírenie datasetu o 15 nových pohorí, Tier 1+2)
