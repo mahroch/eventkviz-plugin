@@ -2,6 +2,19 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.21] - 2026-05-31
+
+### Changed (REST export mapquiz — rozšírenie pre GC 1:1 player rewrite)
+- `build_mapquiz_export()` v `includes/class-eventkviz-rest.php` rozšírený:
+  - Per template: pridané polia **quiz_type** (pin/area/line), **overlays** (config object z `_mapquiz_overlays`), **dataset_slug**, **features_source**, **feature_pool**, **custom_features**. GC ich uloží do `mapquiz_library` pre Fáza 1c player rewrite (sidebar layout, číslované markery, sekvenčný flow, overlays render, autosave).
+  - Top-level `lookup_db`: pridané **overlay_geojsons** (per región: bundled obsah overlay GeoJSON súborov z `public/data/regions/` ako sk-cities.geojson, sk-regions.geojson, europe-capitals.geojson, atď. — len súbory ktoré sú reálne použité v aspoň jednom template overlays config = needed_overlays dedup). Plus **maptiler_key** z plugin settings (pre real tile vrstvy v GC player).
+- **Odstránený pin-only filter** — export teraz vráti aj area/line templaty. GC Fáza 1 player ich nepoužije (filter na strane GC sync alebo player), ale dáta sú v mapquiz_library pre Fáza 3 area/line UI.
+
+### Rationale
+GeoChallenge MapQuizPlayer rewrite (Fáza 1c) potrebuje 1:1 parita s EK player viewom — sidebar task list, číslované circular markery, sekvenčný flow, overlay vrstvy podľa admin nastavenia, localStorage autosave, review mode. Tieto vyžadujú overlays config + overlay GeoJSON files + MapTiler key v lookup_db. Bez tohto rozšírenia GC by musel mať hardcoded overlay list = strata flexibility.
+
+Žiadne breaking changes pre existujúce GC sync (Fáza 1a) — staré polia (`pins`, `score_tiers`, `region_geojsons`, atď.) ostávajú. Len pridané nové polia.
+
 ## [1.18.20] - 2026-05-31
 
 ### Added (REST export — mapquiz typ pre GC sync, Fáza 1)

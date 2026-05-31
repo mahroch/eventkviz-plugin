@@ -393,15 +393,13 @@ class Eventkviz_Rest_Search {
 
         $templates    = array();
         $needed_regions = array();
+        $needed_overlays = array(); // [region][overlay_key] => true
         foreach ( $posts as $post ) {
             $tid    = (int) $post->ID;
-            // Fáza 1 = LEN pinové templaty. Area templates (quiz_type=area —
-            // klik na polygón okresu/pohoria) skipni, GC ich príde v Fáze 3.
             $quiz_type = (string) get_post_meta( $tid, '_mapquiz_quiz_type', true );
             $quiz_type = $quiz_type !== '' ? $quiz_type : 'pin';
-            if ( $quiz_type !== 'pin' ) {
-                continue;
-            }
+            // Fáza 1c: export VŠETKY typy (pin + area + line). GC strana filter na pin
+            // pre Fáza 1 player UI, area/line ostanú v mapquiz_library pre Fáza 3.
 
             $region = (string) get_post_meta( $tid, '_mapquiz_region', true );
             $region = $region !== '' ? $region : 'slovakia';
@@ -415,7 +413,6 @@ class Eventkviz_Rest_Search {
             $tiers_raw = get_post_meta( $tid, '_mapquiz_score_tiers', true );
             $tiers     = is_array( $tiers_raw ) ? $tiers_raw : json_decode( (string) $tiers_raw, true );
             if ( ! is_array( $tiers ) || empty( $tiers ) ) {
-                // Default 4-stupňový gradient (5km→100%, 10km→75%, 20km→50%, 40km→25%).
                 $tiers = array(
                     array( 'maxKm' => 5,  'percent' => 100 ),
                     array( 'maxKm' => 10, 'percent' => 75 ),
@@ -446,21 +443,48 @@ class Eventkviz_Rest_Search {
                 }
             }
 
+            // Fáza 1c: overlays config + dataset slug + feature pool.
+            $overlays_raw = get_post_meta( $tid, '_mapquiz_overlays', true );
+            $overlays = is_array( $overlays_raw ) ? $overlays_raw : json_decode( (string) $overlays_raw, true );
+            $overlays = is_array( $overlays ) ? $overlays : array();
+            // Track ktoré overlay GeoJSON files treba bundle-nuť (per region).
+            foreach ( $overlays as $okey => $oval ) {
+                if ( $oval && ! isset( $needed_overlays[ $region ][ $okey ] ) ) {
+                    $needed_overlays[ $region ][ $okey ] = true;
+                }
+            }
+
+            $dataset_slug = (string) get_post_meta( $tid, '_mapquiz_dataset_slug', true );
+            $feature_pool_raw = get_post_meta( $tid, '_mapquiz_feature_pool', true );
+            $feature_pool = is_array( $feature_pool_raw ) ? $feature_pool_raw : json_decode( (string) $feature_pool_raw, true );
+            $feature_pool = is_array( $feature_pool ) ? $feature_pool : array();
+            $features_source = (string) get_post_meta( $tid, '_mapquiz_features_source', true );
+            $features_source = $features_source !== '' ? $features_source : 'bundle';
+            $custom_features_raw = get_post_meta( $tid, '_mapquiz_custom_features', true );
+            $custom_features = is_array( $custom_features_raw ) ? $custom_features_raw : json_decode( (string) $custom_features_raw, true );
+
             $templates[] = array(
-                'id'            => $tid,
-                'name'          => get_the_title( $tid ),
-                'region'        => $region,
-                'player_detail' => $detail,
-                'max_points'    => $max_points,
-                'score_tiers'   => array_values( $tiers ),
-                'pins'          => $pins,
-                'modified_at'   => mysql2date( 'c', $post->post_modified_gmt, false ),
+                'id'              => $tid,
+                'name'            => get_the_title( $tid ),
+                'quiz_type'       => $quiz_type,
+                'region'          => $region,
+                'player_detail'   => $detail,
+                'max_points'      => $max_points,
+                'score_tiers'     => array_values( $tiers ),
+                'pins'            => $pins,
+                'overlays'        => (object) $overlays,
+                'dataset_slug'    => $dataset_slug,
+                'features_source' => $features_source,
+                'feature_pool'    => array_values( $feature_pool ),
+                'custom_features' => ( is_array( $custom_features ) ? $custom_features : null ),
+                'modified_at'     => mysql2date( 'c', $post->post_modified_gmt, false ),
             );
         }
 
-        // GeoJSON content per region (embed) — GC nepotrebuje ďalší HTTP fetch.
-        $region_geojsons = array();
         $regions_dir = plugin_dir_path( dirname( __FILE__ ) ) . 'public/data/regions/';
+
+        // Region outline GeoJSON (slovakia.geojson / czechia.geojson — pre europe/world fallback).
+        $region_geojsons = array();
         foreach ( array_keys( $needed_regions ) as $region ) {
             $candidates = array( $region . '.geojson', $region . '-countries.geojson' );
             foreach ( $candidates as $fname ) {
@@ -478,11 +502,56 @@ class Eventkviz_Rest_Search {
             }
         }
 
+        // Overlay GeoJSON files (sk-cities, sk-regions, sk-rivers, europe-capitals, atď.)
+        // bundle per región podľa registry. GC importuje len tie ktoré sú v `needed_overlays`.
+        $overlay_geojsons = array();
+        $overlay_registry = array(
+            'slovakia' => array(
+                'cities_main'     => 'sk-cities.geojson',
+                'cities_regional' => 'sk-cities.geojson',
+                'regions'         => 'sk-regions.geojson',
+                'rivers'          => 'sk-rivers.geojson',
+            ),
+            'europe' => array(
+                'eu_capitals'     => 'europe-capitals.geojson',
+                'eu_borders'      => 'europe-countries.geojson',
+                'eu_major_rivers' => 'europe-rivers.geojson',
+            ),
+        );
+        foreach ( $needed_overlays as $region => $okeys ) {
+            $overlay_geojsons[ $region ] = array();
+            $files_seen = array();
+            foreach ( array_keys( $okeys ) as $okey ) {
+                $fname = isset( $overlay_registry[ $region ][ $okey ] ) ? $overlay_registry[ $region ][ $okey ] : null;
+                if ( ! $fname || isset( $files_seen[ $fname ] ) ) continue;
+                $files_seen[ $fname ] = true;
+                $path = $regions_dir . $fname;
+                if ( file_exists( $path ) && is_readable( $path ) ) {
+                    $contents = file_get_contents( $path );
+                    if ( $contents !== false ) {
+                        $decoded = json_decode( $contents, true );
+                        if ( is_array( $decoded ) ) {
+                            $overlay_geojsons[ $region ][ $fname ] = $decoded;
+                        }
+                    }
+                }
+            }
+        }
+
+        // MapTiler API key (z plugin settings) — voliteľný; GC ho použije iba ak je
+        // overlays.tile_streets / tile_satellite / tile_outdoor = true.
+        $maptiler_key = '';
+        if ( class_exists( 'Eventkviz_Settings' ) && method_exists( 'Eventkviz_Settings', 'get_maptiler_key' ) ) {
+            $maptiler_key = (string) Eventkviz_Settings::get_maptiler_key();
+        }
+
         return array(
             'questions' => $templates,
             'scoring'   => new stdClass(),
             'lookup_db' => array(
-                'region_geojsons' => $region_geojsons,
+                'region_geojsons'  => $region_geojsons,
+                'overlay_geojsons' => $overlay_geojsons,
+                'maptiler_key'     => $maptiler_key,
             ),
         );
     }
