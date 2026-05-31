@@ -395,6 +395,14 @@ class Eventkviz_Rest_Search {
         $needed_regions = array();
         foreach ( $posts as $post ) {
             $tid    = (int) $post->ID;
+            // Fáza 1 = LEN pinové templaty. Area templates (quiz_type=area —
+            // klik na polygón okresu/pohoria) skipni, GC ich príde v Fáze 3.
+            $quiz_type = (string) get_post_meta( $tid, '_mapquiz_quiz_type', true );
+            $quiz_type = $quiz_type !== '' ? $quiz_type : 'pin';
+            if ( $quiz_type !== 'pin' ) {
+                continue;
+            }
+
             $region = (string) get_post_meta( $tid, '_mapquiz_region', true );
             $region = $region !== '' ? $region : 'slovakia';
             $needed_regions[ $region ] = true;
