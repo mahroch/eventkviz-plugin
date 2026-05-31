@@ -2,6 +2,14 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.22] - 2026-05-31
+
+### Fixed (REST mapquiz export — overlay GeoJSONs vždy kompletné)
+- `build_mapquiz_export()` v `includes/class-eventkviz-rest.php`: predtým sa do `lookup_db.overlay_geojsons[<region>]` exportovali LEN súbory pre overlay kľúče ktoré boli template-default enabled (cez `$needed_overlays`). Ak template mal default `rivers: false`, sk-rivers.geojson sa nedostal do exportu → GC admin override toggle „Rieky SR" nemohol nič zobraziť (klient nemá dáta). Fix: iterujeme `array_keys( $needed_regions )` a exportujeme VŠETKY súbory z `$overlay_registry[<region>]` — admin per-task override v GC tým vždy má dáta na rendering.
+
+### Rationale
+GC MapQuizPlayer (Fáza 1c) povolí adminovi per-task prepísať template overlay defaults (napr. Hrady SR template má rieky default off, ale konkrétna úloha v challenge chce mať rieky on pre vizuálny kontext). EK export musí zahŕňať plnú sadu regionálnych GeoJSONov, nielen "pre-enabled" podmnožinu — inak admin override nefunguje. Maros hlásil „rieky sa nezobrazujú na slepej mape" 2026-05-31.
+
 ## [1.18.21] - 2026-05-31
 
 ### Changed (REST export mapquiz — rozšírenie pre GC 1:1 player rewrite)

@@ -503,7 +503,14 @@ class Eventkviz_Rest_Search {
         }
 
         // Overlay GeoJSON files (sk-cities, sk-regions, sk-rivers, europe-capitals, atď.)
-        // bundle per región podľa registry. GC importuje len tie ktoré sú v `needed_overlays`.
+        // bundle per región podľa registry.
+        //
+        // 2026-05-31: vždy exportujeme VŠETKY dostupné overlay files per
+        // potrebný región, NIE LEN tie ktoré sú template-default enabled. GC
+        // admin má per-task override toggle — ak template má default rivers=false
+        // ale admin v GC zapne, klient potrebuje sk-rivers.geojson dáta k
+        // dispozícii. Predtým sa exportovali len defaultne enabled → admin
+        // override v GC nezobrazoval prvky (Maros, „rieky sa nezobrazujú").
         $overlay_geojsons = array();
         $overlay_registry = array(
             'slovakia' => array(
@@ -518,12 +525,12 @@ class Eventkviz_Rest_Search {
                 'eu_major_rivers' => 'europe-rivers.geojson',
             ),
         );
-        foreach ( $needed_overlays as $region => $okeys ) {
+        foreach ( array_keys( $needed_regions ) as $region ) {
+            if ( ! isset( $overlay_registry[ $region ] ) ) continue;
             $overlay_geojsons[ $region ] = array();
             $files_seen = array();
-            foreach ( array_keys( $okeys ) as $okey ) {
-                $fname = isset( $overlay_registry[ $region ][ $okey ] ) ? $overlay_registry[ $region ][ $okey ] : null;
-                if ( ! $fname || isset( $files_seen[ $fname ] ) ) continue;
+            foreach ( $overlay_registry[ $region ] as $fname ) {
+                if ( isset( $files_seen[ $fname ] ) ) continue;
                 $files_seen[ $fname ] = true;
                 $path = $regions_dir . $fname;
                 if ( file_exists( $path ) && is_readable( $path ) ) {
