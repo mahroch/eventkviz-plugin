@@ -129,8 +129,8 @@ class Eventkviz_Rest_Search {
             'music'  => array( __CLASS__, 'build_music_export' ),
             'movies' => array( __CLASS__, 'build_movies_export' ),
             'knowledge' => array( __CLASS__, 'build_knowledge_export' ),
+            'mapquiz'   => array( __CLASS__, 'build_mapquiz_export' ),
             // 'sudoku'    => array( __CLASS__, 'build_sudoku_export' ),
-            // 'mapquiz'   => array( __CLASS__, 'build_mapquiz_export' ),
         );
     }
 
@@ -365,6 +365,120 @@ class Eventkviz_Rest_Search {
      * exportujú do GC library (server-only) — GC ich NIKDY neposiela cez
      * /questions, len cez /score reveal. choices sú verejné možnosti (select).
      */
+    /**
+     * Mapquiz data builder (Fáza 1 — pinové šablóny).
+     *
+     * - questions: array `mapquiz_template` post-ov (id, name, region, player_detail,
+     *              max_points, score_tiers, pins[]). 1 question = 1 šablóna (NIE
+     *              jedna otázka v sete — to si vyberie GC pri play time z `pins`).
+     * - scoring:   prázdne (per-template tiers sú v každom question objekte)
+     * - lookup_db.region_geojsons: GeoJSON FeatureCollection per region (slovakia,
+     *              czechia, europe-countries, world-rivers) — bundled v EK plugin
+     *              `public/data/regions/`. GC sync ich uloží do mapquiz_library
+     *              ako blob/jsonb a renderer ich loadne pri player view.
+     *
+     * Photo URL per pin sa resolve-uje z `photo_attachment_id` cez `wp_get_attachment_url`
+     * (plne kvalifikovaný URL). GC sync ich pri import downloadne a uloží do
+     * Supabase Storage `task-images` bucket → URL sa prepíše pred uloženim do
+     * mapquiz_library. Tým je GC offline-robust voči EK downtime.
+     */
+    public static function build_mapquiz_export() {
+        $posts = get_posts( array(
+            'post_type'   => 'mapquiz_template',
+            'post_status' => 'publish',
+            'numberposts' => -1,
+            'orderby'     => 'ID',
+            'order'       => 'ASC',
+        ) );
+
+        $templates    = array();
+        $needed_regions = array();
+        foreach ( $posts as $post ) {
+            $tid    = (int) $post->ID;
+            $region = (string) get_post_meta( $tid, '_mapquiz_region', true );
+            $region = $region !== '' ? $region : 'slovakia';
+            $needed_regions[ $region ] = true;
+
+            $detail        = (string) get_post_meta( $tid, '_mapquiz_player_detail', true );
+            $detail        = $detail !== '' ? $detail : 'outline-only';
+            $max_points    = (int) get_post_meta( $tid, '_mapquiz_max_points', true );
+            $max_points    = $max_points > 0 ? $max_points : 100;
+
+            $tiers_raw = get_post_meta( $tid, '_mapquiz_score_tiers', true );
+            $tiers     = is_array( $tiers_raw ) ? $tiers_raw : json_decode( (string) $tiers_raw, true );
+            if ( ! is_array( $tiers ) || empty( $tiers ) ) {
+                // Default 4-stupňový gradient (5km→100%, 10km→75%, 20km→50%, 40km→25%).
+                $tiers = array(
+                    array( 'maxKm' => 5,  'percent' => 100 ),
+                    array( 'maxKm' => 10, 'percent' => 75 ),
+                    array( 'maxKm' => 20, 'percent' => 50 ),
+                    array( 'maxKm' => 40, 'percent' => 25 ),
+                );
+            }
+
+            $pins_raw = get_post_meta( $tid, '_mapquiz_pins', true );
+            $pins_in  = is_array( $pins_raw ) ? $pins_raw : json_decode( (string) $pins_raw, true );
+            $pins     = array();
+            if ( is_array( $pins_in ) ) {
+                foreach ( $pins_in as $pin ) {
+                    if ( ! is_array( $pin ) ) continue;
+                    $pid = isset( $pin['id'] ) ? (string) $pin['id'] : '';
+                    if ( $pid === '' ) continue;
+                    $photo_id  = isset( $pin['photo_attachment_id'] ) ? (int) $pin['photo_attachment_id'] : 0;
+                    $photo_url = $photo_id > 0 ? wp_get_attachment_url( $photo_id ) : null;
+                    $pins[] = array(
+                        'id'          => $pid,
+                        'name'        => isset( $pin['name'] ) ? (string) $pin['name'] : '',
+                        'hint'        => isset( $pin['hint'] ) ? (string) $pin['hint'] : '',
+                        'description' => isset( $pin['description'] ) ? (string) $pin['description'] : '',
+                        'photo_url'   => ( $photo_url && $photo_url !== '' ? $photo_url : null ),
+                        'lat'         => isset( $pin['lat'] ) ? (float) $pin['lat'] : 0,
+                        'lon'         => isset( $pin['lon'] ) ? (float) $pin['lon'] : 0,
+                    );
+                }
+            }
+
+            $templates[] = array(
+                'id'            => $tid,
+                'name'          => get_the_title( $tid ),
+                'region'        => $region,
+                'player_detail' => $detail,
+                'max_points'    => $max_points,
+                'score_tiers'   => array_values( $tiers ),
+                'pins'          => $pins,
+                'modified_at'   => mysql2date( 'c', $post->post_modified_gmt, false ),
+            );
+        }
+
+        // GeoJSON content per region (embed) — GC nepotrebuje ďalší HTTP fetch.
+        $region_geojsons = array();
+        $regions_dir = plugin_dir_path( dirname( __FILE__ ) ) . 'public/data/regions/';
+        foreach ( array_keys( $needed_regions ) as $region ) {
+            $candidates = array( $region . '.geojson', $region . '-countries.geojson' );
+            foreach ( $candidates as $fname ) {
+                $path = $regions_dir . $fname;
+                if ( file_exists( $path ) && is_readable( $path ) ) {
+                    $contents = file_get_contents( $path );
+                    if ( $contents !== false ) {
+                        $decoded = json_decode( $contents, true );
+                        if ( is_array( $decoded ) ) {
+                            $region_geojsons[ $region ] = $decoded;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return array(
+            'questions' => $templates,
+            'scoring'   => new stdClass(),
+            'lookup_db' => array(
+                'region_geojsons' => $region_geojsons,
+            ),
+        );
+    }
+
     public static function build_knowledge_export() {
         $questions = self::knowledge_questions();
         $scoring   = self::knowledge_scoring_defaults();

@@ -2,6 +2,19 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.20] - 2026-05-31
+
+### Added (REST export — mapquiz typ pre GC sync, Fáza 1)
+- Pridaný builder `build_mapquiz_export()` v `includes/class-eventkviz-rest.php`. Endpoint `GET /wp-json/eventkviz/v1/export/mapquiz` (autentif. `X-Eventkviz-Api-Key`) vráti:
+  - `questions`: array všetkých `mapquiz_template` (publish) so štruktúrou `{id, name, region, player_detail, max_points, score_tiers, pins[], modified_at}`. Pin štruktúra: `{id, name, hint, description, photo_url, lat, lon}` — photo_url resolve-nuté cez `wp_get_attachment_url`.
+  - `scoring`: prázdny stdClass (per-template tiers sú v každom template objekte).
+  - `lookup_db.region_geojsons`: GeoJSON FeatureCollection per region embedded z `public/data/regions/{region}.geojson` (slovakia, czechia, europe-countries, world-rivers) — GC ich uloží do svojej DB, žiadny ďalší HTTP fetch pri player view.
+- Registry `export_builders()` aktivovaný `'mapquiz'` (predtým commentnutý placeholder).
+- Žiadne breaking changes — endpoint je read-only, izolovaný od ostatných WP funkcií.
+
+### Rationale
+GeoChallenge (Maroš side-project) ako consumer EK kvízových dát. Music/Movies/Knowledge mali export už dlho, mapquiz pribudol teraz (Fáza 1 pinové šablóny — area mapquiz mimo). GC pri sync prevezme pinové templates + GeoJSON regions + photos (kopíruje do GC Supabase Storage pre offline robust). Translations (SK→EN) GC dorobí cez vlastnú translations dashboard (parita s music/movies/knowledge).
+
 ## [1.18.19] - 2026-05-30
 
 ### Changed (Okresy SR — zlúčené mestské okresy Bratislavy a Košíc)
