@@ -66,6 +66,14 @@ class Eventkviz_MapQuiz_Datasets {
                 'singular' => 'okres',
             ),
 
+            'sk-chko' => array(
+                'label'    => 'Chránené krajinné oblasti SR',
+                'region'   => 'slovakia',
+                'file'     => 'sk-chko.geojson',
+                'geometry' => 'polygon',
+                'singular' => 'chránenú krajinnú oblasť',
+            ),
+
             // ===== Europe =====
             'europe-countries' => array(
                 'label'    => 'Štáty Európy',

@@ -2,6 +2,17 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.23] - 2026-06-01
+
+### Added (nový mapový dataset + template — Chránené krajinné oblasti SR)
+- Pridaný dataset **sk-chko** (14 chránených krajinných oblastí SR): Biele Karpaty, Cerová vrchovina, Dunajské luhy, Horná Orava, Kysuce, Latorica, Malé Karpaty, Poľana, Ponitrie, Strážovské vrchy, Štiavnické vrchy, Vihorlat, Východné Karpaty, Záhorie.
+- Zdroj: OSM Overpass — relations s `boundary=protected_area` + `protection_title=Chránená krajinná oblasť` v SK area. Outer ways assembled do polygon/multipolygon (5 CHKO sú MultiPolygon: Biele Karpaty 2, Dunajské luhy 5, Kysuce 2, Malé Karpaty 3, Záhorie 2). Simplify N=3, round 5 dp.
+- Súbor `public/data/regions/sk-chko.geojson` (~414 KB, 14 features).
+- Registrácia datasetu v `admin/class-eventkviz-mapquiz-datasets.php` (slug `sk-chko`, label „Chránené krajinné oblasti SR", region slovakia, geometry polygon, singular „chránenú krajinnú oblasť").
+- Vytvorený `mapquiz_template` post „Chránené krajinné oblasti SR" (ID 2141, publish) s pool 14 CHKO — pripravený na pridanie do eventov cez admin UI.
+- Nový tool `tools/build-sk-chko.py` (analógia `extend-sk-mountains-tier1-2.py`).
+- **Pozn. „Dunajské luhy":** v slovenskej geografickej terminológii a v OSM s malým `l` (apelatívum); v Marošovom screenshote bol uvedený s veľkým `L` (typografická prevencia) — datasetu zachovávame slovenský pravopis.
+
 ## [1.18.22] - 2026-05-31
 
 ### Fixed (REST mapquiz export — overlay GeoJSONs vždy kompletné)
