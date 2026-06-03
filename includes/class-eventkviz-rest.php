@@ -75,6 +75,14 @@ class Eventkviz_Rest_Search {
                         'required' => true,
                         'type'     => 'string',
                     ),
+                    // Voliteľný production filter (per-typ semantics; aktuálne
+                    // používa len 'movies'). Hodnota = slug taxonómie `production`
+                    // (sk / cz / zahranicne / rozpravky). Bez parametra → full
+                    // export (žiadny filter). Builder ignoruje neznámu hodnotu.
+                    'production' => array(
+                        'required' => false,
+                        'type'     => 'string',
+                    ),
                 ),
             )
         );
@@ -150,15 +158,24 @@ class Eventkviz_Rest_Search {
             );
         }
 
-        $data = call_user_func( $builders[ $type ] );
+        // Voliteľný production filter (aktuálne len movies). Builder dostáva
+        // sanitized slug alebo null. Neznámy slug = null (full export, žiadny
+        // 400 — back-compat pre staré klientov volajúcich bez param).
+        $production_raw = (string) $req->get_param( 'production' );
+        $production     = $production_raw !== '' ? sanitize_key( $production_raw ) : null;
 
-        // Jednotná obálka zdieľaná všetkými typmi.
+        $data = call_user_func( $builders[ $type ], $production );
+
+        // Jednotná obálka zdieľaná všetkými typmi. partial_subset je vyplnené
+        // len keď builder reálne aplikoval filter (GC ho ukladá do
+        // ek_quiz_library.partial_subset pre indikáciu subset stavu).
         $envelope = array(
-            'quiz_type'    => $type,
-            'generated_at' => gmdate( 'c' ),
-            'questions'    => isset( $data['questions'] ) ? $data['questions'] : array(),
-            'scoring'      => isset( $data['scoring'] ) ? $data['scoring'] : new stdClass(),
-            'lookup_db'    => isset( $data['lookup_db'] ) ? $data['lookup_db'] : new stdClass(),
+            'quiz_type'      => $type,
+            'generated_at'   => gmdate( 'c' ),
+            'questions'      => isset( $data['questions'] ) ? $data['questions'] : array(),
+            'scoring'        => isset( $data['scoring'] ) ? $data['scoring'] : new stdClass(),
+            'lookup_db'      => isset( $data['lookup_db'] ) ? $data['lookup_db'] : new stdClass(),
+            'partial_subset' => isset( $data['partial_subset'] ) ? $data['partial_subset'] : null,
         );
 
         return rest_ensure_response( $envelope );
@@ -249,20 +266,60 @@ class Eventkviz_Rest_Search {
      * ľubovoľný režim podľa svojej admin konfigurácie — verná parita s EK
      * movies_quiz_type (full / choices).
      */
-    public static function build_movies_export() {
-        $questions = self::movies_questions();
+    public static function build_movies_export( $production = null ) {
+        // Validuj filter — len známe slugy z taxonómie. Neznáme → ignoruje
+        // (full export). Pole platných slugov sa berie zo živej taxonómie,
+        // takže keď Maroš pridá ďalší term (napr. „dokument"), automaticky
+        // sa stane validným filtrom bez zmeny kódu.
+        $valid_slugs = array();
+        foreach ( self::taxonomy_terms( 'production' ) as $term ) {
+            if ( isset( $term['slug'] ) ) {
+                $valid_slugs[] = (string) $term['slug'];
+            }
+        }
+        $filter = ( is_string( $production ) && $production !== '' && in_array( $production, $valid_slugs, true ) )
+            ? $production
+            : null;
+
+        $questions = self::movies_questions( $filter );
         $scoring   = self::movies_scoring_defaults();
+
+        // Pri selective sync zúž `lookup_db.movies` na CCT záznamy odkazované
+        // ako correct_movie z filtrovaných otázok — autocomplete v GC potom
+        // ponúka len relevantné filmy (a šetrí prenos / DB veľkosť).
+        if ( $filter !== null ) {
+            $allowed_ids = array();
+            foreach ( $questions as $q ) {
+                if ( isset( $q['correct_movie']['id'] ) ) {
+                    $allowed_ids[ (int) $q['correct_movie']['id'] ] = true;
+                }
+            }
+            $full_movies = self::cct_lookup( 'jet_cct_movies', 'original_title' );
+            $movies_lookup = array();
+            foreach ( $full_movies as $entry ) {
+                if ( isset( $entry['id'] ) && isset( $allowed_ids[ (int) $entry['id'] ] ) ) {
+                    $movies_lookup[] = $entry;
+                }
+            }
+        } else {
+            $movies_lookup = self::cct_lookup( 'jet_cct_movies', 'original_title' );
+        }
+
         $lookup_db = array(
-            'movies'      => self::cct_lookup( 'jet_cct_movies', 'original_title' ),
-            // Fáza 3: dostupné kategórie (taxonómia `production`) pre GC admin
-            // multi-select — rovnaká taxonómia ako music (Maroš zdieľa termy).
+            'movies'      => $movies_lookup,
+            // Productions zostáva PLNÁ lista (informačná — GC admin vidí všetky
+            // kategórie aj keď syncoval len subset, vie potom samostatne syncnúť
+            // ďalšie).
             'productions' => self::taxonomy_terms( 'production' ),
         );
 
         return array(
-            'questions' => $questions,
-            'scoring'   => $scoring,
-            'lookup_db' => $lookup_db,
+            'questions'      => $questions,
+            'scoring'        => $scoring,
+            'lookup_db'      => $lookup_db,
+            // partial_subset = aplikovaný slug alebo null (full). GC ho ukladá
+            // do ek_quiz_library.partial_subset pre UI indikáciu stavu.
+            'partial_subset' => $filter,
         );
     }
 
@@ -284,14 +341,27 @@ class Eventkviz_Rest_Search {
      *  - choices + correct_choice: meta choices_for_answer (newline-split) +
      *    correct_answer_for_choices (string) — choices režim.
      */
-    private static function movies_questions() {
-        $posts = get_posts( array(
+    private static function movies_questions( $production_filter = null ) {
+        $args = array(
             'post_type'   => 'questions-movies',
             'post_status' => 'publish',
             'numberposts' => -1,
             'orderby'     => 'ID',
             'order'       => 'ASC',
-        ) );
+        );
+        // Selective sync: obmedzí query na otázky priradené k danému production
+        // termu (slug). Šetrí egress aj DB záťaž — žiadne post_meta walking
+        // pre vyfiltrované otázky, robí to MySQL cez tax_query JOIN.
+        if ( is_string( $production_filter ) && $production_filter !== '' ) {
+            $args['tax_query'] = array(
+                array(
+                    'taxonomy' => 'production',
+                    'field'    => 'slug',
+                    'terms'    => array( $production_filter ),
+                ),
+            );
+        }
+        $posts = get_posts( $args );
 
         $out = array();
         foreach ( $posts as $post ) {

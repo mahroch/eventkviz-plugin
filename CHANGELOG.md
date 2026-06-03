@@ -2,6 +2,16 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.25] - 2026-06-03
+
+### Added (REST export movies — voliteľný `production` filter pre selective sync)
+- `/export/movies` endpoint v `includes/class-eventkviz-rest.php` prijme nový voliteľný query param **`?production=<slug>`** (sk / cz / zahranicne / rozpravky — všetky reálne termy taxonómie `production`). Pri zadaní vráti len otázky priradené k tomu termu + zúžené `lookup_db.movies` na korešpondujúce CCT záznamy. `lookup_db.productions` ostáva plné (informačné pre admin UI v GC).
+- Response envelope obsahuje nové pole `partial_subset` (slug alebo null) — GC ho ukladá do `ek_quiz_library.partial_subset` pre indikáciu „selective sync" stavu.
+- Implementačne: `build_movies_export($production = null)` validuje slug proti živej taxonómii (nový term v EK = automaticky validný filter, bez zmeny kódu). `movies_questions($filter)` aplikuje `tax_query` priamo na MySQL JOIN.
+
+### Rationale
+Maros 2026-06-03: full movies sync na DEV (90 otázok × videá v MB) preplňuje Supabase egress — pre testing stačí napr. len 2 SK filmy + filter v test kvíze. Selective sync šetrí EK egress, GC storage egress aj DB veľkosť `ek_quiz_library.questions` JSONB. Default (bez param) ostáva full sync — žiadna spätná inkompatibilita pre existujúcich klientov.
+
 ## [1.18.24] - 2026-06-01
 
 ### Fixed (Direct URL generator — GC integration `cp` placeholder)
