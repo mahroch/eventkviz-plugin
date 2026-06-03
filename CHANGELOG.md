@@ -2,6 +2,18 @@
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.18.24] - 2026-06-01
+
+### Fixed (Direct URL generator — GC integration `cp` placeholder)
+- `admin/class-eventkviz-event-links.php` sekcia „Priame URL": URL šablóna teraz obsahuje `&cp={cpId}` placeholder ako string suffix (po `add_query_arg`, aby `{}` neboli URL-encoded). GeoChallenge frontend `app/map/page.tsx` ho automaticky nahradí ID konkrétneho checkpointu pri otvorení v hráčovom modali.
+- Týka sa: priame URL pre music/movies/knowledge/sudoku/mapa kvízy + multi-mapa sub-kvízy.
+- Description aktualizovaný: vysvetlenie `{cpId}` placeholderu + dôsledok keď chýba („Chyba GeoChallenge integrácie — QR kód neobsahoval väzbu na konkrétny checkpoint").
+
+### Rationale
+Maros 2026-06-01 bugreport: hráč otvoril URL+kód úlohu „Národné parky SR" v GC challenge „Biológia 9.roč ZŠ". CP externalUrl bol `https://eventkviz.sk/mapa-quiz/?akcia=chko&mq=2be96b&team=TEAM&user=USER` (chýbal `cp` parameter). Po dokončení mapquizu EK vyhodnotil score (99/100, 9/9 pokusov) ale GC integrácia zlyhala — score sa nezapísal do GC players.progress pre konkrétny checkpoint. Hráč videl error „Chyba GeoChallenge integrácie".
+
+EK plugin parsuje `$_GET['cp']` v `class-eventkviz-musicquiz.php:182` a setuje hidden field `gc_cp` v form. Bez `cp` param-u zostane prázdny → no GC bridge. Fix: admin URL generator vždy pridá `&cp={cpId}` literal placeholder. GC pri render replaces na actual UUID.
+
 ## [1.18.23] - 2026-06-01
 
 ### Added (nový mapový dataset + template — Chránené krajinné oblasti SR)

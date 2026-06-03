@@ -116,12 +116,15 @@ class Eventkviz_Event_Links_Admin {
         // 3. Direct URLs (skip selector) — len aktívne kvízy
         echo '<div class="ek-links-section">';
         echo '<h3>3. Priame URL (bez výberu, hráč ide rovno do kvízu)</h3>';
-        echo '<p class="description">Personalizovaný link pre konkrétny tím / hráča. Nahraď <code>TEAM</code> a <code>USER</code> reálnymi kódmi (alebo nech ostane prázdne ak ich nepoužívaš). Zobrazia sa len aktívne kvízy.</p>';
+        echo '<p class="description">Personalizovaný link pre konkrétny tím / hráča. Nahraď <code>TEAM</code> a <code>USER</code> reálnymi kódmi (alebo nech ostane prázdne ak ich nepoužívaš). Pre GeoChallenge integráciu URL obsahuje <code>&amp;cp={cpId}</code> placeholder — GC ho automaticky nahradí ID checkpointu; bez neho EK nevie spárovať odpoveď s konkrétnou úlohou („Chyba GeoChallenge integrácie — QR kód neobsahoval väzbu na konkrétny checkpoint"). Zobrazia sa len aktívne kvízy.</p>';
         foreach ( $active_quizzes as $type => $info ) {
             $url = add_query_arg(
                 array( 'akcia' => $akcia, 'team' => 'TEAM', 'user' => 'USER' ),
                 home_url( '/' . $info['slug'] . '/' )
             );
+            // GC cp placeholder ako string suffix (add_query_arg by URL-encoded
+            // {} na %7B%7D — to GC frontend nevie matchnúť do .replaceAll).
+            $url .= ( strpos( $url, '?' ) === false ? '?' : '&' ) . 'cp={cpId}';
             self::render_link( $url, $info['label'] );
         }
         // Multi-mapa: pre každý sub-kvíz vlastný link s mq slugom
@@ -136,6 +139,7 @@ class Eventkviz_Event_Links_Admin {
                     array( 'akcia' => $akcia, 'mq' => $slug, 'team' => 'TEAM', 'user' => 'USER' ),
                     home_url( '/mapa-quiz/' )
                 );
+                $url .= '&cp={cpId}';
                 self::render_link( $url, 'Mapa: ' . $label );
             }
         }
