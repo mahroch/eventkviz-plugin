@@ -403,6 +403,7 @@ public function save_event_meta( $post_id ) {
             'verify_users_in_db',
             'identifikacia_userov_timu',
             'select_from_teams_array',
+            'locked_team_mode',
             'use_seed',
             'show_link_back_to_all_quizes',
             'geochallenge_integration'
@@ -659,6 +660,19 @@ private function render_general_tab( $post, $meta ) {
                         })();
                         </script>
                     </div>
+                </td>
+            </tr>
+
+            <!-- locked_team_mode -->
+            <tr>
+                <th><label>🔒 Zamknutý tímový režim</label></th>
+                <td>
+                    <input type="checkbox" name="event_general[locked_team_mode]" value="1" <?php checked( $meta['event_general_locked_team_mode'][0] ?? '0', '1' ); ?> />
+                    <p class="description">
+                        <strong>Zapnuté:</strong> Identita tímu/hráča sa berie LEN z podpísaného tokenu v linku (<code>?t=…</code>) — ručné prepísanie <code>?team=</code> v adrese sa ignoruje. Na vstupe sa nezobrazí výber tímu (dropdown), len načítaný tím (read-only). Hráč tak nevidí ani neprekliká cudzí tím. Tímové linky vygeneruješ v metaboxe „🔗 Linky pre hráčov" (sekcia tokenizované linky).<br>
+                        <strong>Vypnuté:</strong> Bežný režim — hráč si vyberie tím z dropdownu, identita môže byť aj v plain URL.<br>
+                        <em>Vyžaduje zapnuté „Hráč zadáva… kód tímu" + „Výber tímu z preddefinovaného zoznamu".</em>
+                    </p>
                 </td>
             </tr>
 

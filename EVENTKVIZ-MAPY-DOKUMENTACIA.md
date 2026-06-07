@@ -414,3 +414,35 @@ Keď je v admine pre mapový (sub-)kvíz zaškrtnuté **„Pri opakovaní označ
 3. Otvor `eventkviz-vstup/?akcia=<slug>` **bez** team v URL, vyber tím z dropdownu, klikni Pokračovať. Očakávaj: stránka sa reloadne s `&team=…`, zobrazia sa badge skóre + súhrn bodov.
 4. Vyčerpaný kvíz = **sivá karta so zámkom 🔒**, neklikateľná, badge skóre viditeľný. Nevyčerpaný = normálna karta so šípkou, klikateľná.
 5. Otvor priamo URL vyčerpaného kvízu → stránka **„Pokusy vyčerpané"** (vycentrovaná karta, nie holý text). Platí pre mapový aj music/movies/knowledge/sudoku.
+
+---
+
+## 🔒 Zamknutý tímový režim — súkromie medzi tímami (v1.20.0)
+
+**Problém:** v bežnom režime je tím v URL ako `?team=team1` — čitateľný a **editovateľný**. Hráč si prepíše `team1`→`team2` (alebo prepne dropdown) a vidí skóre cudzieho tímu. Aj na štatistike.
+
+**Riešenie:** per-event prepínač **`event_general_locked_team_mode`** („🔒 Zamknutý tímový režim", General tab). Pri zapnutí je identita tímu/hráča **výhradne z podpísaného tokenu** (`?t=…`, HMAC-SHA256, secret v `wp_options['eventkviz_link_secret']`). Plain `?team=`/`?user=` sa ignorujú.
+
+**Zdroj pravdy identity:** `Eventkviz_Link_Token::request_token()` (nový helper) → decode + verify HMAC. V `links.php` aj `statistika.php` sa v locked režime počíta `$sec_team`/`$sec_user` **len** z tokenu — **nikdy** z `$_GET['team']` (ten sa dá prepísať a init hook `apply_from_request` ho pri kolízii ani neprepíše tokenom). Re-decode tokenu priamo = jediná istota.
+
+**Hub (`class-eventkviz-links.php`, `show_team_links`):**
+- `$ek_locked` + `$ek_tok` + `$sec_team`/`$sec_user` na začiatku metódy.
+- Pole tímu: ak locked + `$sec_team` určený → **read-only** `.ek-team-locked` („Tím: …") + hidden input, **žiadny dropdown**. Ak locked + bez tokenu → dropdown (výber, robí admin). Mimo locked → pôvodné správanie.
+- A4 status (badge/súhrn/zámky) sa počíta zo `$sec_team`/`$sec_user`.
+- `submitClicked()`: v locked režime po výbere v dropdowne **naviguje na per-tím token URL** (`window.ekTeamTokenUrls[team]`, server-generované cez `Eventkviz_Link_Token::build_url`). Guard: ak token už v URL je, len `displayValues()` (žiadna slučka).
+- Stats button URL: v locked režime cez `build_url` (nesie token, nie plain team).
+
+**Štatistika (`class-eventkviz-statistika.php`):**
+- Identita sa rieši **až po** `load_basic_event_settings` (aby sme poznali locked flag). V locked režime `$highlight` len z tokenu.
+- Bez platného tokenu v locked režime → **NEUKÁŽE rebríček**, len hlášku „Štatistika je dostupná len cez tvoj tímový link" (inak by holá URL odhalila všetky tímy).
+
+**2-krokový flow:** (1) admin vyberie tím = dá tímu jeho token link; (2) hráč otvorí → zamknutá obrazovka len so svojím tímom, editácia URL nefunguje.
+
+### Test plán (regression + security)
+1. Event: zapni „🔒 Zamknutý tímový režim" + „Hráč zadáva kód tímu" + „Výber tímu z preddefinovaného zoznamu".
+2. **Selection:** otvor `eventkviz-vstup/?akcia=<slug>` (bez tokenu) → zobrazí sa dropdown. Vyber tím → naviguje na `?t=<token>` (nie `?team=`).
+3. **Locked:** na `?t=<token>` → žiadny dropdown, read-only „Tím: …", karty + status + zámky vyčerpaných.
+4. **Útok plain:** `?akcia=<slug>&team=<inýTím>` (bez tokenu) → ignoruje sa, žiadne dáta, len dropdown.
+5. **Útok override:** `?t=<token tímu A>&team=<tímB>` → ukáže tím A (token vyhráva, plain ignorovaný).
+6. **Útok token tamper:** zmeň znak v tokene → neplatný podpis → nič (ani akcia).
+7. **Štatistika:** `?akcia=<slug>` bez tokenu → len hláška, žiadny rebríček. `?t=<token tímu A>` → len tím A. `?t=<A>&team=<B>` → tím A.

@@ -8,6 +8,13 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.20.0] - 2026-06-08
+
+### Added (🔒 Zamknutý tímový režim — súkromie medzi tímami)
+- Nový prepínač eventu **„🔒 Zamknutý tímový režim"** (General tab). Pri zapnutí sa identita tímu/hráča berie LEN z podpísaného tokenu v linku (`?t=…`) — ručné prepísanie `?team=` v adrese sa ignoruje, takže hráč si nevie zobraziť cudzí tím. Na vstupe sa nezobrazí výber tímu (dropdown), len načítaný tím (read-only). Tímové linky vygeneruješ v metaboxe „🔗 Linky pre hráčov".
+- 2-krokový flow: admin vyberie tím (dá tímu jeho token link) → hráč je na zamknutej obrazovke len so svojím tímom, bez možnosti čokoľvek prepnúť.
+- Štatistika v zamknutom režime: dostupná len cez vlastný token link (scoped na vlastný tím); bez tokenu sa rebríček vôbec nezobrazí (žiadny únik cudzích tímov). Prepísanie `?team=` sa ignoruje aj tu.
+
 ## [1.19.0] - 2026-06-07
 
 ### Added (zamknutie vyčerpaných kvízov na vstupnej obrazovke)

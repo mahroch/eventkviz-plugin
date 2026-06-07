@@ -200,14 +200,8 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
         }
 
         // C2: filter rebríčka pre jeden konkrétny tím/hráča.
-        // Atribút shortcode → query var → $_GET; sanitizuj text.
-        if ( $value['team'] === '' ) {
-            $value['team'] = isset( $_GET['team'] ) ? sanitize_text_field( wp_unslash( $_GET['team'] ) ) : '';
-        }
-        if ( $value['user'] === '' ) {
-            $value['user'] = isset( $_GET['user'] ) ? sanitize_text_field( wp_unslash( $_GET['user'] ) ) : '';
-        }
-        $highlight = $value['team'] !== '' ? $value['team'] : $value['user'];
+        // Identita (team/user) sa rieši nižšie — až po načítaní nastavení eventu,
+        // aby sme vedeli, či je zapnutý zamknutý tímový režim (token-only).
 
         if ( empty( $value['akcia'] ) ) {
             echo '<div class="ek-quiz ek-quiz--stats"><div class="ek-quiz-content">';
@@ -221,6 +215,32 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
         if ( ! isset( $this->cAkcia ) || empty( $this->cAkcia->all_quizes_settings ) ) {
             echo '<div class="ek-quiz ek-quiz--stats"><div class="ek-quiz-content">';
             echo '<p class="ek-stats-empty">Akcia „' . esc_html( $value['akcia'] ) . '" sa nenašla alebo nemá nastavenia.</p>';
+            echo '</div></div>';
+            return;
+        }
+
+        // 🔒 Zamknutý režim: identita LEN z podpísaného tokenu (?t=); plain ?team= sa
+        // ignoruje (dá sa prepísať na cudzí tím). Mimo režimu = pôvodné plain ?team/?user.
+        $ek_locked = ! empty( $this->cAkcia->all_quizes_settings['locked_team_mode'] );
+        if ( $ek_locked ) {
+            $ek_tok = class_exists( 'Eventkviz_Link_Token' ) ? Eventkviz_Link_Token::request_token() : null;
+            if ( $value['team'] === '' ) $value['team'] = (string) ( $ek_tok['team'] ?? '' );
+            if ( $value['user'] === '' ) $value['user'] = (string) ( $ek_tok['user'] ?? '' );
+        } else {
+            if ( $value['team'] === '' ) {
+                $value['team'] = isset( $_GET['team'] ) ? sanitize_text_field( wp_unslash( $_GET['team'] ) ) : '';
+            }
+            if ( $value['user'] === '' ) {
+                $value['user'] = isset( $_GET['user'] ) ? sanitize_text_field( wp_unslash( $_GET['user'] ) ) : '';
+            }
+        }
+        $highlight = $value['team'] !== '' ? $value['team'] : $value['user'];
+
+        // V zamknutom režime bez platného tokenu NEUKÁZAŤ celý rebríček (únik cudzích
+        // tímov). Štatistika je dostupná len cez vlastný tímový link.
+        if ( $ek_locked && $highlight === '' ) {
+            echo '<div class="ek-quiz ek-quiz--stats"><div class="ek-quiz-content">';
+            echo '<p class="ek-stats-empty">Štatistika je dostupná len cez tvoj tímový link.</p>';
             echo '</div></div>';
             return;
         }

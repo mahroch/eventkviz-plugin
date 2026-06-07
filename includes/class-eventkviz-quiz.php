@@ -39,6 +39,7 @@ class  Eventkviz_Quiz_Class extends Eventkviz_Public{
             'verify_users_in_db',
             'identifikacia_userov_timu',
             'select_from_teams_array',
+            'locked_team_mode',
             'use_seed',
             'show_link_back_to_all_quizes',
             'geochallenge_integration'

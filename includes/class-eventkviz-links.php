@@ -197,6 +197,14 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
         $this->cAkcia->sudoku_quiz_settings($value['akcia']);
 */
 
+        // 🔒 Zamknutý tímový režim — identita LEN z podpísaného tokenu (?t=); plain
+        // ?team=/?user= sa ignorujú (dajú sa ručne prepísať). Mimo režimu = pôvodné
+        // správanie (plain GET; init hook už prípadný token namapoval do $_GET).
+        $ek_locked = ! empty( $this->cAkcia->all_quizes_settings['locked_team_mode'] );
+        $ek_tok    = ( $ek_locked && class_exists( 'Eventkviz_Link_Token' ) ) ? Eventkviz_Link_Token::request_token() : null;
+        $sec_team  = $ek_locked ? (string) ( $ek_tok['team'] ?? '' ) : ( isset( $_GET['team'] ) ? sanitize_text_field( wp_unslash( $_GET['team'] ) ) : '' );
+        $sec_user  = $ek_locked ? (string) ( $ek_tok['user'] ?? '' ) : ( isset( $_GET['user'] ) ? sanitize_text_field( wp_unslash( $_GET['user'] ) ) : '' );
+
         if ($is_hub_context || $this->cAkcia->all_quizes_settings['startup_form'] === true) {
 
             echo '<div class="ek-startup">';
@@ -206,46 +214,62 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             echo '<form class="ek-startup-form" onsubmit="return false;">';
 
             if ($this->cAkcia->all_quizes_settings['identifikacia_kodom_usera'] === true) {
-                if (!empty($_GET['user'])) {
-                    $preselected_user = $_GET['user'];
+                $preselected_user = $sec_user;
+                if ($ek_locked && $sec_user !== '') {
+                    // 🔒 zamknutý hráč — read-only, žiadne pole na úpravu
+                    echo '<div class="ek-input-group">';
+                    echo '<div class="ek-team-locked"><span class="ek-team-locked-label">Hráč:</span> <span class="ek-team-locked-value">' . esc_html($sec_user) . '</span></div>';
+                    echo '<input type="hidden" id="inputField1" value="' . esc_attr($sec_user) . '">';
+                    echo '</div>';
+                } else {
+                    echo '<div class="ek-input-group">';
+                    echo '<input type="text" id="inputField1" placeholder="Vaše meno alebo kód" value="' . esc_attr($preselected_user) . '" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,\'\');checkFields();">';
+                    echo '</div>';
                 }
-                echo '<div class="ek-input-group">';
-                echo '<input type="text" id="inputField1" placeholder="Vaše meno alebo kód" value="' . esc_attr($preselected_user) . '" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,\'\');checkFields();">';
-                echo '</div>';
             }
 
-            if ($this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true &&
-                $this->cAkcia->all_quizes_settings['select_from_teams_array'] === false) {
-
-                echo '<div class="ek-input-group">';
-                echo '<input type="text" id="inputField2" placeholder="Názov tímu" value="' . esc_attr($_GET['team'] ?? '') . '" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,\'\');checkFields();">';
-                echo '</div>';
-
-            } elseif ($this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true &&
-                    $this->cAkcia->all_quizes_settings['select_from_teams_array'] === true) {
+            if ($this->cAkcia->all_quizes_settings['identifikacia_userov_timu'] === true) {
 
                 $select_teams = $this->cAkcia->all_quizes_settings['select_teams'];
-                $preselected_team = $_GET['team'] ?? '';
-                $displayed_label = 'Vyberte svoj tím';
-                $is_placeholder = true;
-                if ($preselected_team !== '' && isset($select_teams[$preselected_team])) {
-                    $displayed_label = $select_teams[$preselected_team];
-                    $is_placeholder = false;
-                }
 
-                echo '<div class="ek-input-group ek-input-group--select">';
-                echo '<div class="ek-dropdown" id="ekDropdown" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">';
-                echo '<span class="ek-dropdown-value' . ($is_placeholder ? ' is-placeholder' : '') . '" id="ekDropdownValue">' . esc_html($displayed_label) . '</span>';
-                echo '<span class="ek-dropdown-chevron" aria-hidden="true">▾</span>';
-                echo '</div>';
-                echo '<ul class="ek-dropdown-menu" id="ekDropdownMenu" role="listbox">';
-                foreach ($select_teams as $k => $v) {
-                    $is_sel = ($preselected_team == $k);
-                    echo '<li class="ek-dropdown-option' . ($is_sel ? ' is-selected' : '') . '" role="option" data-value="' . esc_attr($k) . '"' . ($is_sel ? ' aria-selected="true"' : '') . '>' . esc_html($v) . '</li>';
+                if ($ek_locked && $sec_team !== '') {
+                    // 🔒 zamknutý tím — read-only, žiadny výber ani dropdown
+                    $locked_label = isset($select_teams[$sec_team]) ? $select_teams[$sec_team] : $sec_team;
+                    echo '<div class="ek-input-group">';
+                    echo '<div class="ek-team-locked"><span class="ek-team-locked-label">Tím:</span> <span class="ek-team-locked-value">' . esc_html($locked_label) . '</span></div>';
+                    echo '<input type="hidden" id="inputField2" value="' . esc_attr($sec_team) . '">';
+                    echo '</div>';
+
+                } elseif ($this->cAkcia->all_quizes_settings['select_from_teams_array'] === false) {
+
+                    echo '<div class="ek-input-group">';
+                    echo '<input type="text" id="inputField2" placeholder="Názov tímu" value="' . esc_attr($sec_team) . '" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,\'\');checkFields();">';
+                    echo '</div>';
+
+                } else {
+
+                    $preselected_team = $sec_team;
+                    $displayed_label = 'Vyberte svoj tím';
+                    $is_placeholder = true;
+                    if ($preselected_team !== '' && isset($select_teams[$preselected_team])) {
+                        $displayed_label = $select_teams[$preselected_team];
+                        $is_placeholder = false;
+                    }
+
+                    echo '<div class="ek-input-group ek-input-group--select">';
+                    echo '<div class="ek-dropdown" id="ekDropdown" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">';
+                    echo '<span class="ek-dropdown-value' . ($is_placeholder ? ' is-placeholder' : '') . '" id="ekDropdownValue">' . esc_html($displayed_label) . '</span>';
+                    echo '<span class="ek-dropdown-chevron" aria-hidden="true">▾</span>';
+                    echo '</div>';
+                    echo '<ul class="ek-dropdown-menu" id="ekDropdownMenu" role="listbox">';
+                    foreach ($select_teams as $k => $v) {
+                        $is_sel = ($preselected_team == $k);
+                        echo '<li class="ek-dropdown-option' . ($is_sel ? ' is-selected' : '') . '" role="option" data-value="' . esc_attr($k) . '"' . ($is_sel ? ' aria-selected="true"' : '') . '>' . esc_html($v) . '</li>';
+                    }
+                    echo '</ul>';
+                    echo '<input type="hidden" id="inputField2" value="' . esc_attr($preselected_team) . '">';
+                    echo '</div>';
                 }
-                echo '</ul>';
-                echo '<input type="hidden" id="inputField2" value="' . esc_attr($preselected_team) . '">';
-                echo '</div>';
             }
 
             echo '<button type="button" id="submitBtn" onclick="submitClicked()" disabled>Pokračovať</button>';
@@ -257,8 +281,9 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             // A4: ak je v URL identifikácia (team/user), zisti ktoré kvízy už
             // tento tím / hráč absolvoval (a najlepšie skóre) → JS zobrazí badge
             // pri kartách hraných kvízov.
-            $a4_team = isset( $_GET['team'] ) ? sanitize_text_field( wp_unslash( $_GET['team'] ) ) : '';
-            $a4_user = isset( $_GET['user'] ) ? sanitize_text_field( wp_unslash( $_GET['user'] ) ) : '';
+            // Identita zo $sec_team/$sec_user — v zamknutom režime z tokenu (nie z plain ?team).
+            $a4_team = $sec_team;
+            $a4_user = $sec_user;
             $a4_played = array();
             $a4_counts = array();
             if ( $a4_team !== '' || $a4_user !== '' ) {
@@ -325,13 +350,39 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
 
             // A5: sumárny počet bodov + URL na samostatnú štatistiku tímu/hráča.
             $a5_total = array_sum( $a4_played );
-            $a5_stats_args = array( 'akcia' => $value['akcia'] );
-            if ( $a4_team !== '' ) $a5_stats_args['team'] = $a4_team;
-            if ( $a4_user !== '' ) $a5_stats_args['user'] = $a4_user;
-            $a5_stats_url = add_query_arg( $a5_stats_args, home_url( '/eventkviz-statistika/' ) );
+            $a5_stats_base = home_url( '/eventkviz-statistika/' );
+            if ( $ek_locked && class_exists( 'Eventkviz_Link_Token' ) ) {
+                // 🔒 stats link nesie podpísaný token (nie plain ?team) → nedá sa prepísať na cudzí tím
+                $a5_stats_url = Eventkviz_Link_Token::build_url( $a5_stats_base, array(
+                    'akcia' => $value['akcia'], 'team' => $a4_team, 'user' => $a4_user,
+                ) );
+            } else {
+                $a5_stats_args = array( 'akcia' => $value['akcia'] );
+                if ( $a4_team !== '' ) $a5_stats_args['team'] = $a4_team;
+                if ( $a4_user !== '' ) $a5_stats_args['user'] = $a4_user;
+                $a5_stats_url = add_query_arg( $a5_stats_args, $a5_stats_base );
+            }
             echo '<script>'
                 . 'window.ekPlayedTotal = ' . (int) $a5_total . ';'
                 . 'window.ekStatsLink = ' . wp_json_encode( $a5_stats_url ) . ';'
+                . '</script>';
+
+            // 🔒 Zamknutý režim: per-tím podpísaný token URL na hub (tamper-proof reload
+            // po výbere v dropdowne). Bez režimu prázdne → JS použije plain ?team reload.
+            $ek_team_token_urls = array();
+            if ( $ek_locked && class_exists( 'Eventkviz_Link_Token' ) ) {
+                $hub_base = get_permalink();
+                $hub_base = $hub_base ? strtok( $hub_base, '?' ) : home_url( '/eventkviz-vstup/' );
+                foreach ( (array) $this->cAkcia->all_quizes_settings['select_teams'] as $tk => $tv ) {
+                    if ( $tk === '' ) continue;
+                    $ek_team_token_urls[ $tk ] = Eventkviz_Link_Token::build_url( $hub_base, array(
+                        'akcia' => $value['akcia'], 'team' => $tk,
+                    ) );
+                }
+            }
+            echo '<script>'
+                . 'window.ekLockedMode = ' . ( $ek_locked ? 'true' : 'false' ) . ';'
+                . 'window.ekTeamTokenUrls = ' . wp_json_encode( $ek_team_token_urls ) . ';'
                 . '</script>';
 
             echo '<script>
@@ -385,6 +436,18 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 // (Pre single-quiz link netreba — displayValues rovno presmeruje na kvíz.)
                 var __singleQuiz = "' . esc_js($value['type']) . '";
                 if (!__singleQuiz) {
+                    if (window.ekLockedMode) {
+                        // 🔒 Zamknutý režim: identita ide cez podpísaný token (?t=), nie cez
+                        // editovateľný ?team=. Ak token v URL ešte nie je (výber tímu), choď
+                        // na token URL daného tímu; ak už je, len zobraz karty (bez slučky).
+                        if (!new URLSearchParams(window.location.search).has("t")) {
+                            var __tok = (window.ekTeamTokenUrls || {})[team];
+                            if (__tok) { window.location.href = __tok; return; }
+                            return; // neznámy tím → nepokračuj
+                        }
+                        displayValues();
+                        return;
+                    }
                     var __params = new URLSearchParams(window.location.search);
                     var __needReload = (team && __params.get("team") !== team) || (user && __params.get("user") !== user);
                     if (__needReload) {

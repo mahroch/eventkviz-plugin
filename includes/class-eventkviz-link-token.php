@@ -90,6 +90,18 @@ class Eventkviz_Link_Token {
 	}
 
 	/**
+	 * Vráti decoded + overené params z `?t=<token>` v aktuálnom requeste, alebo null.
+	 * Použité v zamknutom tímovom režime — tam je token JEDINÝ dôveryhodný zdroj
+	 * identity tímu/hráča (plain ?team=/?user= sa ignorujú, lebo sa dajú prepísať).
+	 *
+	 * @return array|null { akcia, team, user, mq }
+	 */
+	public static function request_token() {
+		if ( empty( $_GET[ self::QUERY_KEY ] ) ) return null;
+		return self::decode( (string) $_GET[ self::QUERY_KEY ] );
+	}
+
+	/**
 	 * Init hook — ak request má `?t=<token>` a podpis je platný, namapuje params
 	 * na pôvodné $_GET keys (akcia/team/user/mq). Zvyšok plugin code číta z $_GET
 	 * ako predtým — žiadny iný refactor netreba.

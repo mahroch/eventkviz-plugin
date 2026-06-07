@@ -199,6 +199,28 @@ form.ek-quiz-form[data-quiz-type="music"] .ek-question-fields {
 .ek-input-group select option {
     color: #333;
 }
+
+/* 🔒 Zamknutý tímový režim — read-only zobrazenie načítaného tímu/hráča (žiadny dropdown) */
+.ek-team-locked {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    background: var(--ek-input-bg);
+    border: 1px solid var(--ek-input-border);
+    border-radius: var(--ek-radius-sm);
+    color: var(--ek-text);
+    font-size: 16px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.ek-team-locked-label {
+    opacity: 0.7;
+}
+.ek-team-locked-value {
+    font-weight: 700;
+}
 .ek-input-group input:focus,
 .ek-input-group select:focus {
     outline: none;
