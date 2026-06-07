@@ -1,3 +1,9 @@
+---
+pdf_version: 0.1
+pdf_updated_at: 2026-06-05 18:02 UTC
+pdf_filename: CHANGELOG-v0.1.pdf
+---
+
 # Changelog
 
 Všetky podstatné zmeny v plugine EventKviz.

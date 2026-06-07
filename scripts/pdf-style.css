@@ -1,0 +1,228 @@
+/* PDF styling pre Marošove MD → PDF dokumenty (cross-project šablóna) */
+
+@page {
+  size: A4;
+  margin: 18mm 14mm 20mm 14mm;
+}
+
+body {
+  font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, "Segoe UI", sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.55;
+  color: #1a1a1a;
+  max-width: none;
+}
+
+h1 {
+  font-size: 22pt;
+  font-weight: 700;
+  color: #0f172a;
+  border-bottom: 3px solid #2563eb;
+  padding-bottom: 6pt;
+  margin-top: 18pt;
+  margin-bottom: 14pt;
+  page-break-after: avoid;
+}
+
+h2 {
+  font-size: 16pt;
+  font-weight: 700;
+  color: #1e3a8a;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 4pt;
+  margin-top: 20pt;
+  margin-bottom: 10pt;
+  page-break-after: avoid;
+}
+
+h3 {
+  font-size: 13pt;
+  font-weight: 600;
+  color: #1e40af;
+  margin-top: 16pt;
+  margin-bottom: 8pt;
+  page-break-after: avoid;
+}
+
+h4 {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #1e40af;
+  margin-top: 12pt;
+  margin-bottom: 6pt;
+  page-break-after: avoid;
+}
+
+p {
+  margin: 6pt 0;
+}
+
+ul, ol {
+  margin: 6pt 0;
+  padding-left: 22pt;
+}
+
+li {
+  margin: 3pt 0;
+}
+
+li > p {
+  margin: 2pt 0;
+}
+
+strong, b {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+em, i {
+  font-style: italic;
+}
+
+a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Inline code */
+code {
+  font-family: "SF Mono", "Monaco", "Menlo", "Courier New", monospace;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 3px;
+  padding: 1pt 4pt;
+  font-size: 9.5pt;
+  color: #be185d;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Code blocks */
+pre {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #2563eb;
+  border-radius: 4px;
+  padding: 10pt 12pt;
+  margin: 10pt 0;
+  font-family: "SF Mono", "Monaco", "Menlo", "Courier New", monospace;
+  font-size: 9pt;
+  line-height: 1.4;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  page-break-inside: avoid;
+}
+
+pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: #1a1a1a;
+  font-size: 9pt;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12pt 0;
+  font-size: 9.5pt;
+  page-break-inside: auto;
+  table-layout: auto;
+}
+
+thead {
+  display: table-header-group;
+}
+
+tr {
+  page-break-inside: avoid;
+  page-break-after: auto;
+}
+
+th {
+  background: #1e3a8a;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 6pt 8pt;
+  text-align: left;
+  border: 1px solid #1e40af;
+}
+
+td {
+  padding: 5pt 8pt;
+  border: 1px solid #cbd5e1;
+  vertical-align: top;
+}
+
+tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+td, th {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+td ul, td ol {
+  margin: 2pt 0;
+  padding-left: 14pt;
+}
+
+td li {
+  margin: 1pt 0;
+}
+
+/* Blockquotes */
+blockquote {
+  border-left: 4px solid #94a3b8;
+  background: #f1f5f9;
+  margin: 12pt 0;
+  padding: 8pt 12pt;
+  color: #475569;
+  font-style: italic;
+}
+
+/* Horizontal rule */
+hr {
+  border: none;
+  border-top: 2px dashed #cbd5e1;
+  margin: 20pt 0;
+}
+
+/* Document header (PDF version + timestamp) */
+.pdf-header {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6pt;
+  padding: 8pt 12pt;
+  margin: 0 0 18pt 0;
+  font-size: 9pt;
+  color: #1e40af;
+}
+
+.pdf-header strong {
+  color: #1e3a8a;
+}
+
+/* Page breaks */
+.page-break {
+  page-break-after: always;
+}
+
+/* Images */
+img {
+  max-width: 100%;
+  height: auto;
+  margin: 8pt 0;
+}
+
+/* Slovak diacritics fallback */
+* {
+  -webkit-font-feature-settings: "kern" 1, "liga" 1;
+}

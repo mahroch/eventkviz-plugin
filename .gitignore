@@ -13,3 +13,6 @@ deploy/.env
 deploy/backups/*.sql
 deploy/backups/*.sql.gz
 deploy/backups/*.tar.gz
+
+# Generované PDF z MD (lokálne pre Maroša, regenerable cez scripts/generate-pdf.sh)
+*-v*.pdf

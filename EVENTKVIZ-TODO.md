@@ -1,3 +1,9 @@
+---
+pdf_version: 0.1
+pdf_updated_at: 2026-06-05 18:02 UTC
+pdf_filename: EVENTKVIZ-TODO-v0.1.pdf
+---
+
 # EventKviz — TODO / backlog
 
 Aktuálna verzia: **v1.18.17** · Posledná aktualizácia: 2026-05-30

@@ -1,3 +1,9 @@
+---
+pdf_version: 0.1
+pdf_updated_at: 2026-06-05 18:02 UTC
+pdf_filename: EVENTKVIZ-MAPY-DOKUMENTACIA-v0.1.pdf
+---
+
 # EventKviz — Mapový kvíz: dokumentácia
 
 Tento súbor dokumentuje **mapový kvíz** — typ kvízu kde hráč na blank/outline mape

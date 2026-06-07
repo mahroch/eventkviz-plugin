@@ -1,3 +1,9 @@
+---
+pdf_version: 0.1
+pdf_updated_at: 2026-06-05 18:02 UTC
+pdf_filename: EVENTKVIZ-EXPORT-API-v0.1.pdf
+---
+
 # EventKviz Export API (GeoChallenge headless port — Fáza 1)
 
 Read-only REST API ktoré exportuje dáta kvízov z EventKviz do GeoChallenge.

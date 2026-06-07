@@ -1,3 +1,9 @@
+---
+pdf_version: 0.1
+pdf_updated_at: 2026-06-05 18:02 UTC
+pdf_filename: PLAYBOOK-v0.1.pdf
+---
+
 # 🚀 Eventkviz Deploy Playbook
 
 **Trigger phrase:** „**deploy local na prod**" (alebo skratka „**deploy**")
