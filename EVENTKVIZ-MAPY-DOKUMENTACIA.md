@@ -385,3 +385,32 @@ Keď je v admine pre mapový (sub-)kvíz zaškrtnuté **„Pri opakovaní označ
 3. Klikni „Opakovať kvíz". Očakávaj: správne = zelené + zelená fajka + zamknuté + hover názov; nesprávne = bez označenia (háda znova); prázdne = bez označenia.
 4. Skús kliknúť na zelenú (správnu) — NESMIE sa odznačiť. Skús nesprávnu úlohu doplniť — nový výber je oranžový.
 5. Pin typ: pri opakovaní sa správanie zatiaľ nemenilo (mimo tohto zadania).
+
+---
+
+## Vyčerpané pokusy — zamknutie kariet na vstupe + stránka „Pokusy vyčerpané" (v1.19.0)
+
+**Cieľ:** keď tím/hráč vyčerpal pokusy pre kvíz, na vstupnej obrazovke (hub) sa karta toho kvízu **zamkne** (preventívne — hráč sa naň vôbec nepreklikne). Ak by sa predsa dostal na kvíz (priamy/QR link, refresh), namiesto holého textu uvidí peknú stránku.
+
+**Server (`includes/class-eventkviz-links.php`, `show_all_links`):**
+- Sekcia **A4** počíta z `jet_cct_results` najlepšie skóre per kvíz (badge) a **A4b** počet záznamov per kvíz.
+- Vyčerpané = `počet záznamov >= pocet_pokusov + 1` — **presne tá istá podmienka** ako reálny gate v `check_number_of_tries()` / `mapa_check_tries()`, takže karta sa nikdy nezamkne falošne. `pocet_pokusov` z `*_settings` (music/movies/knowledge/sudoku) resp. per sub-kvíz z `mapa_quizzes`.
+- Výstup: `window.ekExhaustedQuizzes` (objekt `{ key: true }`, key = `music`/`movies`/`knowledge`/`sudoku` alebo `mapa:<slug>`).
+
+**Klient (JS v tom istom súbore):**
+- Helper **`ekCard(href, cls, icon, label, key)`** — ak je key v `ekExhaustedQuizzes`, vykreslí `<div class="ek-quiz-card … is-locked">` so zámkom 🔒 (bez `href`, neklikateľná); inak normálny `<a>` so šípkou. Badge skóre ostáva v oboch prípadoch.
+
+**Načítanie statusu pri dropdown výbere tímu (fix):**
+- Status (badge + súhrn + zámky) sa počíta server-side z `?team=`/`?user=` v URL. Pri výbere z dropdownu URL tieto params nemá → `submitClicked()` reloadne stránku s nimi (`?akcia=…&team=…`). Existujúca logika „auto-skip pri návrate" potom vykreslí karty so správnym statusom. Pre single-quiz link reload netreba (rovno presmeruje na kvíz).
+
+**Stránka „Pokusy vyčerpané" (`includes/class-eventkviz-quiz.php`):**
+- Zdieľaný helper **`render_tries_limit_page($allowed)`** — vycentrovaná `.ek-startup` karta (🔒 + „Pokusy vyčerpané" + počet pokusov). Volá ho `mapa_check_tries()` (predtým holý text „Limit of tries…") aj `check_number_of_tries()`, takže všetky kvízy majú jednotnú limit-stránku.
+
+**CSS (`public/css/eventkviz.css`):** `.ek-quiz-card.is-locked` (sivá, `opacity .55`, `grayscale .7`, `cursor:default`, bez hoveru) + `.ek-quiz-lock` (🔒) + `.ek-state-icon` / `.ek-state-note` (limit karta).
+
+### Test plán (regression)
+1. Event s tímovým výberom (`identifikacia_userov_timu=1` + `select_from_teams_array=1`), aspoň 1 kvíz s nízkym `pocet_pokusov` (napr. 1).
+2. Tímom odohraj kvíz toľkokrát, aby sa vyčerpali pokusy (pri Allowed:1 stačia 2 záznamy).
+3. Otvor `eventkviz-vstup/?akcia=<slug>` **bez** team v URL, vyber tím z dropdownu, klikni Pokračovať. Očakávaj: stránka sa reloadne s `&team=…`, zobrazia sa badge skóre + súhrn bodov.
+4. Vyčerpaný kvíz = **sivá karta so zámkom 🔒**, neklikateľná, badge skóre viditeľný. Nevyčerpaný = normálna karta so šípkou, klikateľná.
+5. Otvor priamo URL vyčerpaného kvízu → stránka **„Pokusy vyčerpané"** (vycentrovaná karta, nie holý text). Platí pre mapový aj music/movies/knowledge/sudoku.

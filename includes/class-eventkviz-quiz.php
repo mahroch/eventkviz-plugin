@@ -274,12 +274,33 @@ public function mapa_check_tries( $user_code, $akcia_code, $team_code, $mq_slug,
 
     $entries = count( $rows );
     if ( $entries >= $pocet + 1 ) {
-        echo 'Limit of tries for this quiz was reached (Allowed:' . esc_html( $pocet ) . '). ';
+        echo $this->render_tries_limit_page( $pocet );
         $pocet_pokusov_reached = true;
         return false;
     }
     $this->zostava_pocet_pokusov = $pocet + 1 - $entries;
     return true;
+}
+
+/**
+ * Vyrenderuje peknú celostránkovú kartu "Pokusy vyčerpané" (limit reached).
+ * Zdieľaná medzi mapa kvízom (mapa_check_tries) a štandardnými kvízmi
+ * (check_number_of_tries) — všetky limit-stránky vyzerajú rovnako. Renderuje sa
+ * vždy mimo .ek-quiz wrappera (kontrola pokusov beží pred ním), takže full-page
+ * .ek-startup karta nezdvojuje pozadie.
+ *
+ * @param int $allowed Povolený počet pokusov (pocet_pokusov) — informačné.
+ * @return string HTML
+ */
+protected function render_tries_limit_page( $allowed ) {
+    return '<div class="ek-startup ek-state">'
+        . '<div class="ek-startup-card ek-state-card">'
+        . '<div class="ek-state-icon">🔒</div>'
+        . '<h2 class="ek-startup-title">Pokusy vyčerpané</h2>'
+        . '<p class="ek-startup-subtitle">Pre tento kvíz ste využili všetky povolené pokusy'
+        . ' (<strong>' . esc_html( (int) $allowed ) . '</strong>).</p>'
+        . '<p class="ek-state-note">Ďakujeme za hru! 🎉</p>'
+        . '</div></div>';
 }
 
 /**
@@ -540,11 +561,7 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 					if(!empty($alternative_text)) {
 						echo $alternative_text;
 					} else {
-						//echo 'Limit of tries for this quiz was reached (Allowed:' . $pocet_pokusov . ', Realized: ' . $entries . '). ';
-						echo '<div class="ek-quiz-message ek-quiz-message--fail">'
-							. '<p><strong>Vyčerpali ste všetky pokusy.</strong></p>'
-							. '<p>Pre tento kvíz ste využili všetky povolené pokusy (' . intval($pocet_pokusov) . '). Ďakujeme za hru!</p>'
-							. '</div>';
+						echo $this->render_tries_limit_page( $pocet_pokusov );
 					}
 					
 					

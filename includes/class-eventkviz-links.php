@@ -260,6 +260,7 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             $a4_team = isset( $_GET['team'] ) ? sanitize_text_field( wp_unslash( $_GET['team'] ) ) : '';
             $a4_user = isset( $_GET['user'] ) ? sanitize_text_field( wp_unslash( $_GET['user'] ) ) : '';
             $a4_played = array();
+            $a4_counts = array();
             if ( $a4_team !== '' || $a4_user !== '' ) {
                 global $wpdb;
                 if ( $a4_team !== '' ) {
@@ -284,9 +285,43 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                     if ( ! isset( $a4_played[ $key ] ) || $pts > $a4_played[ $key ] ) {
                         $a4_played[ $key ] = $pts;
                     }
+                    $a4_counts[ $key ] = ( $a4_counts[ $key ] ?? 0 ) + 1;
                 }
             }
             echo '<script>window.ekPlayedQuizzes = ' . wp_json_encode( $a4_played ) . ';</script>';
+
+            // A4b: vyčerpané pokusy → karta sa na štartovacej obrazovke zamkne
+            // (sivá + 🔒, neklikateľná). Vyčerpané = počet záznamov >= pocet_pokusov + 1,
+            // presne tá istá podmienka ako reálny gate v check_number_of_tries() /
+            // mapa_check_tries() — karta sa nikdy nezamkne falošne. Počíta sa z tých
+            // istých $a4_rows ako badge, takže lock a badge sú vždy konzistentné.
+            $a4_exhausted = array();
+            foreach ( $a4_counts as $key => $cnt ) {
+                $limit = null;
+                if ( $key === 'music' ) {
+                    $limit = (int) ( $this->cAkcia->music_settings['pocet_pokusov'] ?? 0 );
+                } elseif ( $key === 'movies' ) {
+                    $limit = (int) ( $this->cAkcia->movies_settings['pocet_pokusov'] ?? 0 );
+                } elseif ( $key === 'knowledge' ) {
+                    $limit = (int) ( $this->cAkcia->knowledge_settings['pocet_pokusov'] ?? 0 );
+                } elseif ( $key === 'sudoku' ) {
+                    $limit = (int) ( $this->cAkcia->sudoku_settings['pocet_pokusov'] ?? 0 );
+                } elseif ( strpos( $key, 'mapa:' ) === 0 ) {
+                    $mq_slug = substr( $key, 5 );
+                    if ( ! empty( $this->cAkcia->mapa_quizzes ) && is_array( $this->cAkcia->mapa_quizzes ) ) {
+                        foreach ( $this->cAkcia->mapa_quizzes as $sq ) {
+                            if ( isset( $sq['slug'] ) && sanitize_key( $sq['slug'] ) === $mq_slug ) {
+                                $limit = (int) ( $sq['pocet_pokusov'] ?? 0 );
+                                break;
+                            }
+                        }
+                    }
+                }
+                if ( $limit !== null && $cnt >= $limit + 1 ) {
+                    $a4_exhausted[ $key ] = true;
+                }
+            }
+            echo '<script>window.ekExhaustedQuizzes = ' . wp_json_encode( $a4_exhausted ) . ';</script>';
 
             // A5: sumárny počet bodov + URL na samostatnú štatistiku tímu/hráča.
             $a5_total = array_sum( $a4_played );
@@ -343,7 +378,25 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 echo 'if(!team){alert("Vyplň tím");return;}';
             }
 
-            echo 'displayValues();}
+            echo '
+                // Status (badge skóre + zámok vyčerpaných kvízov) sa počíta na serveri
+                // z ?team=/?user= v URL. Pri výbere z dropdownu URL tieto params nemá,
+                // tak reloadneme s nimi → server vykreslí karty so správnym statusom.
+                // (Pre single-quiz link netreba — displayValues rovno presmeruje na kvíz.)
+                var __singleQuiz = "' . esc_js($value['type']) . '";
+                if (!__singleQuiz) {
+                    var __params = new URLSearchParams(window.location.search);
+                    var __needReload = (team && __params.get("team") !== team) || (user && __params.get("user") !== user);
+                    if (__needReload) {
+                        __params.set("akcia", "' . esc_js($value['akcia']) . '");
+                        if (team) { __params.set("team", team); } else { __params.delete("team"); }
+                        if (user) { __params.set("user", user); } else { __params.delete("user"); }
+                        window.location.search = __params.toString();
+                        return;
+                    }
+                }
+                displayValues();
+            }
 
             // Tokenized URL helper — fetch z REST endpoint /eventkviz/v1/link-token.
             // Pri network/REST chybe fallback na plain URL aby kvíz vždy fungoval.
@@ -398,19 +451,28 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 out.innerHTML="";
                 // A4: helper — vráti HTML badge "✓ X b" pre už absolvovaný kvíz (key).
                 const _ekPlayed = window.ekPlayedQuizzes || {};
-                const ekBadge = (key) => (key in _ekPlayed) ? `<span class="ek-quiz-played">✓ ${_ekPlayed[key]} b</span>` : "";';
+                const ekBadge = (key) => (key in _ekPlayed) ? `<span class="ek-quiz-played">✓ ${_ekPlayed[key]} b</span>` : "";
+                // A4b: vyčerpané kvízy → karta zamknutá (sivá + 🔒, neklikateľná). Badge ostáva.
+                const _ekLocked = window.ekExhaustedQuizzes || {};
+                const ekCard = (href, cls, icon, label, key) => {
+                    const badge = ekBadge(key);
+                    if (key in _ekLocked) {
+                        return `<div class="ek-quiz-card ${cls} is-locked" role="link" aria-disabled="true"><span class="ek-quiz-icon">${icon}</span><span class="ek-quiz-label">${label}</span>${badge}<span class="ek-quiz-lock" aria-label="Vyčerpané" title="Vyčerpané pokusy">🔒</span></div>`;
+                    }
+                    return `<a href="${href}" class="ek-quiz-card ${cls}" target="_blank"><span class="ek-quiz-icon">${icon}</span><span class="ek-quiz-label">${label}</span>${badge}<span class="ek-quiz-arrow">→</span></a>`;
+                };';
 
             if ($this->cAkcia->music_settings['music_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="music"){out.innerHTML+=`<a href="${link1}" class="ek-quiz-card ek-quiz-music" target="_blank"><span class="ek-quiz-icon">🎵</span><span class="ek-quiz-label">Hudobný kvíz</span>${ekBadge("music")}<span class="ek-quiz-arrow">→</span></a>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="music"){out.innerHTML+=ekCard(link1,"ek-quiz-music","🎵","Hudobný kvíz","music");}';
             }
             if ($this->cAkcia->movies_settings['movies_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="movies"){out.innerHTML+=`<a href="${link2}" class="ek-quiz-card ek-quiz-movies" target="_blank"><span class="ek-quiz-icon">🎬</span><span class="ek-quiz-label">Filmový kvíz</span>${ekBadge("movies")}<span class="ek-quiz-arrow">→</span></a>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="movies"){out.innerHTML+=ekCard(link2,"ek-quiz-movies","🎬","Filmový kvíz","movies");}';
             }
             if ($this->cAkcia->knowledge_settings['knowledge_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="knowledge"){out.innerHTML+=`<a href="${link3}" class="ek-quiz-card ek-quiz-knowledge" target="_blank"><span class="ek-quiz-icon">🧠</span><span class="ek-quiz-label">Vedomostný kvíz</span>${ekBadge("knowledge")}<span class="ek-quiz-arrow">→</span></a>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="knowledge"){out.innerHTML+=ekCard(link3,"ek-quiz-knowledge","🧠","Vedomostný kvíz","knowledge");}';
             }
             if ($this->cAkcia->sudoku_settings['sudoku_quiz_active']) {
-                echo 'if(!singleQuiz||singleQuiz==="sudoku"){out.innerHTML+=`<a href="${link4}" class="ek-quiz-card ek-quiz-sudoku" target="_blank"><span class="ek-quiz-icon">🔢</span><span class="ek-quiz-label">Sudoku kvíz</span>${ekBadge("sudoku")}<span class="ek-quiz-arrow">→</span></a>`;}';
+                echo 'if(!singleQuiz||singleQuiz==="sudoku"){out.innerHTML+=ekCard(link4,"ek-quiz-sudoku","🔢","Sudoku kvíz","sudoku");}';
             }
             // Multi-mapa: pre každý sub-kvíz jedna karta s vlastným mq slug + admin label.
             // Render je async (fetch tokenized URL pre každú karu paralelne).
@@ -419,7 +481,7 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                     $slug  = isset( $sq['slug'] ) ? sanitize_key( $sq['slug'] ) : '';
                     $label = isset( $sq['label'] ) ? (string) $sq['label'] : 'Mapový kvíz';
                     if ( $slug === '' ) continue;
-                    echo 'if(!singleQuiz){const mqLink = await ekTokUrl("mapa-quiz", akcia, team, user, "' . esc_js( $slug ) . '"); out.innerHTML+=`<a href="${mqLink}" class="ek-quiz-card ek-quiz-mapa" target="_blank"><span class="ek-quiz-icon">🗺️</span><span class="ek-quiz-label">' . esc_js( $label ) . '</span>${ekBadge("mapa:' . esc_js( $slug ) . '")}<span class="ek-quiz-arrow">→</span></a>`;}';
+                    echo 'if(!singleQuiz){const mqLink = await ekTokUrl("mapa-quiz", akcia, team, user, "' . esc_js( $slug ) . '"); out.innerHTML+=ekCard(mqLink,"ek-quiz-mapa","🗺️","' . esc_js( $label ) . '","mapa:' . esc_js( $slug ) . '");}';
                 }
             }
 

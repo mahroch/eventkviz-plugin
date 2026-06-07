@@ -8,6 +8,17 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.19.0] - 2026-06-07
+
+### Added (zamknutie vyčerpaných kvízov na vstupnej obrazovke)
+- Na vstupnej obrazovke (hub s kartami kvízov) sa kvíz, ktorému tím/hráč už vyčerpal všetky pokusy, zobrazí ako **zamknutá karta** — sivá, neklikateľná, so zámkom 🔒 namiesto šípky. Skóre badge ostáva viditeľné. Hráč sa tak na vyčerpaný kvíz vôbec nepreklikne.
+
+### Fixed (načítanie statusu pri výbere tímu z dropdownu)
+- Pri výbere tímu z preddefinovaného dropdownu sa po kliku na „Pokračovať" stránka načíta s tímom v URL → správne sa zobrazí skóre badge, súhrn bodov aj zámky vyčerpaných kvízov. Predtým sa status načítal len pri príchode s tímom už v adrese (napr. návrat z kvízu).
+
+### Changed (krajšia stránka „Pokusy vyčerpané")
+- Hláška o vyčerpaní pokusov je teraz vycentrovaná karta v dizajne vstupnej obrazovky (zámok + „Pokusy vyčerpané"), jednotná pre mapový aj ostatné kvízy. Nahrádza holý text „Limit of tries…" pri mapovom kvíze.
+
 ## [1.18.25] - 2026-06-03
 
 ### Added (REST export movies — voliteľný `production` filter pre selective sync)
