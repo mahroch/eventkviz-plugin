@@ -442,10 +442,17 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 		$akcia_tag = $this->akcia_tag;
 
 		if($this->cAkcia->all_quizes_settings['show_link_back_to_all_quizes'] != false) {
-			$links_url = add_query_arg(
-				array( 'akcia' => $akcia_tag, 'team' => $team, 'user' => $user ),
-				home_url( '/eventkviz-vstup/' )
-			);
+			$base = home_url( '/eventkviz-vstup/' );
+			if ( ! empty( $this->cAkcia->all_quizes_settings['locked_team_mode'] ) && class_exists( 'Eventkviz_Link_Token' ) ) {
+				// 🔒 Zamknutý režim: späť cez podpísaný token → vráti na zamknutý hub
+				// s predvybratým tímom (žiadny dropdown, žiadny výber cudzieho tímu).
+				$links_url = Eventkviz_Link_Token::build_url( $base, array( 'akcia' => $akcia_tag, 'team' => $team, 'user' => $user ) );
+			} else {
+				$links_url = add_query_arg(
+					array( 'akcia' => $akcia_tag, 'team' => $team, 'user' => $user ),
+					$base
+				);
+			}
 			echo '<br><br><a href="' . esc_url( $links_url ) . '">Späť na linky s kvízmi</a><br><br>';
 		}
 	}
@@ -496,7 +503,15 @@ public function mapa_reset_sub_quiz_rows( $akcia_code, $user_code, $team_code, $
 			
 			
 		} else {
-			$team_code = get_query_var( 'team' );
+			// 🔒 Zamknutý režim: tím LEN z podpísaného tokenu (?t=); plain ?team= /
+			// query var sa ignoruje (dá sa prepísať). Platí pre všetky kvízové form
+			// stránky (music/movies/knowledge/sudoku) — set_team_code je spoločný bod.
+			if ( ! empty( $this->cAkcia->all_quizes_settings['locked_team_mode'] ) && class_exists( 'Eventkviz_Link_Token' ) ) {
+				$tok = Eventkviz_Link_Token::request_token();
+				$team_code = $tok ? (string) $tok['team'] : '';
+			} else {
+				$team_code = get_query_var( 'team' );
+			}
 		}
 		//echo 'set_team_code-> team code:' . $team_code;
 		return $team_code;

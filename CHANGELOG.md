@@ -8,6 +8,13 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.20.1] - 2026-06-08
+
+### Fixed (zamknutý režim — dotiahnutie)
+- Na zamknutej obrazovke (tím už načítaný z tokenu) zmizlo zbytočné tlačidlo **„Pokračovať"** — karty sa zobrazia rovno.
+- Link **„Späť na linky s kvízmi"** z výsledku kvízu teraz v zamknutom režime nesie token → vráti na zamknutý hub s predvybratým tímom (predtým viedol na výber tímu, kde sa dal zvoliť cudzí tím).
+- Kvízové stránky (music/movies/knowledge/sudoku/mapa) v zamknutom režime berú tím LEN z tokenu — ručné prepísanie `?team=` v URL kvízu sa ignoruje (centrálne v `set_team_code`).
+
 ## [1.20.0] - 2026-06-08
 
 ### Added (🔒 Zamknutý tímový režim — súkromie medzi tímami)

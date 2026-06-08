@@ -204,6 +204,9 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
         $ek_tok    = ( $ek_locked && class_exists( 'Eventkviz_Link_Token' ) ) ? Eventkviz_Link_Token::request_token() : null;
         $sec_team  = $ek_locked ? (string) ( $ek_tok['team'] ?? '' ) : ( isset( $_GET['team'] ) ? sanitize_text_field( wp_unslash( $_GET['team'] ) ) : '' );
         $sec_user  = $ek_locked ? (string) ( $ek_tok['user'] ?? '' ) : ( isset( $_GET['user'] ) ? sanitize_text_field( wp_unslash( $_GET['user'] ) ) : '' );
+        // Locked + identita už načítaná z tokenu = read-only obrazovka → žiadny výber,
+        // teda ani tlačidlo „Pokračovať"; karty sa načítajú automaticky.
+        $ek_locked_ready = $ek_locked && ( $sec_team !== '' || $sec_user !== '' );
 
         if ($is_hub_context || $this->cAkcia->all_quizes_settings['startup_form'] === true) {
 
@@ -272,7 +275,9 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 }
             }
 
-            echo '<button type="button" id="submitBtn" onclick="submitClicked()" disabled>Pokračovať</button>';
+            if ( ! $ek_locked_ready ) {
+                echo '<button type="button" id="submitBtn" onclick="submitClicked()" disabled>Pokračovať</button>';
+            }
             echo '</form>';
             echo '<div id="output" class="ek-output"></div>';
             echo '</div>'; // .ek-startup-card
@@ -382,6 +387,7 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             }
             echo '<script>'
                 . 'window.ekLockedMode = ' . ( $ek_locked ? 'true' : 'false' ) . ';'
+                . 'window.ekLockedReady = ' . ( $ek_locked_ready ? 'true' : 'false' ) . ';'
                 . 'window.ekTeamTokenUrls = ' . wp_json_encode( $ek_team_token_urls ) . ';'
                 . '</script>';
 
@@ -409,7 +415,7 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 echo 'valid = true;';
             }
 
-            echo 'btn.disabled = !valid;
+            echo 'if (btn) btn.disabled = !valid;
             }
             function submitClicked() {
                 let user = document.getElementById("inputField1")?.value.trim() || "";
@@ -567,8 +573,10 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 // Auto-skip startup form pri návrate z kvízu: ak sú údaje
                 // predvyplnené z URL (?team=X&user=Y), button je rovno enabled →
                 // priamo zobraz linky bez nutnosti klikať "Pokračovať".
+                // V zamknutom režime (ekLockedReady) tlačidlo nie je — karty sa
+                // načítajú rovno (identita je už z tokenu).
                 var btn = document.getElementById("submitBtn");
-                if (btn && !btn.disabled) submitClicked();
+                if (window.ekLockedReady || (btn && !btn.disabled)) submitClicked();
             });
 
             (function(){
