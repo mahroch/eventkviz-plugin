@@ -8,6 +8,11 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.20.2] - 2026-06-08
+
+### Changed (Pohoria Európy — reálne obrysy)
+- Dataset **Pohoria Európy** (europe-mountains) prekreslený z hrubých ručných osemuholníkov (8–11 vrcholov/pohorie) na reálne obrysy z **Natural Earth 10m** (public domain) — ~9× viac detailu (1127 vs 121 vrcholov). Pohoria už nie sú hranaté, sledujú skutočné tvary (Ural, Kavkaz, Alpy, …). Názvy všetkých 12 pohorí ostávajú identické → kvíz funguje bez zmeny.
+
 ## [1.20.1] - 2026-06-08
 
 ### Fixed (zamknutý režim — dotiahnutie)
