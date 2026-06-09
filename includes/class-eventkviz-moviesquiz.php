@@ -494,7 +494,12 @@ class Eventkviz_MoviesEval_Quiz_Class extends Eventkviz_MoviesForm_Quiz_Class{
         } else {
             $odpoved_hraca = $form_movie;
         }
-        echo '<div class="ek-user-answer">Vaša odpoveď: ' . esc_html($odpoved_hraca) . '</div>';
+        // Zvýraznenie odpovede hráča: správny film pre danú pozíciu = zelená,
+        // nesprávny = červená, nezadané = neutrálna. (rovnaké porovnanie ako retry_state)
+        $movie_ok = ($correct_movie == $form_movie && !empty($form_movie));
+        $movie_cls = ($odpoved_hraca === '' || empty($form_movie)) ? 'ek-ans-empty' : ($movie_ok ? 'ek-ans-correct' : 'ek-ans-wrong');
+        echo '<div class="ek-user-answer">Vaša odpoveď: '
+            . '<span class="' . $movie_cls . '">' . esc_html($odpoved_hraca !== '' ? $odpoved_hraca : '—') . '</span></div>';
 
         // Capture previous-state per-question for retry review highlight
         $typed_value = isset($_POST['movie' . $iteration_no_real]) ? wp_unslash($_POST['movie' . $iteration_no_real]) : '';

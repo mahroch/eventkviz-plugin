@@ -572,7 +572,21 @@ class Eventkviz_MusicEval_Quiz_Class extends Eventkviz_MusicForm_Quiz_Class{
         echo '</div>';
 
         $this->show_answer("Správna odpoveď: " .  $this->get_artist_name($correct_artist) . ' - ' . $this->get_song_name($correct_song), 'music');
-        echo "<div class='ek-user-answer'>Vaša odpoveď: " . esc_html($this->get_artist_name($form_artist) . ' - ' . $this->get_song_name($form_song))  . '</div>';
+
+        // Per-komponent zvýraznenie odpovede hráča: interpret a pieseň sa hodnotia
+        // samostatne — správny pre danú pozíciu = zelená, nesprávny = červená,
+        // nezadané = neutrálna. (rovnaké porovnanie ako retry_state nižšie)
+        $artist_name = $this->get_artist_name($form_artist);
+        $song_name   = $this->get_song_name($form_song);
+        $artist_ok = ($form_artist == $correct_artist && !empty($form_artist));
+        $song_ok   = ($form_song == $correct_song && !empty($form_song));
+        $artist_cls = ($artist_name === '' || empty($form_artist)) ? 'ek-ans-empty' : ($artist_ok ? 'ek-ans-correct' : 'ek-ans-wrong');
+        $song_cls   = ($song_name === '' || empty($form_song)) ? 'ek-ans-empty' : ($song_ok ? 'ek-ans-correct' : 'ek-ans-wrong');
+        echo "<div class='ek-user-answer'>Vaša odpoveď: "
+            . "<span class='" . $artist_cls . "'>" . esc_html($artist_name !== '' ? $artist_name : '—') . "</span>"
+            . " - "
+            . "<span class='" . $song_cls . "'>" . esc_html($song_name !== '' ? $song_name : '—') . "</span>"
+            . "</div>";
         
         if(!empty($form_artist) && $form_artist == $correct_artist && $form_song == $correct_song) {
             // artist & song on correct position

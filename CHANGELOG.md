@@ -8,6 +8,12 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.20.4] - 2026-06-09
+
+### Fixed (hudobný + filmový kvíz — farebné vyhodnotenie odpovedí)
+- Na výsledkovej obrazovke hudobného a filmového kvízu sa odpoveď hráča teraz zvýrazní **zeleno (správne) / červeno (nesprávne)**, tak ako to už dávno robí vedomostný kvíz. Doteraz boli neutrálne (biele).
+- Hudobný kvíz hodnotí **každú časť zvlášť** — napr. správny interpret je zelený aj keď je pieseň červená. Filmový kvíz zvýrazní názov filmu. Nezadané pole ostáva neutrálne.
+
 ## [1.20.3] - 2026-06-09
 
 ### Fixed (zamknutý režim — admin vidí všetky tímy)

@@ -586,6 +586,22 @@ body .ek-quiz-submit:disabled {
     line-height: 1.4;
 }
 
+/* Per-komponent zvýraznenie odpovede hráča na výsledkovej obrazovke
+   (music: interpret/pieseň zvlášť; movies: film) — zelená správne, červená nesprávne */
+.ek-quiz-content .ek-user-answer .ek-ans-correct {
+    color: #6dd58c;
+    font-weight: 800;
+}
+.ek-quiz-content .ek-user-answer .ek-ans-wrong {
+    color: #ff6b6b;
+    font-weight: 800;
+}
+.ek-quiz-content .ek-user-answer .ek-ans-empty {
+    color: rgba(255,255,255,0.5);
+    font-style: italic;
+    font-weight: 600;
+}
+
 /* show_total_credits_gained — h1 with strong styling */
 .ek-quiz-content > h1:first-of-type {
     margin-top: 0;
