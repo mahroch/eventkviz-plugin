@@ -8,6 +8,11 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.20.3] - 2026-06-09
+
+### Fixed (zamknutý režim — admin vidí všetky tímy)
+- V zamknutom tímovom režime sa štatistika prihlásenému adminovi opäť zobrazí celá — **rebríček všetkých tímov pokope**, tak ako pred zavedením zamknutého režimu. Hláška „Štatistika je dostupná len cez tvoj tímový link" sa od teraz ukáže len neprihláseným hráčom bez tokenu. Súkromie medzi tímami ostáva zachované.
+
 ## [1.20.2] - 2026-06-08
 
 ### Changed (Pohoria Európy — reálne obrysy)

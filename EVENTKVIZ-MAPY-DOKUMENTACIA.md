@@ -435,6 +435,7 @@ Keď je v admine pre mapový (sub-)kvíz zaškrtnuté **„Pri opakovaní označ
 **Štatistika (`class-eventkviz-statistika.php`):**
 - Identita sa rieši **až po** `load_basic_event_settings` (aby sme poznali locked flag). V locked režime `$highlight` len z tokenu.
 - Bez platného tokenu v locked režime → **NEUKÁŽE rebríček**, len hlášku „Štatistika je dostupná len cez tvoj tímový link" (inak by holá URL odhalila všetky tímy).
+- **Výnimka admin:** prihlásený WP admin (`current_user_can('manage_options')`) vidí v locked režime **celý rebríček všetkých tímov** aj bez tokenu — súkromie medzi tímami sa týka len hráčov, nie admina. (v1.20.3)
 
 **2-krokový flow:** (1) admin vyberie tím = dá tímu jeho token link; (2) hráč otvorí → zamknutá obrazovka len so svojím tímom, editácia URL nefunguje.
 
@@ -445,4 +446,5 @@ Keď je v admine pre mapový (sub-)kvíz zaškrtnuté **„Pri opakovaní označ
 4. **Útok plain:** `?akcia=<slug>&team=<inýTím>` (bez tokenu) → ignoruje sa, žiadne dáta, len dropdown.
 5. **Útok override:** `?t=<token tímu A>&team=<tímB>` → ukáže tím A (token vyhráva, plain ignorovaný).
 6. **Útok token tamper:** zmeň znak v tokene → neplatný podpis → nič (ani akcia).
+7. **Admin prehľad:** prihlásený ako WP admin otvor `[statistika]` stránku bez tokenu → zobrazí sa **plný rebríček všetkých tímov** (žiadna hláška o tímovom linku). Po odhlásení (anonymný) tá istá URL → znova len hláška „len cez tvoj tímový link".
 7. **Štatistika:** `?akcia=<slug>` bez tokenu → len hláška, žiadny rebríček. `?t=<token tímu A>` → len tím A. `?t=<A>&team=<B>` → tím A.

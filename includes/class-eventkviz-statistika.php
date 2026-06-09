@@ -236,9 +236,13 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
         }
         $highlight = $value['team'] !== '' ? $value['team'] : $value['user'];
 
+        // Admin (prihlásený WP používateľ s manage_options) vidí celý rebríček všetkých
+        // tímov aj v zamknutom režime — súkromie medzi tímami sa týka len hráčov.
+        $ek_is_admin = current_user_can( 'manage_options' );
+
         // V zamknutom režime bez platného tokenu NEUKÁZAŤ celý rebríček (únik cudzích
-        // tímov). Štatistika je dostupná len cez vlastný tímový link.
-        if ( $ek_locked && $highlight === '' ) {
+        // tímov). Štatistika je dostupná len cez vlastný tímový link. Admin je výnimka.
+        if ( $ek_locked && $highlight === '' && ! $ek_is_admin ) {
             echo '<div class="ek-quiz ek-quiz--stats"><div class="ek-quiz-content">';
             echo '<p class="ek-stats-empty">Štatistika je dostupná len cez tvoj tímový link.</p>';
             echo '</div></div>';
