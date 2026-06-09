@@ -586,18 +586,30 @@ body .ek-quiz-submit:disabled {
     line-height: 1.4;
 }
 
-/* Per-komponent zvýraznenie odpovede hráča na výsledkovej obrazovke
-   (music: interpret/pieseň zvlášť; movies: film) — zelená správne, červená nesprávne */
-.ek-quiz-content .ek-user-answer .ek-ans-correct {
-    color: #6dd58c;
+/* Per-komponent zvýraznenie odpovede hráča na výsledkovej obrazovke — „bublina
+   s podkladom" v štýle mapového kvízu (priesvitný farebný podklad + orámovanie,
+   svetlý čitateľný text namiesto farebného textu na fialovom pozadí).
+   music: interpret/pieseň zvlášť; movies: film. */
+.ek-quiz-content .ek-user-answer .ek-ans-correct,
+.ek-quiz-content .ek-user-answer .ek-ans-wrong {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 8px;
+    border: 1px solid transparent;
     font-weight: 800;
+    color: #fff;
+    line-height: 1.5;
+}
+.ek-quiz-content .ek-user-answer .ek-ans-correct {
+    background: rgba(67,160,71,0.30);
+    border-color: rgba(67,160,71,0.60);
 }
 .ek-quiz-content .ek-user-answer .ek-ans-wrong {
-    color: #ff6b6b;
-    font-weight: 800;
+    background: rgba(229,57,53,0.30);
+    border-color: rgba(229,57,53,0.60);
 }
 .ek-quiz-content .ek-user-answer .ek-ans-empty {
-    color: rgba(255,255,255,0.5);
+    color: rgba(255,255,255,0.6);
     font-style: italic;
     font-weight: 600;
 }

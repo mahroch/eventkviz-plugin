@@ -8,6 +8,11 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.20.5] - 2026-06-09
+
+### Changed (kontrast farebných odpovedí — štýl „bublín" z mapového kvízu)
+- Zelené/červené zvýraznenie odpovede hráča (hudobný + filmový kvíz) je teraz **bublina s priesvitným podkladom a orámovaním** a svetlým čitateľným textom — rovnaká konvencia ako v mapovom kvíze. Predtým bol len farebný text, ktorý mal na fialovom pozadí slabý kontrast.
+
 ## [1.20.4] - 2026-06-09
 
 ### Fixed (hudobný + filmový kvíz — farebné vyhodnotenie odpovedí)
