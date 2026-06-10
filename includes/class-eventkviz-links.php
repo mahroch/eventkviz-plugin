@@ -232,7 +232,7 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                     echo '</div>';
                 } else {
                     echo '<div class="ek-input-group">';
-                    echo '<input type="text" id="inputField1" placeholder="Vaše meno alebo kód" value="' . esc_attr($preselected_user) . '" oninput="this.value=this.value.replace(/[^a-zA-Z0-9]/g,\'\');checkFields();">';
+                    echo '<input type="text" id="inputField1" placeholder="Meno a priezvisko / kód" value="' . esc_attr($preselected_user) . '" oninput="this.value=this.value.replace(/[^\p{L}\p{N} .-]/gu,\'\');checkFields();">';
                     echo '</div>';
                 }
             }

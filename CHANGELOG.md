@@ -8,6 +8,11 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.24.2] - 2026-06-10
+
+### Changed (individuálny režim — login pole)
+- Pole pri vstupe v režime individuálnych hráčov má teraz text **„Meno a priezvisko / kód"** (predtým „Vaše meno alebo kód") a **akceptuje aj medzery a diakritiku** (predtým len písmená/čísla bez medzier) — hráč zadá celé meno.
+
 ## [1.24.1] - 2026-06-10
 
 ### Changed (štatistika — export tlačidlá + PDF vizuál)
