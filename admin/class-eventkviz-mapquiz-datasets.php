@@ -107,6 +107,13 @@ class Eventkviz_MapQuiz_Datasets {
                 'singular' => 'rieku',
                 'style'    => array( 'color' => '#3aa6f0', 'weight' => 3 ),
             ),
+            'world-mountains' => array(
+                'label'    => 'Pohoria sveta',
+                'region'   => 'world',
+                'file'     => 'world-mountains.geojson',
+                'geometry' => 'polygon',
+                'singular' => 'pohorie',
+            ),
 
             // ===== Future examples (commented out) — easy to add: =====
             // 'sk-national-parks'   => [polygon, slovakia, 'Národné parky SR']

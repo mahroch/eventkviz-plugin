@@ -8,6 +8,13 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.21.0] - 2026-06-10
+
+### Added (mapový kvíz — nová šablóna „Pohoria sveta")
+- Nový dataset **Pohoria sveta** (16 pohorí) pre mapový kvíz typu „plocha", región Svet — pridáva sa v admine cez výber datasetu rovnako ako Pohoria SR / Pohoria Európy.
+- Obsah poolu: Himálaj, Karakoram, Hindúkuš, Pamír, Ťan-šan, Altaj, Andy, Skalnaté vrchy, Apalačské pohorie, Sierra Nevada, Aljašské pohorie, Atlas, Južné Alpy, Alpy, Kaukaz, Sierra Madre.
+- Reálne obrysy z Natural Earth 10m (public domain), rovnaký prístup ako pri Pohoriach Európy.
+
 ## [1.20.5] - 2026-06-09
 
 ### Changed (kontrast farebných odpovedí — štýl „bublín" z mapového kvízu)
