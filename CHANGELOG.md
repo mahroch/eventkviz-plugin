@@ -8,6 +8,12 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.24.1] - 2026-06-10
+
+### Changed (štatistika — export tlačidlá + PDF vizuál)
+- Tlačidlá **Export CSV / PDF** sú teraz výrazné a čitateľné (biele s tmavým textom) namiesto slabo viditeľných.
+- **Export PDF** teraz vytlačí výsledky **so vzhľadom stránky** (fialové pozadie, karty, emoji) — cez natívnu tlač („Uložiť ako PDF"). Predtým bol len čierny text na bielom, ktorý nezodpovedal vizuálu.
+
 ## [1.24.0] - 2026-06-10
 
 ### Added (štatistika — rozpis bodov po kvízoch + export CSV/PDF)
