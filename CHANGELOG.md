@@ -8,6 +8,12 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.23.0] - 2026-06-10
+
+### Added (QR aj pre mapové kvízy)
+- Sekcia **2. Vstup do konkrétneho kvízu** teraz zobrazuje aj **mapové kvízy** — každý s vlastným vstupným linkom a tlačidlami QR PNG/PDF. Na QR PDF sa pod kódom vytlačí **názov mapovej šablóny** (napr. „Pohoria sveta", „Rieky SR").
+- Nový vstupný link pre mapový kvíz: hráč si vyberie tím a ide rovno do konkrétneho mapového kvízu (predtým to šlo len cez hlavný hub).
+
 ## [1.22.2] - 2026-06-10
 
 ### Changed (QR PDF — popis namiesto filename)

@@ -176,6 +176,12 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
             // explicit caller wins (used internally by quiz form classes)
             $value['type'] = $single_quiz;
         }
+        // Vstup na konkrétny mapový kvíz: ?type=mapa&mq=<slug> → po výbere tímu
+        // redirect rovno do toho mapového sub-kvízu (analógia k music/movies/…).
+        $mq_entry = isset($_GET['mq']) ? sanitize_key(wp_unslash($_GET['mq'])) : '';
+        if ($mq_entry === '' && get_query_var('mq')) {
+            $mq_entry = sanitize_key(get_query_var('mq'));
+        }
 
         if (empty($value['akcia'])) {
             echo '<p>Akcia nie je špecifikovaná. Použite <code>?akcia=&lt;slug&gt;</code> v URL.</p>';
@@ -490,7 +496,8 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                 const user  = document.getElementById("inputField1")?.value || "";
                 const team  = document.getElementById("inputField2")?.value || "";
                 const akcia = "' . esc_js($value['akcia']) . '";
-                const singleQuiz = "' . esc_js($value['type']) . '";';
+                const singleQuiz = "' . esc_js($value['type']) . '";
+                const singleMq = "' . esc_js($mq_entry) . '";';
 
             $host_url = untrailingslashit( home_url() );
 
@@ -514,6 +521,7 @@ class Eventkviz_AllLinks_Quiz_Class  extends Eventkviz_Quiz_Class{
                     if(singleQuiz==="movies" && typeof link2!=="undefined"){window.location.href=link2;return;}
                     if(singleQuiz==="knowledge" && typeof link3!=="undefined"){window.location.href=link3;return;}
                     if(singleQuiz==="sudoku" && typeof link4!=="undefined"){window.location.href=link4;return;}
+                    if(singleQuiz==="mapa" && singleMq){ const mqL = await ekTokUrl("mapa-quiz", akcia, team, user, singleMq); window.location.href=mqL; return; }
                 }
 
                 const out=document.getElementById("output");

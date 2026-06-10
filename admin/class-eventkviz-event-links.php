@@ -127,6 +127,23 @@ class Eventkviz_Event_Links_Admin {
                 $qr_captions[ $type ] ?? ucfirst( $type )  // PDF popis → typové označenie
             );
         }
+        // Mapové kvízy — každý sub-kvíz má vlastný vstupný link (?type=mapa&mq=slug)
+        // + QR. PDF popis = názov mapovej šablóny (napr. „Pohoria sveta").
+        $mapa_quizzes_json = get_post_meta( $post->ID, 'event_mapa_quizzes', true );
+        $mapa_quizzes      = is_string( $mapa_quizzes_json ) && $mapa_quizzes_json !== '' ? json_decode( $mapa_quizzes_json, true ) : array();
+        if ( is_array( $mapa_quizzes ) && ! empty( $mapa_quizzes ) ) {
+            foreach ( $mapa_quizzes as $sq ) {
+                $slug  = isset( $sq['slug'] ) ? sanitize_key( $sq['slug'] ) : '';
+                $label = isset( $sq['label'] ) ? (string) $sq['label'] : 'Mapový kvíz';
+                if ( $slug === '' ) continue;
+                self::render_link(
+                    add_query_arg( array( 'akcia' => $akcia, 'type' => 'mapa', 'mq' => $slug ), $vstup_url ),
+                    'Mapa: ' . $label,
+                    $akcia . '-' . $label,   // QR filename base → „event-názovšablóny"
+                    $label                   // PDF popis → názov mapovej šablóny
+                );
+            }
+        }
         echo '</div>';
 
         // 3. Direct URLs (skip selector) — len aktívne kvízy
