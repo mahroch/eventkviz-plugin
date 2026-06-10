@@ -96,7 +96,7 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
      * zobrazí IBA jeden riadok pre daný tím/hráč so správnou pozíciou v celkovom
      * poradí (napr. "6. miesto z 8"). Bez highlight = celý rebríček.
      */
-    private function render_leaderboard( $sorted, $highlight = '' ) {
+    private function render_leaderboard( $sorted, $highlight = '', $by_quiz = array() ) {
         if ( empty( $sorted ) ) {
             echo '<p class="ek-stats-empty">Zatiaľ žiadne body.</p>';
             return;
@@ -111,15 +111,95 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             }
             $hl_cls = $highlight !== '' ? ' ek-stats-rank--highlight' : '';
             echo '<li class="ek-stats-rank' . $hl_cls . '">';
+            echo '<div class="ek-stats-rank-head">';
             echo '<span class="ek-stats-rank-badge">' . $pos . '</span>';
             echo '<span class="ek-stats-rank-name">' . esc_html( $name ) . '</span>';
             echo '<span class="ek-stats-rank-points">' . intval( $pts ) . ' b</span>';
+            echo '</div>';
+            // Vždy viditeľný rozpis bodov po kvízoch pre tento tím/hráča.
+            if ( $highlight === '' && ! empty( $by_quiz ) ) {
+                $bd = $this->entity_breakdown( $name, $by_quiz );
+                if ( ! empty( $bd ) ) {
+                    echo '<ul class="ek-stats-rank-breakdown">';
+                    foreach ( $bd as $r ) {
+                        echo '<li class="ek-stats-rank-bd-row">';
+                        echo '<span class="ek-stats-rank-bd-quiz">' . $r['icon'] . ' ' . esc_html( $r['label'] ) . '</span>';
+                        echo '<span class="ek-stats-rank-bd-pts">' . intval( $r['pts'] ) . ' b</span>';
+                        echo '</li>';
+                    }
+                    echo '</ul>';
+                }
+            }
             echo '</li>';
         }
         echo '</ol>';
         if ( $highlight !== '' ) {
             echo '<p class="ek-stats-context">z celkového počtu <strong>' . $total . '</strong> tímov / hráčov</p>';
         }
+    }
+
+    /** Poradové číslo kvíze pre stabilné triedenie (rovnaké ako render_by_quiz). */
+    private function quiz_key_rank( $k ) {
+        $order = array( 'music' => 1, 'movies' => 2, 'knowledge' => 3, 'sudoku' => 4, 'final' => 5 );
+        return isset( $order[ $k ] ) ? $order[ $k ] : ( strpos( $k, 'mapa:' ) === 0 ? 10 : 8 );
+    }
+
+    /** Rozpis bodov jednej entity po kvízoch (len kde má > 0), zoradený. */
+    private function entity_breakdown( $name, $by_quiz ) {
+        $rows = array();
+        foreach ( $by_quiz as $key => $ents ) {
+            if ( ! isset( $ents[ $name ] ) ) continue;
+            $p = (int) $ents[ $name ];
+            if ( $p <= 0 ) continue;
+            list( $icon, $label ) = $this->stats_quiz_meta( $key );
+            $rows[] = array( 'icon' => $icon, 'label' => $label, 'pts' => $p, 'rank' => $this->quiz_key_rank( $key ) );
+        }
+        usort( $rows, function ( $a, $b ) { return $a['rank'] <=> $b['rank']; } );
+        return $rows;
+    }
+
+    /**
+     * Export toolbar (CSV + PDF) — len pre plný pohľad (žiadny highlight), aby sa
+     * v zamknutom režime neexportovali cudzie tímy. Dáta sa odovzdajú do JS, ktorý
+     * vygeneruje súbor klientsky (žiadny server round-trip).
+     */
+    private function render_export( $entity_label, $sorted, $by_quiz, $akcia ) {
+        if ( empty( $sorted ) ) return;
+        $keys = array_keys( $by_quiz );
+        usort( $keys, function ( $a, $b ) { return $this->quiz_key_rank( $a ) <=> $this->quiz_key_rank( $b ); } );
+        $quizzes = array();
+        foreach ( $keys as $k ) {
+            list( $icon, $label ) = $this->stats_quiz_meta( $k );
+            $quizzes[] = array( 'key' => $k, 'label' => $label );
+        }
+        $rows = array();
+        $pos = 0;
+        foreach ( $sorted as $name => $pts ) {
+            $pos++;
+            $pmap = array();
+            foreach ( $keys as $k ) {
+                $pmap[ $k ] = isset( $by_quiz[ $k ][ $name ] ) ? (int) $by_quiz[ $k ][ $name ] : 0;
+            }
+            $rows[] = array( 'rank' => $pos, 'name' => (string) $name, 'total' => (int) $pts, 'points' => $pmap );
+        }
+        $data = array(
+            'akcia'       => (string) $akcia,
+            'entityLabel' => $entity_label,
+            'quizzes'     => $quizzes,
+            'rows'        => $rows,
+        );
+        wp_enqueue_script(
+            'eventkviz-stats-export',
+            plugin_dir_url( __FILE__ ) . '../public/js/eventkviz-stats-export.js',
+            array(),
+            defined( 'EVENKVIZ_VERSION' ) ? EVENKVIZ_VERSION : '1.0',
+            true
+        );
+        echo '<div class="ek-stats-export">';
+        echo '<button type="button" class="ek-stats-export-btn" data-fmt="csv">⬇ Export CSV</button>';
+        echo '<button type="button" class="ek-stats-export-btn" data-fmt="pdf">⬇ Export PDF</button>';
+        echo '</div>';
+        echo '<script>window.ekStatsExport = ' . wp_json_encode( $data ) . ';</script>';
     }
 
     /**
@@ -266,7 +346,8 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             list( $leaderboard, $by_quiz ) = $this->build_stats( $value['akcia'], 'user' );
 
             echo '<h2 class="ek-stats-section-title">Poradie hráčov</h2>';
-            $this->render_leaderboard( $leaderboard, $highlight );
+            if ( $highlight === '' ) $this->render_export( 'Hráč', $leaderboard, $by_quiz, $value['akcia'] );
+            $this->render_leaderboard( $leaderboard, $highlight, $by_quiz );
 
             echo '<h2 class="ek-stats-section-title">Body po kvízoch</h2>';
             $this->render_by_quiz( $by_quiz, $highlight );
@@ -298,7 +379,8 @@ class Eventkviz_Statistika_Class extends Eventkviz_Quiz_Class{
             list( $leaderboard, $by_quiz ) = $this->build_stats( $value['akcia'], 'team' );
 
             echo '<h2 class="ek-stats-section-title">Poradie tímov</h2>';
-            $this->render_leaderboard( $leaderboard, $highlight );
+            if ( $highlight === '' ) $this->render_export( 'Tím', $leaderboard, $by_quiz, $value['akcia'] );
+            $this->render_leaderboard( $leaderboard, $highlight, $by_quiz );
 
             echo '<h2 class="ek-stats-section-title">Body po kvízoch</h2>';
             $this->render_by_quiz( $by_quiz, $highlight );

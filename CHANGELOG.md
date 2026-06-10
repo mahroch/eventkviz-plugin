@@ -8,6 +8,13 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.24.0] - 2026-06-10
+
+### Added (štatistika — rozpis bodov po kvízoch + export CSV/PDF)
+- V štatistike (Výsledky) sa pod každým tímom/hráčom v poradí teraz **vždy zobrazí rozpis** — v ktorom kvíze koľko bodov získal.
+- Pribudli tlačidlá **Export CSV** a **Export PDF** — stiahnu celé výsledky (poradie + body po kvízoch). CSV je pripravené pre Excel (oddeľovač `;`, UTF-8). Generuje sa v prehliadači.
+- Export aj rozpis sú dostupné len v plnom (admin) pohľade — v zamknutom tímovom režime ostáva súkromie medzi tímami zachované.
+
 ## [1.23.0] - 2026-06-10
 
 ### Added (QR aj pre mapové kvízy)

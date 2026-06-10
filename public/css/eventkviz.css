@@ -1017,14 +1017,59 @@ body .ek-scoring-info,
 }
 .ek-stats-rank {
     display: flex;
-    align-items: center;
-    gap: 14px;
+    flex-direction: column;
+    align-items: stretch;
     padding: 12px 18px;
     background: var(--ek-card-bg);
     border: 1px solid var(--ek-card-border);
     border-radius: var(--ek-radius-sm);
     color: var(--ek-text);
 }
+.ek-stats-rank-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+/* Vždy viditeľný rozpis bodov po kvízoch pod tímom/hráčom */
+.ek-stats-rank-breakdown {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 10px 0 0 48px;
+    border-top: 1px solid rgba(255,255,255,0.14);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+.ek-stats-rank-bd-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.88);
+}
+.ek-stats-rank-bd-quiz { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ek-stats-rank-bd-pts { flex: 0 0 auto; font-weight: 700; }
+/* Export toolbar */
+.ek-stats-export {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 0 0 12px;
+}
+.ek-stats-export-btn {
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12);
+    color: var(--ek-text);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+.ek-stats-export-btn:hover { background: rgba(255,255,255,0.22); }
 .ek-stats-rank-badge {
     flex: 0 0 auto;
     width: 34px;
