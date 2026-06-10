@@ -8,6 +8,13 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.22.0] - 2026-06-10
+
+### Added (QR kódy pre linky kvízov)
+- V metaboxe „🔗 Linky pre hráčov", sekcia **2. Vstup do konkrétneho kvízu**, má teraz každý kvíz tlačidlá **⬇ QR PNG** a **⬇ QR PDF** — stiahne QR kód danej linky.
+- PDF = veľký QR vycentrovaný na stred A4 (ideálne na vytlačenie a vystavenie na stanovišti). Filename = **event-typkvízu** (napr. `siemens-music.png`).
+- QR sa generuje priamo v prehliadači (žiadna externá služba, funguje offline).
+
 ## [1.21.0] - 2026-06-10
 
 ### Added (mapový kvíz — nová šablóna „Pohoria sveta")

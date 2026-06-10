@@ -49,8 +49,15 @@ class Eventkviz_Event_Links_Admin {
             .ek-link-row.ek-link-row--inline { background: rgba(0,124,186,0.05); padding: 4px 6px; border-radius: 4px; }
             .ek-copy-feedback { color: #00a32a; font-weight: 600; margin-left: 6px; opacity: 0; transition: opacity 0.2s; }
             .ek-copy-feedback.show { opacity: 1; }
+            .ek-link-row .ek-qr-btn { white-space: nowrap; }
         ';
         wp_add_inline_style( 'wp-admin', $css );
+
+        // QR generátor (qrcode-generator, MIT) + download logika — len pre sekciu 2.
+        $plugin_url = plugin_dir_url( __FILE__ );
+        $ver = defined( 'EVENKVIZ_VERSION' ) ? EVENKVIZ_VERSION : '1.0';
+        wp_enqueue_script( 'eventkviz-qrcode', $plugin_url . '../public/js/eventkviz-qrcode.js', array(), $ver, true );
+        wp_enqueue_script( 'eventkviz-qr-download', $plugin_url . '../public/js/eventkviz-qr-download.js', array( 'eventkviz-qrcode' ), $ver, true );
 
         $js = '
             (function(){
@@ -108,7 +115,8 @@ class Eventkviz_Event_Links_Admin {
         foreach ( $active_quizzes as $type => $info ) {
             self::render_link(
                 add_query_arg( array( 'akcia' => $akcia, 'type' => $type ), $vstup_url ),
-                $info['label']
+                $info['label'],
+                $akcia . '-' . $type   // QR filename base → „event-typ"
             );
         }
         echo '</div>';
@@ -258,7 +266,13 @@ class Eventkviz_Event_Links_Admin {
         echo '</p>';
     }
 
-    private static function render_link( $url, $label ) {
+    /**
+     * @param string      $url       Distribuovateľná URL.
+     * @param string      $label     Popis riadku (alebo '').
+     * @param string|null $qr_name   Ak nie null → pridá tlačidlá „QR PNG"/„QR PDF"
+     *                               s týmto filename basom (napr. „siemens-music").
+     */
+    private static function render_link( $url, $label, $qr_name = null ) {
         echo '<div class="ek-link-row">';
         if ( $label !== '' ) {
             echo '<span class="ek-link-label">' . esc_html( $label ) . '</span>';
@@ -267,6 +281,11 @@ class Eventkviz_Event_Links_Admin {
         echo '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener" class="button ek-open-btn" title="Otvoriť v novom tabe">↗</a>';
         echo '<button type="button" class="button ek-copy-btn" data-copy="' . esc_attr( $url ) . '">Kopírovať</button>';
         echo '<span class="ek-copy-feedback">✓ Skopírované</span>';
+        if ( $qr_name !== null && $qr_name !== '' ) {
+            $safe = sanitize_file_name( $qr_name );
+            echo '<button type="button" class="button ek-qr-btn" title="Stiahnuť QR ako PNG" data-qr-fmt="png" data-qr-name="' . esc_attr( $safe ) . '" data-qr-url="' . esc_attr( $url ) . '">⬇ QR PNG</button>';
+            echo '<button type="button" class="button ek-qr-btn" title="Stiahnuť QR ako PDF (A4, vycentrovaný)" data-qr-fmt="pdf" data-qr-name="' . esc_attr( $safe ) . '" data-qr-url="' . esc_attr( $url ) . '">⬇ QR PDF</button>';
+        }
         echo '</div>';
     }
 }
