@@ -250,6 +250,7 @@ Map kvíz používa **rovnaké spoločné helpery** ako music/movies/knowledge/s
 - [x] Bug fix: `+regions` value v dropdown sa po sanitize_key strácala — premenovaný na `outline-regions`. (Dropdown už nie je v UI, ale postmeta key migration.)
 
 **Bundleované dáta SK (`public/data/regions/`):**
+- `world-countries.geojson` — podkladová vrstva pre región **Svet** (177 štátov, NE 110m admin_0, RDP tol 0.18 + round 2dp, bez properties, 6670 vrcholov, ~111 KB). Renderuje sa neinteraktívne (kontinenty + hranice štátov) pod feature vrstvou — `mapa-form.js` ho fetchne pre `region==='world'` (analógia k `slovakia.geojson`). Tool: `tools/build-world-countries.py`.
 - `slovakia.geojson` — outline 144 bodov (z Natural Earth)
 - `czechia.geojson` — outline 232 bodov
 - `sk-cities.geojson` — 34 miest (8 krajských tier=1 + 26 okresných tier=2), hand-curated

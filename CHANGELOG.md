@@ -8,6 +8,11 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.22.1] - 2026-06-10
+
+### Fixed (mapový kvíz Svet — chýbal mapový podklad)
+- Mapový kvíz v regióne **Svet** (napr. Pohoria sveta) teraz zobrazuje **kontinenty + hranice štátov** ako podklad. Predtým boli na bielej ploche len plávajúce úlohové polygóny bez geografického kontextu. Podklad je neinteraktívny — kliky na úlohy fungujú ako predtým.
+
 ## [1.22.0] - 2026-06-10
 
 ### Added (QR kódy pre linky kvízov)

@@ -98,6 +98,22 @@
                     loadOverlays();
                     loadFeatureLayer();
                 });
+            } else if (region === 'world') {
+                // Svetový podklad — kontinenty + hranice štátov. Neinteraktívny,
+                // aby neukrádal kliky určené feature polygónom (pohoria a pod.).
+                fetch(ekMapaCfg.geoJsonBase + 'world-countries.geojson').then(function (r) {
+                    if (!r.ok) throw new Error('world base missing');
+                    return r.json();
+                }).then(function (data) {
+                    renderWorldBase(data);
+                    refitToRegion(b);
+                    loadOverlays();
+                    loadFeatureLayer();
+                }).catch(function () {
+                    refitToRegion(b);
+                    loadOverlays();
+                    loadFeatureLayer();
+                });
             } else {
                 refitToRegion(b);
                 loadOverlays();
@@ -137,6 +153,20 @@
                 color: '#2271b1',
                 weight: 2,
                 fillColor: '#f6f7f7',
+                fillOpacity: 1.0
+            }
+        }).addTo(map);
+    }
+
+    function renderWorldBase(geojson) {
+        // Podklad sveta — svetlá pevnina + jemné hranice štátov. interactive:false,
+        // takže kliky prejdú na feature vrstvu / mapu (scoring sa nezmení).
+        L.geoJSON(geojson, {
+            interactive: false,
+            style: {
+                color: '#b0bec5',
+                weight: 0.7,
+                fillColor: '#eceff1',
                 fillOpacity: 1.0
             }
         }).addTo(map);
