@@ -8,6 +8,11 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [1.22.2] - 2026-06-10
+
+### Changed (QR PDF — popis namiesto filename)
+- Na QR PDF sa pod kódom vytlačí **typové označenie** kvízu (Audio / Movies / Knowledge / Sudoku) namiesto názvu súboru. Filename sťahovaného súboru ostáva „event-typ".
+
 ## [1.22.1] - 2026-06-10
 
 ### Fixed (mapový kvíz Svet — chýbal mapový podklad)

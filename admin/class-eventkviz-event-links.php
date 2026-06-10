@@ -112,11 +112,19 @@ class Eventkviz_Event_Links_Admin {
         echo '<div class="ek-links-section">';
         echo '<h3>2. Vstup do konkrétneho kvízu (hráč si vyberie tím, ide rovno do daného kvízu)</h3>';
         echo '<p class="description">Použi keď chceš poslať link na <em>jeden konkrétny</em> kvíz (napr. „dnes hráme len film kvíz"). Zobrazia sa len aktívne kvízy.</p>';
+        // Typové označenie vytlačené na QR PDF (nie filename — ten ostáva „event-typ").
+        $qr_captions = array(
+            'music'     => 'Audio',
+            'movies'    => 'Movies',
+            'knowledge' => 'Knowledge',
+            'sudoku'    => 'Sudoku',
+        );
         foreach ( $active_quizzes as $type => $info ) {
             self::render_link(
                 add_query_arg( array( 'akcia' => $akcia, 'type' => $type ), $vstup_url ),
                 $info['label'],
-                $akcia . '-' . $type   // QR filename base → „event-typ"
+                $akcia . '-' . $type,                  // QR filename base → „event-typ"
+                $qr_captions[ $type ] ?? ucfirst( $type )  // PDF popis → typové označenie
             );
         }
         echo '</div>';
@@ -267,12 +275,15 @@ class Eventkviz_Event_Links_Admin {
     }
 
     /**
-     * @param string      $url       Distribuovateľná URL.
-     * @param string      $label     Popis riadku (alebo '').
-     * @param string|null $qr_name   Ak nie null → pridá tlačidlá „QR PNG"/„QR PDF"
-     *                               s týmto filename basom (napr. „siemens-music").
+     * @param string      $url        Distribuovateľná URL.
+     * @param string      $label      Popis riadku (alebo '').
+     * @param string|null $qr_name    Ak nie null → pridá tlačidlá „QR PNG"/„QR PDF"
+     *                                s týmto filename basom (napr. „siemens-music").
+     * @param string|null $qr_caption Text vytlačený na PDF pod QR (typové označenie
+     *                                Audio/Movies/… alebo názov mapovej šablóny).
+     *                                Ak null → použije sa $qr_name.
      */
-    private static function render_link( $url, $label, $qr_name = null ) {
+    private static function render_link( $url, $label, $qr_name = null, $qr_caption = null ) {
         echo '<div class="ek-link-row">';
         if ( $label !== '' ) {
             echo '<span class="ek-link-label">' . esc_html( $label ) . '</span>';
@@ -283,8 +294,9 @@ class Eventkviz_Event_Links_Admin {
         echo '<span class="ek-copy-feedback">✓ Skopírované</span>';
         if ( $qr_name !== null && $qr_name !== '' ) {
             $safe = sanitize_file_name( $qr_name );
-            echo '<button type="button" class="button ek-qr-btn" title="Stiahnuť QR ako PNG" data-qr-fmt="png" data-qr-name="' . esc_attr( $safe ) . '" data-qr-url="' . esc_attr( $url ) . '">⬇ QR PNG</button>';
-            echo '<button type="button" class="button ek-qr-btn" title="Stiahnuť QR ako PDF (A4, vycentrovaný)" data-qr-fmt="pdf" data-qr-name="' . esc_attr( $safe ) . '" data-qr-url="' . esc_attr( $url ) . '">⬇ QR PDF</button>';
+            $cap  = ( $qr_caption !== null && $qr_caption !== '' ) ? $qr_caption : $safe;
+            echo '<button type="button" class="button ek-qr-btn" title="Stiahnuť QR ako PNG" data-qr-fmt="png" data-qr-name="' . esc_attr( $safe ) . '" data-qr-caption="' . esc_attr( $cap ) . '" data-qr-url="' . esc_attr( $url ) . '">⬇ QR PNG</button>';
+            echo '<button type="button" class="button ek-qr-btn" title="Stiahnuť QR ako PDF (A4, vycentrovaný)" data-qr-fmt="pdf" data-qr-name="' . esc_attr( $safe ) . '" data-qr-caption="' . esc_attr( $cap ) . '" data-qr-url="' . esc_attr( $url ) . '">⬇ QR PDF</button>';
         }
         echo '</div>';
     }

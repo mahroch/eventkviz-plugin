@@ -53,8 +53,9 @@
     function f2(x) { return (Math.round(x * 100) / 100).toString(); }
     function pdfEsc(s) { return String(s).replace(/[\\()]/g, function (c) { return '\\' + c; }); }
 
-    function buildPdfString(matrix, name) {
+    function buildPdfString(matrix, name, caption) {
         var n = matrix.length;
+        if (caption == null) { caption = name; }
         var PW = 595.28, PH = 841.89;          // A4 v bodoch
         var qrSize = 440;                       // veľký vycentrovaný kód
         var x0 = (PW - qrSize) / 2;
@@ -70,7 +71,9 @@
                 rects += f2(x) + ' ' + f2(y) + ' ' + f2(m + 0.3) + ' ' + f2(m + 0.3) + ' re\n';
             }
         }
-        var cap = name;                         // ASCII (slug-typ) — Helvetica WinAnsi
+        // PDF popis kreslíme cez Helvett/WinAnsi — odstráň diakritiku (č/ť/ž…) do
+        // ASCII, inak by chýbajúce glyfy zlomili text. (Audio/Movies/… sú aj tak ASCII.)
+        var cap = String(caption).normalize('NFD').replace(/[̀-ͯ]/g, '');
         var capFs = 16;
         var capX = (PW - cap.length * capFs * 0.5) / 2;
         var capY = y0 - 34;
@@ -99,8 +102,8 @@
         return pdf;
     }
 
-    function downloadPDF(matrix, name) {
-        triggerDownload(new Blob([buildPdfString(matrix, name)], { type: 'application/pdf' }), name + '.pdf');
+    function downloadPDF(matrix, name, caption) {
+        triggerDownload(new Blob([buildPdfString(matrix, name, caption)], { type: 'application/pdf' }), name + '.pdf');
     }
 
     // Verejná API (pre testy / re-use)
@@ -118,10 +121,11 @@
         e.preventDefault();
         var url = btn.getAttribute('data-qr-url');
         var name = btn.getAttribute('data-qr-name') || 'qr';
+        var caption = btn.getAttribute('data-qr-caption') || name;
         var fmt = btn.getAttribute('data-qr-fmt');
         var matrix = buildMatrix(url);
         if (!matrix) { alert('QR knižnica sa nenačítala.'); return; }
-        if (fmt === 'pdf') { downloadPDF(matrix, name); }
+        if (fmt === 'pdf') { downloadPDF(matrix, name, caption); }
         else { downloadPNG(matrix, name); }
     });
 })();
