@@ -10,6 +10,16 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Added (eventkviz.sk web — SEO základ cez RankMath, localhost 2026-06-13)
+- Nainštalovaný a nastavený **SEO plugin (Rank Math, free)** — generuje **meta tagy, OpenGraph, štruktúrované dáta (JSON-LD), XML sitemap a breadcrumbs**.
+- **Vlastný titulok a popis** pre Domov, Ponuku aj Kontakt (cielené na vyhľadávanie „interaktívne kvízy", „kvíz na event").
+- **Náhľadový obrázok pri zdieľaní** (OpenGraph 1200×630, branded EventKviz) pre všetky tri stránky.
+- **JSON-LD Organization** (EventKviz) + WebSite s vyhľadávaním + WebPage; **XML sitemap** dostupná.
+- **H1 na Domove**: „Zábavné kvízy pre váš event" → **„Interaktívne kvízy pre váš event"** (kľúčové slovo).
+- Jazyková formulácia opravená: „ľubovoľný jazyk, nielen SK/EN" → **„SK/CZ/EN; ďalší jazyk na vyžiadanie"** (Domov + Ponuka).
+- **Zjednotené vykanie** na Domove a Ponuke (predtým mix: „Vyskúšaj DEMO"/„Klikni"/„vyplň" → „Vyskúšajte"/„Kliknite"/„vyplňte"; 9 výskytov).
+- Poznámka: SEO nastavenia žijú v DB (RankMath options + per-page meta), nie len v súboroch — deploy na ostro je preto väčší než theme-only (viď deploy poznámka). Nemení verziu pluginu EventKviz.
+
 ### Changed (eventkviz.sk web — rebrand cross-sell GeoChallenge → Georena, deploy 2026-06-12)
 - Sekcie o terénnej hre na **homepage**, v **ponuke** aj v **kontakte** sú premenované z „GeoChallenge" na **„Georena"** (nový brand) — vrátane badge, kariet, nadpisov aj jazykovej poznámky. Ikona kompasu nahradená **pinom 📍**.
 - Cross-sell tlačidlá teraz vedú na **georena.sk** (homepage) namiesto priameho dema; popis „Vyskúšať DEMO" → **„Viac o Georene"**. Demo karta v kontakte vedie na **www.georena.sk/demo**.
