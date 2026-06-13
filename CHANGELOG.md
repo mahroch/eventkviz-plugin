@@ -8,6 +8,13 @@ pdf_filename: CHANGELOG-v0.1.pdf
 
 Všetky podstatné zmeny v plugine EventKviz.
 
+## [Unreleased]
+
+### Changed (eventkviz.sk web — rebrand cross-sell GeoChallenge → Georena, deploy 2026-06-12)
+- Sekcie o terénnej hre na **homepage**, v **ponuke** aj v **kontakte** sú premenované z „GeoChallenge" na **„Georena"** (nový brand) — vrátane badge, kariet, nadpisov aj jazykovej poznámky. Ikona kompasu nahradená **pinom 📍**.
+- Cross-sell tlačidlá teraz vedú na **georena.sk** (homepage) namiesto priameho dema; popis „Vyskúšať DEMO" → **„Viac o Georene"**. Demo karta v kontakte vedie na **www.georena.sk/demo**.
+- Poznámka: theme-only zmena marketingových stránok (child theme), nemení verziu pluginu. Odkazy idú cez **www** formu, lebo apex georena.sk redirect zatiaľ nezachováva cestu.
+
 ## [1.24.2] - 2026-06-10
 
 ### Changed (individuálny režim — login pole)
