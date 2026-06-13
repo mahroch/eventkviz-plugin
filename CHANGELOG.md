@@ -10,6 +10,27 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Changed (eventkviz.sk web — vizuálny refresh, localhost 2026-06-13)
+- **Kompletný vizuálny refresh** ponuky (referencia: marketing mock) — kontrast, hierarchia a **odlíšené typy kariet** namiesto rovnakých bledých blokov.
+- **Nadpisy vo fonte Sora** na celom webe (home/ponuka/kontakt).
+- **Katalóg kvízov** = kompaktné dlaždice s **farebným ikonovým štvorčekom** a farebným okrajom podľa typu.
+- **„Ako to funguje"** = 3 číslované kroky. **Tematické stanovište** = tmavý kotvový panel s „glass" kartami. **Príklady stanovíšť** = vlajkové karty s gradientovou hlavičkou (rovnako široké aj vysoké). **Georena** = teplý sunset podklad. **Záverečné CTA** = gradientový panel.
+- Refresh je v zdieľanom CSS → prejavil sa aj na **home a kontakt**.
+- **Mobil:** 1-stĺpec ≤600px, žiadny horizontálny scroll, tap-targety ≥44px (overené v 390px iframe).
+- Jazyk: zjednotené **„stanovište"** (predtým „stanovisko"/„stanoviská" → „stanovište"/„stanovištia"). Obsah/texty inak nezmenené. Theme-only zmena (+ Sora font enqueue), nemení verziu pluginu.
+
+### Changed (Georena sekcia — zladenie s Georena brandingom, localhost 2026-06-13)
+- Sekcia o terénnej hre **Georena** (na Domove aj v Ponuke) zladená s **Georena brand identitou (Sunset)** — z pôvodnej zelenej/tyrkysovej na **ružovú/korálovú/žltú** (eyebrow, telefón-mockup, body na mape, „Viac o Georene" tlačidlo).
+- Ikona stanovišťa aj logo v mock-aplikácii sú teraz **Georena pin** (značkový symbol so sunset gradientom), nie generická červená špendlíková emoji.
+- Ikony zladené s Georena webom: **🎨** Flexibilita, **🌍** Jazykové mutácie.
+- Demo karta „DEMO Georena" v kontakte tiež prefarbená na Sunset. Theme-only zmena, nemení verziu pluginu.
+
+### Added (ponuka — sekcia „Tematické stanovište na kľúč", localhost 2026-06-13)
+- Na stránke **/ponuka** pribudla sekcia **„Tematické stanovište na kľúč — doplníme váš event jedným hotovým stanovišťom"** (medzi „5 typov kvízov" a „Georena").
+- Vysvetľuje produkt (1 samostatné kvízové stanovište do cudzieho eventu) + **dva spôsoby hrania** (📱 vlastné mobily / 🖥️ zdieľaná obrazovka „tím pred obrazovkou").
+- Dva príklady tém: **„Slovensko"** (v štýle Milujem Slovensko — vedomostný/filmový/hudobný/mapový) a **„Naša firma"** (firemný + mapové na mieru) + blok „ďalšie témy na mieru" + CTA na kontakt.
+- Theme-only zmena (page-eventkviz-ponuka.php + zdieľaný CSS), nemení verziu pluginu.
+
 ### Added (eventkviz.sk web — SEO základ cez RankMath, localhost 2026-06-13)
 - Nainštalovaný a nastavený **SEO plugin (Rank Math, free)** — generuje **meta tagy, OpenGraph, štruktúrované dáta (JSON-LD), XML sitemap a breadcrumbs**.
 - **Vlastný titulok a popis** pre Domov, Ponuku aj Kontakt (cielené na vyhľadávanie „interaktívne kvízy", „kvíz na event").
