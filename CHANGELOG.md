@@ -10,6 +10,21 @@ Všetky podstatné zmeny v plugine EventKviz.
 
 ## [Unreleased]
 
+### Obsah/dáta (BENCONT event — localhost, 2026-06-15)
+- **Mapová šablóna „Mestá Bentcont"** skopírovaná z prod na localhost (mapquiz_template, prod ID 2150 → local ID 2149) — read-only extrakcia + 1:1 rekonštrukcia post+meta.
+- **Vedomostný kvíz — nová kategória „Bentcont"** (topic term) + **17 otázok** (questions-knowledge, ID 2150–2166) z dodaného Wordu. Použitý výlučne existujúci systém (meta choices-for-correct-answer + correct-answer-1, taxonómia topic), žiadne nové štruktúry ani zmena kódu. Voľby s čiarkami (otázky 11, 13) oddelené bodkočiarkou. Záloha pred zmenou: deploy/backups/local-db-before-bentcont-*.sql.
+- Len DB obsah, nie kód → nemení verziu pluginu. Na prod sa dostane cez DB push (nie git).
+
+### Fixed (eventkviz.sk web — čitateľnosť ikon v katalógu „Naša ponuka", localhost 2026-06-14)
+- **Ikonové štvorčeky katalógu kvízov** (🎵🎬🧠🔢🗺️📍) mali sýty farebný podklad, na ktorom farebné emoji splývali a boli **nečitateľné**. Podklad chipu (.ek-quiz-card__icon) zmenený zo solídnej sýtej farby na **svetlý tint** cez **color-mix(in srgb, var(--rf-X) 16%, #fff)** — emoji teraz jasne vyskočia na bledom podklade.
+- **Farebné kódovanie ostáva zachované** — farebný horný okraj karty podľa typu kvízu je nezmenený, len chip je svetlejší. Týka sa **Domova aj Ponuky** (zdieľané CSS).
+- Overené Chrome headless renderom /ponuka aj / (home): všetkých 6 ikon čitateľných, layout kariet a ostatné sekcie nedotknuté. Cache-bust: CSS enqueue verzia **1.0.21 → 1.0.22** (functions.php). Theme-only zmena, nemení verziu pluginu.
+
+### Added/Changed (eventkviz.sk — SEO follow-up + cleanup, prod 2026-06-14)
+- **Service štruktúrované dáta (JSON-LD)** na domovskej stránke — typ služby „interaktívne kvízy a terénne hry", prepojené na Organizáciu (cez RankMath filter vo functions.php). FAQ schema N/A (stránky nemajú FAQ obsah).
+- **Vyčistené nepoužité CSS** (staré triedy z pred-refresh dizajnu — ek-station-*, ek-cta-banner).
+- Theme-only zmena, nemení verziu pluginu. Nasadené na prod (backup prod-theme-2026-06-14-100046).
+
 ### Changed (eventkviz.sk web — vizuálny refresh, localhost 2026-06-13)
 - **Kompletný vizuálny refresh** ponuky (referencia: marketing mock) — kontrast, hierarchia a **odlíšené typy kariet** namiesto rovnakých bledých blokov.
 - **Nadpisy vo fonte Sora** na celom webe (home/ponuka/kontakt).
