@@ -20,7 +20,7 @@
 - **EVENTKVIZ-TODO.md zmazaný** (+ jeho PDF) — jediný živý bod (B6 pohoria) presunutý do sekcie „Otvorené" nižšie.
 - **GEOCHALLENGE-BSD-HMAC-COORDINATION.md + -INVESTIGATION.md presunuté do `docs-archiv/`** — vyriešený incident spred ~10 verzií.
 - **PDF-čka regenerované** (v0.1→v0.2) pre EXPORT-API/MAPY-DOKUMENTACIA/CHANGELOG. Pozn.: **CHANGELOG-v0.2.pdf vyšiel 1.58MB** (predtým 1.36MB) — veľkosť teda NIE JE spôsobená zastaraným obsahom, je to vlastnosť Chrome-headless→PDF pipeline (pravdepodobne embedded fonty), nie bug v obsahu. Netreba ďalej riešiť, kým to Marošovi nevadí.
-- **Zvyšné otvorené:** **deploy/backups/prod-theme-*/** (7 priečinkov, spolu len ~580KB — malé, rollback.sh ich vôbec nepoužíva) čaká na Marošovo rozhodnutie či pruneovať; **tools/** (17 geo seed skriptov) sa NECHÁVA — Maroš plánuje ďalšie rozšírenia mapových kvízov.
+- **deploy/backups/prod-theme-*/** (7 priečinkov, ~580KB) — Maroš rozhodol nechať všetky tak (zanedbateľná veľkosť). **tools/** (17 geo seed skriptov) sa tiež necháva — plánuje ďalšie rozšírenia mapových kvízov. Cleanup tým uzavretý, žiadne ďalšie otvorené položky z auditu.
 
 ## ✅ Hotové, žiadne otvorené otázky
 
