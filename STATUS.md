@@ -7,7 +7,10 @@
 ## Aktuálny stav (over `git log --oneline -10` a `eventkviz.php` verziu pri každom otvorení — toto je len snapshot k 2026-07-16)
 
 - **Verzia:** 1.24.2 (posledné feat: individuálny login mód, štatistika export CSV/PDF, QR pre mapové kvízy).
-- **Git:** `main`, up to date s `origin/main`. Necommitnuté (drobné, neblokujúce): **CLAUDE.md** (táto migrácia), **loadtest/config.env** (MQ hrady-sr→rieky-eu), **loadtest/eventkviz-load.js** (smoke scenár think-time skip) — pochádzajú z predošlej loadtest session, neboli moje, nechaj ich na Marošovo rozhodnutie kým sa k nim nevrátiš. Untracked: **deploy/backups/prod-theme-*/** (viacero, z minulých theme-only deployov) + **deploy/deploy-theme-only.sh** (referencovaný v CLAUDE.md deploy ritual, ale nikdy negitnutý — zvážiť pridať do gitu alebo .gitignore explicitne).
+- **Git:** `main`, up to date s `origin/main`, working tree čistý. Posledné 4 commity (2026-07-16):
+  - **5522647** docs: rozšírenie CLAUDE.md (STATUS.md pointer, DB CLI prístup, SemVer pravidlá, deploy ritual, produktové kontrakty)
+  - **9099d52** chore(loadtest): MQ hrady-sr→rieky-eu, smoke scenár preskakuje think-time
+  - **4055417** chore: STATUS.md + deploy-theme-only.sh pridané do gitu, deploy/backups/prod-theme-*/ pridané do .gitignore (rollback snapshoty, netreba v repo)
 
 ## ✅ Hotové, žiadne otvorené otázky
 
@@ -18,7 +21,7 @@
 
 ## Otvorené / žiadny aktívny task práve teraz
 
-Žiadny rozrobený feature/fix k 2026-07-16. Pri ďalšom otvorení tejto session over najprv git log + CHANGELOG `[Unreleased]` sekciu — ak niekto medzitým (iná session) niečo pridal, toto je zastarané.
+Žiadny rozrobený feature/fix k 2026-07-16. Repo hygiena (necommitnuté loadtest/CLAUDE.md zmeny, untracked backup priečinky) je vyriešená vyššie uvedenými commitmi. Pri ďalšom otvorení tejto session over najprv git log + CHANGELOG `[Unreleased]` sekciu — ak niekto medzitým (iná session) niečo pridal, toto je zastarané.
 
 ## Ďalší krok
 
