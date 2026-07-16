@@ -14,5 +14,8 @@ deploy/backups/*.sql
 deploy/backups/*.sql.gz
 deploy/backups/*.tar.gz
 
+# Theme-only deploy rollback snapshoty (deploy-theme-only.sh) — lokálne, per-deploy, netreba v repo
+deploy/backups/prod-theme-*/
+
 # Generované PDF z MD (lokálne pre Maroša, regenerable cez scripts/generate-pdf.sh)
 *-v*.pdf
