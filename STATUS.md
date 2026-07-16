@@ -7,10 +7,20 @@
 ## Aktuálny stav (over `git log --oneline -10` a `eventkviz.php` verziu pri každom otvorení — toto je len snapshot k 2026-07-16)
 
 - **Verzia:** 1.24.2 (posledné feat: individuálny login mód, štatistika export CSV/PDF, QR pre mapové kvízy).
-- **Git:** `main`, up to date s `origin/main`, working tree čistý. Posledné 4 commity (2026-07-16):
+- **Git:** `main`, up to date s `origin/main`, working tree čistý. Posledné commity (2026-07-16):
+  - **6f6dad2** chore: PDF regenerácia (EXPORT-API/MAPY-DOKUMENTACIA/CHANGELOG v0.2)
+  - **e1d5f26** docs: fix stale EXPORT-API doc, archív BSD-HMAC docs, retire EVENTKVIZ-TODO.md
   - **5522647** docs: rozšírenie CLAUDE.md (STATUS.md pointer, DB CLI prístup, SemVer pravidlá, deploy ritual, produktové kontrakty)
   - **9099d52** chore(loadtest): MQ hrady-sr→rieky-eu, smoke scenár preskakuje think-time
   - **4055417** chore: STATUS.md + deploy-theme-only.sh pridané do gitu, deploy/backups/prod-theme-*/ pridané do .gitignore (rollback snapshoty, netreba v repo)
+
+## ✅ Repo cleanup (16.7., read-only audit → schválené kroky)
+
+- **EVENTKVIZ-EXPORT-API.md opravený** — pôvodne aktívne klamal, že implementovaný je len `music` (Fáza 1). Reálne (kód `class-eventkviz-rest.php`) sú implementované aj `movies`/`knowledge`/`mapquiz`, len `sudoku` chýba. Doplnené per-type sekcie.
+- **EVENTKVIZ-TODO.md zmazaný** (+ jeho PDF) — jediný živý bod (B6 pohoria) presunutý do sekcie „Otvorené" nižšie.
+- **GEOCHALLENGE-BSD-HMAC-COORDINATION.md + -INVESTIGATION.md presunuté do `docs-archiv/`** — vyriešený incident spred ~10 verzií.
+- **PDF-čka regenerované** (v0.1→v0.2) pre EXPORT-API/MAPY-DOKUMENTACIA/CHANGELOG. Pozn.: **CHANGELOG-v0.2.pdf vyšiel 1.58MB** (predtým 1.36MB) — veľkosť teda NIE JE spôsobená zastaraným obsahom, je to vlastnosť Chrome-headless→PDF pipeline (pravdepodobne embedded fonty), nie bug v obsahu. Netreba ďalej riešiť, kým to Marošovi nevadí.
+- **Zvyšné otvorené:** **deploy/backups/prod-theme-*/** (7 priečinkov, spolu len ~580KB — malé, rollback.sh ich vôbec nepoužíva) čaká na Marošovo rozhodnutie či pruneovať; **tools/** (17 geo seed skriptov) sa NECHÁVA — Maroš plánuje ďalšie rozšírenia mapových kvízov.
 
 ## ✅ Hotové, žiadne otvorené otázky
 
