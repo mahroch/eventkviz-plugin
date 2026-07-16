@@ -19,10 +19,12 @@
 - **Vizuálny refresh eventkviz.sk** (ponuka/home/kontakt — Sora font, farebné ikonové dlaždice, Georena sekcia sunset paleta) — theme-only, prod.
 - **Full DB overwrite runbook** (local→prod) reálne overený 2026-06-15 (BENCONT event). Postup funguje 1:1, pozri CLAUDE.md deploy ritual.
 
-## Otvorené / žiadny aktívny task práve teraz
+## Otvorené
 
-Žiadny rozrobený feature/fix k 2026-07-16. Repo hygiena (necommitnuté loadtest/CLAUDE.md zmeny, untracked backup priečinky) je vyriešená vyššie uvedenými commitmi. Pri ďalšom otvorení tejto session over najprv git log + CHANGELOG `[Unreleased]` sekciu — ak niekto medzitým (iná session) niečo pridal, toto je zastarané.
+- **B6 — Pohoria SR, chýba Považský Inovec + ďalšie** (jediná zvyšná položka z bývalého EVENTKVIZ-TODO.md, zmazaného 16.7. pri repo cleanupe). Aktuálne v datasete 16 pohorí (Biele Karpaty, Branisko, Levočské vrchy, Malá Fatra, Malé Karpaty, Nízke Tatry, Poľana, Slanské vrchy, Slovenský kras, Strážovské vrchy, Tribeč, Veľká Fatra, Vihorlat, Vysoké Tatry, Západné Tatry, Štiavnické vrchy). Navrhnutý rozšírenie (čaká Marošovo schválenie, analogicky ako B5 rieky): Považský Inovec, Vtáčnik, Žiar, Kremnické vrchy, Krupinská planina, Cerová vrchovina, Volovské vrchy, Čierna hora, Bachureň, Spišská Magura, Pieniny, Čergov, Bukovské vrchy, Vihorlatské vrchy, Javorníky. Beskydy — treba overiť, či polygón má SR časť (väčšina v ČR/PL). **Blokuje:** reálne GeoJSON polygóny (OSM Overpass, rovnaký postup ako pri B5 rieky — nástroje v `tools/`). Postup: Maroš OK na zdroj → import → update `_mapquiz_feature_pool` (pozri CLAUDE.md gotcha) → Chrome MCP test.
+
+Žiadny iný rozrobený feature/fix k 2026-07-16. Repo hygiena (necommitnuté loadtest/CLAUDE.md zmeny, untracked backup priečinky) je vyriešená commitmi vyššie. Pri ďalšom otvorení tejto session over najprv git log + CHANGELOG `[Unreleased]` sekciu — ak niekto medzitým (iná session) niečo pridal, toto je zastarané.
 
 ## Ďalší krok
 
-Žiadny konkrétny — čakaj na Marošov pokyn. Ak sa spýta "kde sme skončili", zhrň verziu + git stav + posledné ✅ hotové položky vyššie.
+**B6 pohoria** — počkať na Marošovo schválenie zoznamu vyššie, potom import + feature pool update. Inak žiadny konkrétny krok — čakaj na Marošov pokyn. Ak sa spýta "kde sme skončili", zhrň verziu + git stav + posledné ✅ hotové položky + B6 vyššie.
