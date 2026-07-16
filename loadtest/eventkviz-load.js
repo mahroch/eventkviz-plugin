@@ -49,7 +49,7 @@ export const options = (() => {
 })();
 
 // realistický „think time" hráča; pri burst žiadny (všetci naraz)
-function think() { if (SCENARIO === 'burst') return; sleep(Math.random() * 25 + 8); }
+function think() { if (SCENARIO === 'burst' || SCENARIO === 'smoke') return; sleep(Math.random() * 25 + 8); }
 
 function hit(url, name) {
   const r = http.get(url, { tags: { name } });
