@@ -1,7 +1,7 @@
 ---
-pdf_version: 0.1
-pdf_updated_at: 2026-06-05 18:02 UTC
-pdf_filename: CHANGELOG-v0.1.pdf
+pdf_version: 0.2
+pdf_updated_at: 2026-07-16 20:52 UTC
+pdf_filename: CHANGELOG-v0.2.pdf
 ---
 
 # Changelog
